@@ -77,7 +77,8 @@ model Astrologer {
   about          String
   approvalStatus ApprovalStatus @default(PENDING)
   adminRemarks   String?
-
+  price          Int?           @default(0)
+  rating         Float?         @default(0)
   addresses        Address[]
   experiences      ExperiencePlatform[]
   interviews       Interview[]
@@ -89,6 +90,11 @@ model Astrologer {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([approvalStatus])
+  @@index([price])
+  @@index([rating])
+  @@index([experience])
 }
 
 model AstrologerApproved {
@@ -181,6 +187,7 @@ model Admin {
   password            String? // hashed password
   isActive            Boolean      @default(true)
   isDeleted           Boolean      @default(false)
+  refreshToken String?  @db.Text
   approvedAstrologers Astrologer[]
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @updatedAt

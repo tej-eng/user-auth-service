@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1771567609560" clover="3.2.0">
-  <project timestamp="1771567609560" name="All files">
-    <metrics statements="156" coveredstatements="125" conditionals="108" coveredconditionals="59" methods="25" coveredmethods="20" elements="289" coveredelements="204" complexity="0" loc="156" ncloc="156" packages="3" files="6" classes="6"/>
+<coverage generated="1771843956301" clover="3.2.0">
+  <project timestamp="1771843956301" name="All files">
+    <metrics statements="88" coveredstatements="85" conditionals="48" coveredconditionals="30" methods="13" coveredmethods="10" elements="149" coveredelements="125" complexity="0" loc="88" ncloc="88" packages="3" files="6" classes="6"/>
     <package name="config">
       <metrics statements="23" coveredstatements="21" conditionals="0" coveredconditionals="0" methods="6" coveredmethods="4"/>
-      <file name="jwt.js" path="/home/tej/Desktop/dhwaniastroV2/astro-auth-api/src/config/jwt.js">
+      <file name="jwt.js" path="/home/tej/Desktop/dhwaniastroV2/user-auth-service/src/config/jwt.js">
         <metrics statements="10" coveredstatements="9" conditionals="0" coveredconditionals="0" methods="4" coveredmethods="3"/>
         <line num="1" count="1" type="stmt"/>
         <line num="3" count="1" type="stmt"/>
@@ -17,7 +17,7 @@
         <line num="24" count="1" type="stmt"/>
         <line num="27" count="1" type="stmt"/>
       </file>
-      <file name="redis.js" path="/home/tej/Desktop/dhwaniastroV2/astro-auth-api/src/config/redis.js">
+      <file name="redis.js" path="/home/tej/Desktop/dhwaniastroV2/user-auth-service/src/config/redis.js">
         <metrics statements="7" coveredstatements="6" conditionals="0" coveredconditionals="0" methods="2" coveredmethods="1"/>
         <line num="3" count="1" type="stmt"/>
         <line num="5" count="1" type="stmt"/>
@@ -27,7 +27,7 @@
         <line num="16" count="0" type="stmt"/>
         <line num="19" count="1" type="stmt"/>
       </file>
-      <file name="redisConstants.js" path="/home/tej/Desktop/dhwaniastroV2/astro-auth-api/src/config/redisConstants.js">
+      <file name="redisConstants.js" path="/home/tej/Desktop/dhwaniastroV2/user-auth-service/src/config/redisConstants.js">
         <metrics statements="6" coveredstatements="6" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
         <line num="2" count="1" type="stmt"/>
         <line num="3" count="1" type="stmt"/>
@@ -38,9 +38,9 @@
       </file>
     </package>
     <package name="graphql">
-      <metrics statements="130" coveredstatements="102" conditionals="108" coveredconditionals="59" methods="17" coveredmethods="15"/>
-      <file name="resolvers.js" path="/home/tej/Desktop/dhwaniastroV2/astro-auth-api/src/graphql/resolvers.js">
-        <metrics statements="128" coveredstatements="100" conditionals="108" coveredconditionals="59" methods="17" coveredmethods="15"/>
+      <metrics statements="62" coveredstatements="62" conditionals="48" coveredconditionals="30" methods="5" coveredmethods="5"/>
+      <file name="resolvers.js" path="/home/tej/Desktop/dhwaniastroV2/user-auth-service/src/graphql/resolvers.js">
+        <metrics statements="60" coveredstatements="60" conditionals="48" coveredconditionals="30" methods="5" coveredmethods="5"/>
         <line num="1" count="1" type="stmt"/>
         <line num="6" count="1" type="stmt"/>
         <line num="7" count="1" type="stmt"/>
@@ -49,128 +49,60 @@
         <line num="15" count="1" type="stmt"/>
         <line num="17" count="1" type="stmt"/>
         <line num="19" count="1" type="stmt"/>
-        <line num="23" count="5" type="cond" truecount="4" falsecount="0"/>
-        <line num="24" count="2" type="stmt"/>
-        <line num="27" count="3" type="stmt"/>
-        <line num="29" count="3" type="stmt"/>
-        <line num="40" count="3" type="stmt"/>
-        <line num="55" count="2" type="cond" truecount="4" falsecount="0"/>
-        <line num="56" count="1" type="stmt"/>
-        <line num="58" count="1" type="stmt"/>
-        <line num="60" count="1" type="stmt"/>
-        <line num="66" count="1" type="stmt"/>
-        <line num="85" count="1" type="stmt"/>
-        <line num="99" count="2" type="cond" truecount="4" falsecount="0"/>
-        <line num="100" count="1" type="stmt"/>
-        <line num="102" count="1" type="stmt"/>
-        <line num="104" count="1" type="stmt"/>
-        <line num="106" count="1" type="stmt"/>
-        <line num="116" count="1" type="stmt"/>
-        <line num="130" count="2" type="cond" truecount="3" falsecount="1"/>
-        <line num="131" count="0" type="stmt"/>
-        <line num="133" count="2" type="stmt"/>
-        <line num="135" count="2" type="stmt"/>
-        <line num="137" count="2" type="stmt"/>
-        <line num="147" count="2" type="stmt"/>
-        <line num="156" count="1" type="cond" truecount="3" falsecount="1"/>
-        <line num="157" count="0" type="stmt"/>
-        <line num="159" count="1" type="stmt"/>
-        <line num="171" count="1" type="cond" truecount="3" falsecount="1"/>
-        <line num="172" count="0" type="stmt"/>
-        <line num="175" count="1" type="stmt"/>
-        <line num="177" count="1" type="stmt"/>
-        <line num="202" count="1" type="stmt"/>
-        <line num="219" count="3" type="cond" truecount="1" falsecount="1"/>
-        <line num="221" count="3" type="stmt"/>
-        <line num="223" count="3" type="cond" truecount="2" falsecount="2"/>
-        <line num="225" count="3" type="cond" truecount="1" falsecount="1"/>
-        <line num="226" count="3" type="stmt"/>
-        <line num="232" count="3" type="stmt"/>
-        <line num="233" count="3" type="stmt"/>
-        <line num="234" count="3" type="cond" truecount="1" falsecount="1"/>
-        <line num="235" count="3" type="cond" truecount="1" falsecount="1"/>
-        <line num="237" count="3" type="stmt"/>
-        <line num="238" count="3" type="stmt"/>
-        <line num="239" count="3" type="stmt"/>
-        <line num="241" count="3" type="stmt"/>
-        <line num="246" count="4" type="cond" truecount="1" falsecount="1"/>
-        <line num="247" count="4" type="cond" truecount="1" falsecount="1"/>
-        <line num="249" count="4" type="stmt"/>
-        <line num="250" count="4" type="cond" truecount="2" falsecount="0"/>
-        <line num="252" count="3" type="stmt"/>
-        <line num="253" count="3" type="cond" truecount="2" falsecount="0"/>
-        <line num="254" count="2" type="cond" truecount="2" falsecount="0"/>
-        <line num="256" count="1" type="stmt"/>
-        <line num="257" count="1" type="stmt"/>
-        <line num="259" count="1" type="stmt"/>
-        <line num="260" count="1" type="cond" truecount="1" falsecount="1"/>
-        <line num="261" count="1" type="cond" truecount="1" falsecount="1"/>
-        <line num="262" count="1" type="cond" truecount="1" falsecount="1"/>
-        <line num="264" count="1" type="stmt"/>
-        <line num="265" count="1" type="stmt"/>
-        <line num="267" count="1" type="stmt"/>
-        <line num="272" count="1" type="cond" truecount="1" falsecount="1"/>
-        <line num="273" count="1" type="stmt"/>
-        <line num="291" count="1" type="stmt"/>
-        <line num="296" count="1" type="cond" truecount="1" falsecount="1"/>
-        <line num="297" count="1" type="stmt"/>
-        <line num="298" count="1" type="stmt"/>
-        <line num="299" count="1" type="cond" truecount="3" falsecount="1"/>
-        <line num="301" count="1" type="stmt"/>
-        <line num="302" count="1" type="stmt"/>
-        <line num="304" count="1" type="stmt"/>
-        <line num="309" count="1" type="cond" truecount="1" falsecount="1"/>
-        <line num="310" count="1" type="stmt"/>
-        <line num="328" count="1" type="stmt"/>
-        <line num="333" count="3" type="cond" truecount="2" falsecount="0"/>
-        <line num="335" count="2" type="stmt"/>
-        <line num="340" count="2" type="cond" truecount="1" falsecount="1"/>
-        <line num="341" count="2" type="stmt"/>
-        <line num="355" count="2" type="stmt"/>
-        <line num="361" count="2" type="stmt"/>
-        <line num="364" count="2" type="cond" truecount="1" falsecount="1"/>
-        <line num="367" count="2" type="cond" truecount="2" falsecount="0"/>
-        <line num="368" count="1" type="stmt"/>
-        <line num="370" count="1" type="stmt"/>
-        <line num="388" count="1" type="stmt"/>
-        <line num="391" count="2" type="stmt"/>
-        <line num="392" count="2" type="stmt"/>
-        <line num="394" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="395" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="397" count="0" type="stmt"/>
-        <line num="398" count="0" type="stmt"/>
-        <line num="399" count="0" type="stmt"/>
-        <line num="400" count="0" type="stmt"/>
-        <line num="404" count="1" type="stmt"/>
-        <line num="408" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="409" count="0" type="stmt"/>
-        <line num="412" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="413" count="0" type="stmt"/>
-        <line num="416" count="0" type="stmt"/>
-        <line num="418" count="0" type="stmt"/>
-        <line num="424" count="0" type="stmt"/>
-        <line num="429" count="0" type="stmt"/>
-        <line num="434" count="0" type="stmt"/>
-        <line num="444" count="0" type="cond" truecount="0" falsecount="4"/>
-        <line num="445" count="0" type="stmt"/>
-        <line num="447" count="0" type="stmt"/>
-        <line num="454" count="1" type="cond" truecount="3" falsecount="1"/>
-        <line num="455" count="0" type="stmt"/>
-        <line num="457" count="1" type="stmt"/>
-        <line num="462" count="1" type="stmt"/>
-        <line num="476" count="0" type="cond" truecount="0" falsecount="4"/>
-        <line num="477" count="0" type="stmt"/>
-        <line num="479" count="0" type="stmt"/>
-        <line num="483" count="0" type="stmt"/>
-        <line num="488" count="0" type="stmt"/>
-        <line num="493" count="1" type="cond" truecount="3" falsecount="1"/>
-        <line num="494" count="0" type="stmt"/>
-        <line num="496" count="1" type="stmt"/>
-        <line num="497" count="1" type="cond" truecount="1" falsecount="1"/>
-        <line num="499" count="1" type="stmt"/>
-        <line num="504" count="1" type="stmt"/>
+        <line num="23" count="2" type="cond" truecount="4" falsecount="0"/>
+        <line num="24" count="1" type="stmt"/>
+        <line num="27" count="1" type="stmt"/>
+        <line num="29" count="1" type="stmt"/>
+        <line num="40" count="1" type="stmt"/>
+        <line num="51" count="3" type="cond" truecount="1" falsecount="1"/>
+        <line num="53" count="3" type="stmt"/>
+        <line num="55" count="3" type="cond" truecount="2" falsecount="2"/>
+        <line num="57" count="3" type="cond" truecount="1" falsecount="1"/>
+        <line num="58" count="3" type="stmt"/>
+        <line num="64" count="3" type="stmt"/>
+        <line num="65" count="3" type="stmt"/>
+        <line num="66" count="3" type="cond" truecount="1" falsecount="1"/>
+        <line num="67" count="3" type="cond" truecount="1" falsecount="1"/>
+        <line num="69" count="3" type="stmt"/>
+        <line num="70" count="3" type="stmt"/>
+        <line num="71" count="3" type="stmt"/>
+        <line num="73" count="3" type="stmt"/>
+        <line num="78" count="4" type="cond" truecount="1" falsecount="1"/>
+        <line num="79" count="4" type="cond" truecount="1" falsecount="1"/>
+        <line num="81" count="4" type="stmt"/>
+        <line num="82" count="4" type="cond" truecount="2" falsecount="0"/>
+        <line num="84" count="3" type="stmt"/>
+        <line num="85" count="3" type="cond" truecount="2" falsecount="0"/>
+        <line num="86" count="2" type="cond" truecount="2" falsecount="0"/>
+        <line num="88" count="1" type="stmt"/>
+        <line num="89" count="1" type="stmt"/>
+        <line num="91" count="1" type="stmt"/>
+        <line num="92" count="1" type="cond" truecount="1" falsecount="1"/>
+        <line num="93" count="1" type="cond" truecount="1" falsecount="1"/>
+        <line num="94" count="1" type="cond" truecount="1" falsecount="1"/>
+        <line num="96" count="1" type="stmt"/>
+        <line num="97" count="1" type="stmt"/>
+        <line num="99" count="1" type="stmt"/>
+        <line num="104" count="1" type="cond" truecount="1" falsecount="1"/>
+        <line num="105" count="1" type="stmt"/>
+        <line num="123" count="1" type="stmt"/>
+        <line num="128" count="1" type="cond" truecount="1" falsecount="1"/>
+        <line num="129" count="1" type="stmt"/>
+        <line num="130" count="1" type="stmt"/>
+        <line num="131" count="1" type="cond" truecount="3" falsecount="1"/>
+        <line num="133" count="1" type="stmt"/>
+        <line num="134" count="1" type="stmt"/>
+        <line num="136" count="1" type="stmt"/>
+        <line num="141" count="1" type="cond" truecount="1" falsecount="1"/>
+        <line num="142" count="1" type="stmt"/>
+        <line num="160" count="1" type="stmt"/>
+        <line num="165" count="3" type="cond" truecount="2" falsecount="0"/>
+        <line num="167" count="2" type="stmt"/>
+        <line num="172" count="2" type="cond" truecount="1" falsecount="1"/>
+        <line num="173" count="2" type="stmt"/>
+        <line num="187" count="2" type="stmt"/>
       </file>
-      <file name="typeDefs.js" path="/home/tej/Desktop/dhwaniastroV2/astro-auth-api/src/graphql/typeDefs.js">
+      <file name="typeDefs.js" path="/home/tej/Desktop/dhwaniastroV2/user-auth-service/src/graphql/typeDefs.js">
         <metrics statements="2" coveredstatements="2" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
         <line num="1" count="1" type="stmt"/>
         <line num="3" count="1" type="stmt"/>
@@ -178,7 +110,7 @@
     </package>
     <package name="utils">
       <metrics statements="3" coveredstatements="2" conditionals="0" coveredconditionals="0" methods="2" coveredmethods="1"/>
-      <file name="otp.js" path="/home/tej/Desktop/dhwaniastroV2/astro-auth-api/src/utils/otp.js">
+      <file name="otp.js" path="/home/tej/Desktop/dhwaniastroV2/user-auth-service/src/utils/otp.js">
         <metrics statements="3" coveredstatements="2" conditionals="0" coveredconditionals="0" methods="2" coveredmethods="1"/>
         <line num="2" count="3" type="stmt"/>
         <line num="6" count="0" type="stmt"/>
