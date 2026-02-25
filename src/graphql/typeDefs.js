@@ -24,6 +24,33 @@ module.exports = gql`
     user_status: Int
   }
 
+  input IntakeInput {
+  astrologerId: String!
+  name: String!
+  mobile: String!
+  gender: Gender!
+  birthDate: String!
+  birthTime: String!
+  occupation: String!
+  birthPlace: String!
+  requestType: String!
+  chatId: String
+}
+
+type Intake {
+  id: ID!
+  name: String!
+  mobile: String!
+  gender: Gender!
+  birthDate: String!
+  birthTime: String!
+  occupation: String!
+  birthPlace: String!
+  requestType: String!
+  chatId: String
+  createdAt: String!
+}
+
   type AuthPayload {
     user: User!
     accessToken: String!
@@ -107,5 +134,6 @@ type AstrologerPagination {
     logout: Boolean
     deleteUser(id: ID!): Boolean
     updateUserProfile(input: UpdateUserInput!): User!
+    createIntake(input: IntakeInput!): Intake!
   }
 `;
