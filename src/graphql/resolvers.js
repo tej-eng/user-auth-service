@@ -191,25 +191,21 @@ module.exports = {
 
 
     updateUserProfile: async (_, { input }, context) => {
-      console.log("Context in updateUserProfile:", context);
-      if (!context.user) throw new Error("Unauthorized. Please login.");
+  if (!context.user) throw new Error("Unauthorized. Please login.");
 
-      const updatedUser = await prisma.user.update({
-        where: { id: context.user.id },
-        data: {
-          name: input.name,
-          gender: input.gender,
-          birthDate: input.birthDate,
-          birthTime: input.birthTime,
-          occupation: input.occupation,
-        },
-      });
-
-      // Log profile update
-      await logEvent({ userId: context.user.id, action: "UPDATE_PROFILE", details: input });
-
-      return updatedUser;
+  const updatedUser = await prisma.user.update({
+    where: { id: context.user.id },
+    data: {
+      name: input.name,
+      gender: input.gender,
+      birthDate: input.birthDate ? new Date(input.birthDate) : null,
+      birthTime: input.birthTime,
+      occupation: input.occupation,
     },
+  });
+  await logEvent({ userId: context.user.id, action: "UPDATE_PROFILE", details: input });
+  return updatedUser;
+},
 
 
     logout: async (_, __, { user, res }) => {
