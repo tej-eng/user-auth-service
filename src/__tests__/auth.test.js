@@ -45,7 +45,7 @@ beforeAll(async () => {
 
   // ================= CLEAN REDIS =================
   await redis.flushall();
-
+console.log("xxxxxxxxxxxxxxxxxx", redis);
   // ================= SETUP EXPRESS + APOLLO =================
   app = express();
   app.use(express.json());
@@ -120,6 +120,7 @@ describe("GraphQL USER +ASTROLOGER FLOW", () => {
 
     expect(res.body.errors).toBeUndefined();
     expect(res.body.data.requestOtp).toBe(true);
+console.log("resssssssssssssss", res.body.data);
 
     generatedOtp = await redis.get(`otp:${MOBILE}`);
     expect(generatedOtp).toBeDefined();

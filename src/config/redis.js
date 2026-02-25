@@ -1,19 +1,14 @@
-// src/config/redis.js
+const { createClient } = require("redis");
 
-const Redis = require("ioredis");
-
-const redis = new Redis({
-  host: "127.0.0.1",
-  port: 6379,
-  // password: "your_password", // if needed
+const redis = createClient({
+  url: process.env.REDIS_URL || "redis://redis:6379",
 });
 
-redis.on("connect", () => {
-  console.log("ioredis Connected");
-});
+redis.on("error", (err) => console.error("Redis Error:", err));
 
-redis.on("error", (err) => {
-  console.error("ioredis Error:", err);
-});
+(async () => {
+  await redis.connect();
+  console.log("Redis Connected ✅");
+})();
 
 module.exports = redis;

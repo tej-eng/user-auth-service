@@ -18,56 +18,72 @@ const prisma = new PrismaClient();
 
 module.exports = {
   Query: {
-   // ================= GET USERS (ADMIN ONLY) =================
-getUsersDetails: async (_, { page = 1, limit = 10 }, context) => {
-  if (!context.user || context.user.role !== "ADMIN") {
-    throw new Error("Admin only");
-  }
+    // ================= GET USERS (ADMIN ONLY) =================
+    getUsersDetails: async (_, { page = 1, limit = 10 }, context) => {
+      if (!context.user || context.user.role !== "ADMIN") {
+        throw new Error("Admin only");
+      }
 
-  const skip = (page - 1) * limit;
+      const skip = (page - 1) * limit;
 
-  const [users, totalCount] = await Promise.all([
-    prisma.user.findMany({
-      skip,
-      take: limit,
-      orderBy: {
-        createdAt: "desc",
-      },
-    }),
-    prisma.user.count(),
-  ]);
+      const [users, totalCount] = await Promise.all([
+        prisma.user.findMany({
+          skip,
+          take: limit,
+          orderBy: {
+            createdAt: "desc",
+          },
+        }),
+        prisma.user.count(),
+      ]);
 
-  return {
-    data: users,
-    totalCount,
-    currentPage: page,
-    totalPages: Math.ceil(totalCount / limit),
-  };
-},
-},
+      return {
+        data: users,
+        totalCount,
+        currentPage: page,
+        totalPages: Math.ceil(totalCount / limit),
+      };
+    },
+
+     me: async (_, __, { user }) => {
+      if (!user) return null;
+
+      return await prisma.user.findUnique({
+        where: { id: user.id },
+      });
+    },
+
+ 
+  },
+
+
   Mutation: {
     // ================= REQUEST OTP =================
     requestOtp: async (_, { mobile }) => {
       if (!mobile) throw new Error("Mobile required");
 
-      let user = await prisma.user.findUnique({ where: { mobile } });
-
-      if (user && user.isDeleted) throw new Error("Account deleted");
-
-      if (!user) {
-        user = await prisma.user.create({
-          data: { mobile, isActive: true, isDeleted: false },
-        });
+      // Optional: check if deleted user exists
+      const existingUser = await prisma.user.findUnique({ where: { mobile } });
+      if (existingUser?.isDeleted) {
+        throw new Error("Account deleted");
       }
 
       // Rate limiting
       const rateKey = `otp_rate:${mobile}`;
       const count = await redis.incr(rateKey);
-      if (count === 1) await redis.expire(rateKey, OTP_RATE_WINDOW);
-      if (count > OTP_RATE_LIMIT) throw new Error("Too many OTP requests");
+
+      if (count === 1) {
+        await redis.expire(rateKey, OTP_RATE_WINDOW);
+      }
+
+      if (count > OTP_RATE_LIMIT) {
+        throw new Error("Too many OTP requests");
+      }
 
       const otp = generateOtp();
+
       await redis.set(`otp:${mobile}`, otp, "EX", OTP_EXPIRY);
+
       console.log("Generated OTP:", otp);
 
       return true;
@@ -85,11 +101,23 @@ getUsersDetails: async (_, { page = 1, limit = 10 }, context) => {
       if (!storedOtp) throw new Error("OTP expired or not requested");
       if (storedOtp !== otp) throw new Error("Invalid OTP");
 
+      // Mark OTP used
       await redis.set(`otp_used:${mobile}:${otp}`, "1", "EX", 300);
       await redis.del(`otp:${mobile}`);
 
-      const user = await prisma.user.findUnique({ where: { mobile } });
-      if (!user) throw new Error("User not found");
+      // 🔥 Now create or fetch user AFTER OTP verification
+      let user = await prisma.user.findUnique({ where: { mobile } });
+
+      if (!user) {
+        user = await prisma.user.create({
+          data: {
+            mobile,
+            isActive: true,
+            isDeleted: false,
+          },
+        });
+      }
+
       if (user.isDeleted) throw new Error("Account deleted");
       if (!user.isActive) throw new Error("Account inactive");
 
@@ -187,6 +215,8 @@ getUsersDetails: async (_, { page = 1, limit = 10 }, context) => {
       return true;
     },
 
-    
+
+
+
   },
 };

@@ -1,6 +1,8 @@
 const { gql } = require("graphql-tag");
 
 module.exports = gql`
+
+
   enum Gender {
     MALE
     FEMALE
@@ -34,9 +36,10 @@ module.exports = gql`
   totalPages: Int!
 }
 
-  type Query {
-    getUsersDetails(page: Int, limit: Int): PaginatedUsers!
-  }
+type Query {
+  me: User
+  getUsersDetails(page: Int, limit: Int): PaginatedUsers!
+}
 
   type Mutation {
     requestOtp(mobile: String!): Boolean

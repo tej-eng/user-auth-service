@@ -46,7 +46,7 @@ export const verifyOTPService = async (phone, otp) => {
   await redis.del(`login_fail:${phone}`);
 
   let user = await prisma.user.findUnique({
-    where: { phone },
+  where: { mobile: phone },
   });
 
   if (!user) {
