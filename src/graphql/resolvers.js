@@ -1,191 +1,108 @@
-const { PrismaClient } = require("@prisma/client");
-const {
-  generateAccessToken,
-  generateRefreshToken,
-  verifyRefreshToken,
-} = require("../config/jwt");
-const { generateOtp } = require("../utils/otp");
+const prisma = require("../config/prisma");
 const redis = require("../config/redis");
 const cookie = require("cookie");
+const { sendOTPService, verifyOTPService, refreshTokenService } = require("../services/authService");
+const { connectMongo, getDb } = require("../config/mongo");
 
-const {
-  OTP_EXPIRY,
-  OTP_RATE_LIMIT,
-  OTP_RATE_WINDOW,
-} = require("../config/redisConstants");
-
-const prisma = new PrismaClient();
+// Helper to log events in MongoDB
+async function logEvent({ userId, action, details }) {
+  try {
+    const db = await connectMongo();
+    const collection = db.collection("userAuthLogs");
+    await collection.insertOne({
+      userId: userId || null,
+      action,
+      details: details || {},
+      createdAt: new Date(),
+    });
+  } catch (error) {
+    console.error("Failed to log event:", error.message);
+  }
+}
 
 module.exports = {
   Query: {
-    // ================= GET USERS (ADMIN ONLY) =================
-    getUsersDetails: async (_, { page = 1, limit = 10 }, context) => {
-      if (!context.user || context.user.role !== "ADMIN") {
-        throw new Error("Admin only");
-      }
+    getUsersDetails: async (_, { page = 1, limit = 10, search = "" }, context) => {
+      try {
+        const skip = (page - 1) * limit;
+        const whereCondition = search
+          ? { mobile: { contains: search, mode: "insensitive" } }
+          : {};
 
-      const skip = (page - 1) * limit;
-
-      const [users, totalCount] = await Promise.all([
-        prisma.user.findMany({
-          skip,
-          take: limit,
-          orderBy: {
-            createdAt: "desc",
-          },
-        }),
-        prisma.user.count(),
-      ]);
-
-      return {
-        data: users,
-        totalCount,
-        currentPage: page,
-        totalPages: Math.ceil(totalCount / limit),
-      };
-    },
-
-     me: async (_, __, { user }) => {
-      if (!user) return null;
-
-      return await prisma.user.findUnique({
-        where: { id: user.id },
-      });
-    },
-
- 
-  },
-
-
-  Mutation: {
-    // ================= REQUEST OTP =================
-    requestOtp: async (_, { mobile }) => {
-      if (!mobile) throw new Error("Mobile required");
-
-      // Optional: check if deleted user exists
-      const existingUser = await prisma.user.findUnique({ where: { mobile } });
-      if (existingUser?.isDeleted) {
-        throw new Error("Account deleted");
-      }
-
-      // Rate limiting
-      const rateKey = `otp_rate:${mobile}`;
-      const count = await redis.incr(rateKey);
-
-      if (count === 1) {
-        await redis.expire(rateKey, OTP_RATE_WINDOW);
-      }
-
-      if (count > OTP_RATE_LIMIT) {
-        throw new Error("Too many OTP requests");
-      }
-
-      const otp = generateOtp();
-
-      await redis.set(`otp:${mobile}`, otp, "EX", OTP_EXPIRY);
-
-      console.log("Generated OTP:", otp);
-
-      return true;
-    },
-
-    // ================= AUTH WITH OTP =================
-    authWithOtp: async (_, { mobile, otp }, { res }) => {
-      if (!mobile) throw new Error("Mobile required");
-      if (!otp) throw new Error("OTP required");
-
-      const alreadyUsed = await redis.get(`otp_used:${mobile}:${otp}`);
-      if (alreadyUsed) throw new Error("OTP already used");
-
-      const storedOtp = await redis.get(`otp:${mobile}`);
-      if (!storedOtp) throw new Error("OTP expired or not requested");
-      if (storedOtp !== otp) throw new Error("Invalid OTP");
-
-      // Mark OTP used
-      await redis.set(`otp_used:${mobile}:${otp}`, "1", "EX", 300);
-      await redis.del(`otp:${mobile}`);
-
-      // 🔥 Now create or fetch user AFTER OTP verification
-      let user = await prisma.user.findUnique({ where: { mobile } });
-
-      if (!user) {
-        user = await prisma.user.create({
-          data: {
-            mobile,
-            isActive: true,
-            isDeleted: false,
-          },
-        });
-      }
-
-      if (user.isDeleted) throw new Error("Account deleted");
-      if (!user.isActive) throw new Error("Account inactive");
-
-      const accessToken = generateAccessToken(user);
-      const refreshToken = generateRefreshToken(user);
-
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { refreshToken },
-      });
-
-      if (res?.setHeader) {
-        res.setHeader("Set-Cookie", [
-          cookie.serialize("accessToken", accessToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "Strict",
-            maxAge: 60 * 15,
-            path: "/",
+        const [users, totalCount] = await Promise.all([
+          prisma.user.findMany({
+            where: whereCondition,
+            skip,
+            take: limit,
+            orderBy: { createdAt: "desc" },
           }),
-          cookie.serialize("refreshToken", refreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "Strict",
-            maxAge: 60 * 60 * 24 * 7,
-            path: "/",
-          }),
+          prisma.user.count({ where: whereCondition }),
         ]);
-      }
 
-      return { user, accessToken, refreshToken };
+        return {
+          data: users,
+          totalCount,
+          currentPage: page,
+          totalPages: Math.ceil(totalCount / limit),
+        };
+      } catch (error) {
+        throw new Error(error.message || "Failed to fetch users");
+      }
     },
 
-    // ================= REFRESH TOKEN =================
-    refreshToken: async (_, { token }, { res }) => {
-      if (!token) throw new Error("Refresh token required");
-      const decoded = verifyRefreshToken(token);
-      const user = await prisma.user.findUnique({ where: { id: decoded.id } });
-      if (!user || user.refreshToken !== token) throw new Error("Invalid refresh token");
+    getAstrologerListBySearch: async (_, { searchInput }) => {
+      try {
+        const { query, sortField, sortOrder, limit = 10, page = 1 } = searchInput || {};
+        const skip = (page - 1) * limit;
 
-      const newAccess = generateAccessToken(user);
-      const newRefresh = generateRefreshToken(user);
+        let orderBy = { createdAt: "desc" };
+        if (sortField) {
+          const sortMap = { EXPERIENCE: "experience", PRICE: "price", RATING: "rating" };
+          if (sortMap[sortField]) {
+            orderBy = { [sortMap[sortField]]: sortOrder === "ASC" ? "asc" : "desc" };
+          }
+        }
 
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { refreshToken: newRefresh },
-      });
-
-      if (res?.setHeader) {
-        res.setHeader("Set-Cookie", [
-          cookie.serialize("accessToken", newAccess, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "Strict",
-            maxAge: 60 * 15,
-            path: "/",
+        const where = {
+          approvalStatus: "APPROVED",
+          ...(query && {
+            OR: [
+              { name: { contains: query, mode: "insensitive" } },
+              { skills: { has: query } },
+              { languages: { has: query } },
+            ],
           }),
-          cookie.serialize("refreshToken", newRefresh, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "Strict",
-            maxAge: 60 * 60 * 24 * 7,
-            path: "/",
+        };
+
+        const [astrologers, totalCount] = await Promise.all([
+          prisma.astrologer.findMany({
+            where,
+            orderBy,
+            skip,
+            take: limit,
+            select: {
+              id: true,
+              profilePic: true,
+              name: true,
+              experience: true,
+              price: true,
+              rating: true,
+              skills: true,
+              languages: true,
+            },
           }),
+          prisma.astrologer.count({ where }),
         ]);
-      }
 
-      return { user, accessToken: newAccess, refreshToken: newRefresh };
+        return {
+          data: astrologers,
+          totalCount,
+          currentPage: page,
+          totalPages: Math.ceil(totalCount / limit),
+        };
+      } catch (error) {
+        throw new Error(error.message || "Failed to fetch astrologer list");
+      }
     },
 
     // ================= LOGOUT =================
@@ -218,5 +135,110 @@ module.exports = {
 
 
 
+  },
+
+  Mutation: {
+    requestOtp: async (_, { mobile }) => {
+      try {
+        if (!mobile) throw new Error("Mobile required");
+
+        const result = await sendOTPService(mobile);
+
+        // Log OTP request
+        await logEvent({ action: "REQUEST_OTP", details: { mobile } });
+
+        return result;
+      } catch (error) {
+        throw new Error(error.message || "Failed to request OTP");
+      }
+    },
+
+    authWithOtp: async (_, { mobile, otp }, { res }) => {
+      try {
+        if (!mobile) throw new Error("Mobile required");
+        if (!otp) throw new Error("OTP required");
+
+        const { accessToken, refreshToken, user } = await verifyOTPService(mobile, otp);
+
+        if (res?.setHeader) {
+          res.setHeader("Set-Cookie", [
+            cookie.serialize("accessToken", accessToken, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "Strict", maxAge: 60 * 15, path: "/" }),
+            cookie.serialize("refreshToken", refreshToken, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "Strict", maxAge: 60 * 60 * 24 * 7, path: "/" }),
+          ]);
+        }
+
+        // Log successful login
+        await logEvent({ userId: user.id, action: "LOGIN_OTP", details: { mobile } });
+
+        return { user, accessToken, refreshToken };
+      } catch (error) {
+        await logEvent({ action: "FAILED_LOGIN_OTP", details: { mobile, error: error.message } });
+        throw new Error(error.message || "Failed to authenticate with OTP");
+      }
+    },
+
+    refreshToken: async (_, { token }, { res }) => {
+      try {
+        if (!token) throw new Error("Refresh token required");
+
+        const { accessToken, refreshToken, user } = await refreshTokenService(token);
+
+        if (res?.setHeader) {
+          res.setHeader("Set-Cookie", [
+            cookie.serialize("accessToken", accessToken, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "Strict", maxAge: 60 * 15, path: "/" }),
+            cookie.serialize("refreshToken", refreshToken, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "Strict", maxAge: 60 * 60 * 24 * 7, path: "/" }),
+          ]);
+        }
+
+        await logEvent({ userId: user.id, action: "REFRESH_TOKEN" });
+
+        return { user, accessToken, refreshToken };
+      } catch (error) {
+        throw new Error(error.message || "Invalid refresh token");
+      }
+    },
+
+    updateUserProfile: async (_, { input }, context) => {
+      console.log("Context in updateUserProfile:", context);
+      if (!context.user) throw new Error("Unauthorized. Please login.");
+
+      const updatedUser = await prisma.user.update({
+        where: { id: context.user.id },
+        data: {
+          name: input.name,
+          gender: input.gender,
+          birthDate: input.birthDate,
+          birthTime: input.birthTime,
+          occupation: input.occupation,
+        },
+      });
+
+      // Log profile update
+      await logEvent({ userId: context.user.id, action: "UPDATE_PROFILE", details: input });
+
+      return updatedUser;
+    },
+
+    logout: async (_, __, { user, res }) => {
+      try {
+        if (!user) throw new Error("Unauthorized");
+
+        await prisma.user.update({ where: { id: user.id }, data: { refreshToken: null } });
+
+        if (res?.setHeader) {
+          res.setHeader("Set-Cookie", [
+            cookie.serialize("accessToken", "", { httpOnly: true, expires: new Date(0), path: "/" }),
+            cookie.serialize("refreshToken", "", { httpOnly: true, expires: new Date(0), path: "/" }),
+          ]);
+        }
+
+        // Log logout
+        await logEvent({ userId: user.id, action: "LOGOUT" });
+
+        return true;
+      } catch (error) {
+        throw new Error(error.message || "Failed to logout");
+      }
+    },
   },
 };
