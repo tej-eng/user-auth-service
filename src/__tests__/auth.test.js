@@ -299,41 +299,41 @@ test("6. Too many failed OTP attempts", async () => {
   expect(res.body.errors[0].message).toBe("Too many failed attempts.");
 });
 
-// it("Authenticated user can update own profile", async () => {
-//   console.log("Access Token for update profile test:", accessToken);
-//   const mutation = `
-//     mutation updateUserProfile($input: UpdateUserInput!) {
-//       updateUserProfile(input: $input) {
-//         id
-//         name
-//         gender
-//         birthDate
-//         birthTime
-//         occupation
-//       }
-//     }
-//   `;
+it("Authenticated user can update own profile", async () => {
+  console.log("Access Token for update profile test:", accessToken);
+  const mutation = `
+    mutation updateUserProfile($input: UpdateUserInput!) {
+      updateUserProfile(input: $input) {
+        id
+        name
+        gender
+        birthDate
+        birthTime
+        occupation
+      }
+    }
+  `;
 
-//   const res = await request(app)
-//     .post("/graphql")
-//     .set("Authorization", `Bearer ${accessToken}`) 
-//     .send({
-//       query: mutation,
-//       variables: {
-//         input: {
-//           name: "Updated User",
-//           gender: "MALE",
-//           birthDate: "1995-05-15",
-//           birthTime: "10:30",
-//           occupation: "Software Engineer",
-//         },
-//       },
-//     });
-//     console.log("Update Profile Response:", res.body.data.updateUserProfile);
-//  expect(res.body.errors).toBeUndefined();
-// expect(res.body.data.updateUserProfile.name).toBe("Updated User");
-// expect(res.body.data.updateUserProfile.occupation).toBe("Software Engineer");
-// });
+  const res = await request(app)
+    .post("/graphql")
+    .set("Authorization", `Bearer ${accessToken}`) 
+    .send({
+      query: mutation,
+      variables: {
+        input: {
+          name: "Updated User",
+          gender: "MALE",
+          birthDate: "1995-05-15",
+          birthTime: "10:30",
+          occupation: "Software Engineer",
+        },
+      },
+    });
+    //console.log("Update Profile Response:", res.body.data.updateUserProfile);
+ expect(res.body.errors).toBeUndefined();
+expect(res.body.data.updateUserProfile.name).toBe("Updated User");
+expect(res.body.data.updateUserProfile.occupation).toBe("Software Engineer");
+});
 test("7. Refresh token generates new access token", async () => {
   const mobile = "9999944444";
 

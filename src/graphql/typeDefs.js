@@ -101,6 +101,6 @@ type AstrologerPagination {
     refreshToken(token: String!): AuthPayload
     logout: Boolean
     deleteUser(id: ID!): Boolean
-    updateUserProfile(data: UpdateUserInput!): User!
+    updateUserProfile(input: UpdateUserInput!): User!
   }
 `;
