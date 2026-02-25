@@ -28,9 +28,9 @@ async function logEvent(type, mobile, details = {}) {
 // ================= SEND OTP =================
 const sendOTPService = async (mobile) => {
   try {
-    if (!/^\d{6,15}$/.test(mobile)) {
-      throw new Error("Invalid mobile number");
-    }
+ if (!/^\+[1-9]\d{5,14}$/.test(mobile)) {
+  throw new Error("Invalid mobile number");
+}
 
     const rateKey = `otp_rate:${mobile}`;
     const count = await redis.incr(rateKey);

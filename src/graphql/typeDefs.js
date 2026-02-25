@@ -21,6 +21,7 @@ module.exports = gql`
     isDeleted: Boolean
     createdAt: String
     updatedAt: String
+    user_status: Int
   }
 
   type AuthPayload {
@@ -52,10 +53,7 @@ module.exports = gql`
 # Astrologer Public Search Configuration
 # -----------------------------------------
 
-type Query {
-  me: User
-  getUsersDetails(page: Int, limit: Int): PaginatedUsers!
-}
+
 type Astrologer {
   id: ID!
   name: String
@@ -97,6 +95,7 @@ type AstrologerPagination {
 # End Astrologer Search Section
 # -----------------------------------------
   type Query {
+  me: User
   getUsersDetails(page: Int, limit: Int, search: String): UserPagination!
   getAstrologerListBySearch(searchInput: AstrologerSearchInput): AstrologerPagination!
   }

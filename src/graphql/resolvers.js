@@ -22,6 +22,7 @@ async function logEvent({ userId, action, details }) {
 
 module.exports = {
   Query: {
+
     getUsersDetails: async (_, { page = 1, limit = 10, search = "" }, context) => {
       try {
         const skip = (page - 1) * limit;
@@ -49,6 +50,7 @@ module.exports = {
         throw new Error(error.message || "Failed to fetch users");
       }
     },
+    
 
     getAstrologerListBySearch: async (_, { searchInput }) => {
       try {
@@ -105,39 +107,26 @@ module.exports = {
       }
     },
 
-    // ================= LOGOUT =================
-    logout: async (_, __, { user, res }) => {
-      if (!user) throw new Error("Unauthorized");
 
-      await prisma.user.update({
+    me: async (_, __, { user }) => {
+      if (!user) return null;
+
+      return await prisma.user.findUnique({
         where: { id: user.id },
-        data: { refreshToken: null },
       });
-
-      if (res?.setHeader) {
-        res.setHeader("Set-Cookie", [
-          cookie.serialize("accessToken", "", {
-            httpOnly: true,
-            expires: new Date(0),
-            path: "/",
-          }),
-          cookie.serialize("refreshToken", "", {
-            httpOnly: true,
-            expires: new Date(0),
-            path: "/",
-          }),
-        ]);
-      }
-
-      return true;
     },
-
 
 
 
   },
 
+
+
+
+  // Mutations for auth
+
   Mutation: {
+
     requestOtp: async (_, { mobile }) => {
       try {
         if (!mobile) throw new Error("Mobile required");
@@ -152,6 +141,7 @@ module.exports = {
         throw new Error(error.message || "Failed to request OTP");
       }
     },
+
 
     authWithOtp: async (_, { mobile, otp }, { res }) => {
       try {
@@ -177,6 +167,7 @@ module.exports = {
       }
     },
 
+
     refreshToken: async (_, { token }, { res }) => {
       try {
         if (!token) throw new Error("Refresh token required");
@@ -198,6 +189,7 @@ module.exports = {
       }
     },
 
+
     updateUserProfile: async (_, { input }, context) => {
       console.log("Context in updateUserProfile:", context);
       if (!context.user) throw new Error("Unauthorized. Please login.");
@@ -218,6 +210,7 @@ module.exports = {
 
       return updatedUser;
     },
+
 
     logout: async (_, __, { user, res }) => {
       try {
