@@ -109,13 +109,14 @@ module.exports = {
 
 
     me: async (_, __, { user }) => {
-      if (!user) return null;
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
 
       return await prisma.user.findUnique({
         where: { id: user.id },
       });
-    },
-
+    }
 
 
   },
@@ -168,8 +169,9 @@ module.exports = {
     },
 
 
-    refreshToken: async (_, { token }, { res }) => {
+    refreshToken: async (_, __, { req, res }) => {
       try {
+        const token = req.cookies.refreshToken;
         if (!token) throw new Error("Refresh token required");
 
         const { accessToken, refreshToken, user } = await refreshTokenService(token);

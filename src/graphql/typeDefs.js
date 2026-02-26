@@ -117,6 +117,10 @@ type AstrologerPagination {
   currentPage: Int!
   totalPages: Int!
 }
+  type OtpResponse {
+  message: String!
+  otp: String
+}
 
 # -----------------------------------------
 # End Astrologer Search Section
@@ -128,7 +132,7 @@ type AstrologerPagination {
   }
 
   type Mutation {
-    requestOtp(mobile: String!): String
+     requestOtp(mobile: String!): OtpResponse!
     authWithOtp(mobile: String!, otp: String!): AuthPayload
     refreshToken(token: String!): AuthPayload
     logout: Boolean
