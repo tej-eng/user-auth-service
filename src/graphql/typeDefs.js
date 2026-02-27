@@ -51,11 +51,13 @@ type Intake {
   createdAt: String!
 }
 
-  type AuthPayload {
-    user: User!
-    accessToken: String!
-    refreshToken: String!
-  }
+type AuthPayload {
+  user: User!
+  accessToken: String!
+  refreshToken: String!
+  isNewUser: Boolean!
+  hasName: Boolean!
+}
  
   type UserPagination {
   data: [User!]!
