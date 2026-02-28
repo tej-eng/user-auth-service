@@ -5,7 +5,7 @@ const { generateAccessToken, generateRefreshToken } = require("../config/jwt");
 const jwt = require("jsonwebtoken");
 const { connectMongo, getDb } = require("../config/mongo");
 
-const OTP_EXPIRE = 300; // 5 minutes
+const OTP_EXPIRE = 60; // 1 minutes
 const OTP_LIMIT = 3; // 3 per 10 min
 const LOGIN_LIMIT = 5; // 5 failed attempts
 
@@ -39,7 +39,8 @@ const sendOTPService = async (mobile) => {
 
     const otp = generateOtp();
     console.log(`Generated OTP for ${mobile}: ${otp}`);
-    await redis.set(`otp:${mobile}`, otp, "EX", OTP_EXPIRE);
+    // await redis.set(`otp:${mobile}`, otp, "EX", OTP_EXPIRE);
+    await redis.set(`otp:${mobile}`, otp, { EX: OTP_EXPIRE });
 
     // Log OTP generation
     await logEvent("OTP_GENERATED", mobile, { otp });
@@ -59,7 +60,7 @@ const verifyOTPService = async (mobile, otp) => {
     if (!mobile || !otp) {
       throw new Error("Mobile and OTP required");
     }
-
+ console.log("Stored OTPpppppppppppppppppp:", storedOTP);
     // 1️⃣ Get stored OTP
     const storedOTP = await redis.get(`otp:${mobile}`);
 
@@ -67,6 +68,8 @@ const verifyOTPService = async (mobile, otp) => {
       await logEvent("OTP_EXPIRED", mobile);
       throw new Error("OTP expired. Please request again.");
     }
+
+   
 
     if (storedOTP !== otp) {
       const failKey = `login_fail:${mobile}`;
