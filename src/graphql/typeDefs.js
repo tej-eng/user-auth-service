@@ -140,6 +140,9 @@ type RechargePack {
   validityDays: Int!
   createdAt: String!
 }
+  type Query {
+  getRechargePackById(id: ID!): RechargePack
+}
 
 type RechargePackResponse {
   data: [RechargePack!]!

@@ -60,10 +60,11 @@ const verifyOTPService = async (mobile, otp) => {
     if (!mobile || !otp) {
       throw new Error("Mobile and OTP required");
     }
- console.log("Stored OTPpppppppppppppppppp:", storedOTP);
+
     // 1️⃣ Get stored OTP
     const storedOTP = await redis.get(`otp:${mobile}`);
-
+   console.log("Entered OTP:", otp);
+    console.log("Stored OTP:", storedOTP);
     if (!storedOTP) {
       await logEvent("OTP_EXPIRED", mobile);
       throw new Error("OTP expired. Please request again.");
