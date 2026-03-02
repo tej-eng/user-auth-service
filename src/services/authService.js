@@ -5,7 +5,7 @@ const { generateAccessToken, generateRefreshToken } = require("../config/jwt");
 const jwt = require("jsonwebtoken");
 const { connectMongo, getDb } = require("../config/mongo");
 
-const OTP_EXPIRE = 300; // 5 minutes
+const OTP_EXPIRE = 60; // 1 minutes
 const OTP_LIMIT = 3; // 3 per 10 min
 const LOGIN_LIMIT = 5; // 5 failed attempts
 
@@ -28,9 +28,9 @@ async function logEvent(type, mobile, details = {}) {
 // ================= SEND OTP =================
 const sendOTPService = async (mobile) => {
   try {
- if (!/^\+[1-9]\d{5,14}$/.test(mobile)) {
-  throw new Error("Invalid mobile number");
-}
+    if (!/^\+[1-9]\d{5,14}$/.test(mobile)) {
+      throw new Error("Invalid mobile number");
+    }
 
     const rateKey = `otp_rate:${mobile}`;
     const count = await redis.incr(rateKey);
@@ -39,49 +39,83 @@ const sendOTPService = async (mobile) => {
 
     const otp = generateOtp();
     console.log(`Generated OTP for ${mobile}: ${otp}`);
-    await redis.set(`otp:${mobile}`, otp, "EX", OTP_EXPIRE);
+    // await redis.set(`otp:${mobile}`, otp, "EX", OTP_EXPIRE);
+    await redis.set(`otp:${mobile}`, otp, { EX: OTP_EXPIRE });
 
     // Log OTP generation
     await logEvent("OTP_GENERATED", mobile, { otp });
-
-    return "OTP sent successfully";
+    return { message: "OTP sent successfully", otp };
+    // return "OTP sent successfully";
   } catch (error) {
     await logEvent("OTP_FAILED", mobile, { error: error.message });
     throw new Error(error.message || "Failed to send OTP");
   }
 };
 
+
 // ================= VERIFY OTP =================
+
 const verifyOTPService = async (mobile, otp) => {
   try {
-    const isUsed = await redis.get(`otp_used:${mobile}`);
-    if (isUsed) {
-      await logEvent("OTP_REUSED", mobile);
-      throw new Error("OTP already used");
+    if (!mobile || !otp) {
+      throw new Error("Mobile and OTP required");
+    }
+ console.log("Stored OTPpppppppppppppppppp:", storedOTP);
+    // 1️⃣ Get stored OTP
+    const storedOTP = await redis.get(`otp:${mobile}`);
+
+    if (!storedOTP) {
+      await logEvent("OTP_EXPIRED", mobile);
+      throw new Error("OTP expired. Please request again.");
     }
 
-    const storedOTP = await redis.get(`otp:${mobile}`);
-    if (!storedOTP || storedOTP !== otp) {
+   
+
+    if (storedOTP !== otp) {
       const failKey = `login_fail:${mobile}`;
       const fails = await redis.incr(failKey);
-      if (fails === 1) await redis.expire(failKey, 900);
-      if (fails > LOGIN_LIMIT) {
-        await logEvent("LOGIN_FAILED_LIMIT", mobile);
-        throw new Error("Too many failed attempts.");
+
+      if (fails === 1) {
+        await redis.expire(failKey, 900);
       }
 
-      await logEvent("OTP_INVALID", mobile, { enteredOtp: otp, storedOtp: storedOTP });
+      if (fails > LOGIN_LIMIT) {
+        await logEvent("LOGIN_FAILED_LIMIT", mobile);
+        throw new Error("Too many failed attempts. Try later.");
+      }
+
+      await logEvent("OTP_INVALID", mobile, {
+        enteredOtp: otp,
+      });
+
       throw new Error("Invalid OTP");
     }
 
-    await redis.set(`otp_used:${mobile}`, "true", "EX", OTP_EXPIRE);
+    // 2️⃣ OTP VALID → CLEANUP
     await redis.del(`otp:${mobile}`);
     await redis.del(`login_fail:${mobile}`);
 
-    let user = await prisma.user.findUnique({ where: { mobile } });
-    if (!user) user = await prisma.user.create({ data: { mobile } });
-    if (user.isDeleted) throw new Error("Account deleted");
+    // 3️⃣ FIND OR CREATE USER
+    let user = await prisma.user.findUnique({
+      where: { mobile },
+    });
 
+    let isNewUser = false;
+
+    if (!user) {
+      user = await prisma.user.create({
+        data: { mobile },
+      });
+      isNewUser = true;
+    }
+
+    if (user.isDeleted) {
+      throw new Error("Account deleted");
+    }
+
+    const hasName = !!user.name;
+
+    // 4️⃣ GENERATE TOKENS
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
 
@@ -90,12 +124,24 @@ const verifyOTPService = async (mobile, otp) => {
       data: { refreshToken },
     });
 
-    // Log successful login
-    await logEvent("LOGIN_SUCCESS", mobile, { userId: user.id });
+    await logEvent("LOGIN_SUCCESS", mobile, {
+      userId: user.id,
+      isNewUser,
+    });
 
-    return { accessToken, refreshToken, user };
+    return {
+      accessToken,
+      refreshToken,
+      user,
+      isNewUser,
+      hasName,
+    };
+
   } catch (error) {
-    await logEvent("LOGIN_FAILED", mobile, { error: error.message });
+    await logEvent("LOGIN_FAILED", mobile, {
+      error: error.message,
+    });
+
     throw new Error(error.message || "Failed to verify OTP");
   }
 };

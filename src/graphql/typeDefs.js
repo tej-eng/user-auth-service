@@ -24,11 +24,40 @@ module.exports = gql`
     user_status: Int
   }
 
-  type AuthPayload {
-    user: User!
-    accessToken: String!
-    refreshToken: String!
-  }
+  input IntakeInput {
+  astrologerId: String!
+  name: String!
+  mobile: String!
+  gender: Gender!
+  birthDate: String!
+  birthTime: String!
+  occupation: String!
+  birthPlace: String!
+  requestType: String!
+  chatId: String
+}
+
+type Intake {
+  id: ID!
+  name: String!
+  mobile: String!
+  gender: Gender!
+  birthDate: String!
+  birthTime: String!
+  occupation: String!
+  birthPlace: String!
+  requestType: String!
+  chatId: String
+  createdAt: String!
+}
+
+type AuthPayload {
+  user: User!
+  accessToken: String!
+  refreshToken: String!
+  isNewUser: Boolean!
+  hasName: Boolean!
+}
  
   type UserPagination {
   data: [User!]!
@@ -90,6 +119,10 @@ type AstrologerPagination {
   currentPage: Int!
   totalPages: Int!
 }
+  type OtpResponse {
+  message: String!
+  otp: String
+}
 
 # -----------------------------------------
 # End Astrologer Search Section
@@ -124,11 +157,12 @@ type RechargePackResponse {
   }
 
   type Mutation {
-    requestOtp(mobile: String!): String
+     requestOtp(mobile: String!): OtpResponse!
     authWithOtp(mobile: String!, otp: String!): AuthPayload
     refreshToken(token: String!): AuthPayload
     logout: Boolean
     deleteUser(id: ID!): Boolean
     updateUserProfile(input: UpdateUserInput!): User!
+    createIntake(input: IntakeInput!): Intake!
   }
 `;

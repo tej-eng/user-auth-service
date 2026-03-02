@@ -50,7 +50,7 @@ module.exports = {
         throw new Error(error.message || "Failed to fetch users");
       }
     },
-    
+
 
     getAstrologerListBySearch: async (_, { searchInput }) => {
       try {
@@ -106,21 +106,31 @@ module.exports = {
         throw new Error(error.message || "Failed to fetch astrologer list");
       }
     },
-  getRechargePacks: async (_, __, context) => {
-  if (!context.user) {
-    throw new Error("Unauthorized. Please login.");
-  }
+    getRechargePacks: async (_, __, context) => {
+      if (!context.user) {
+        throw new Error("Unauthorized. Please login.");
+      }
 
-  const packs = await prisma.rechargePack.findMany({
-    where: { isActive: true },
-    orderBy: { price: "asc" },
-  });
+      const packs = await prisma.rechargePack.findMany({
+        where: { isActive: true },
+        orderBy: { price: "asc" },
+      });
 
-  return {
-    data: packs,
-    totalCount: packs.length,
-  };
-},
+      return {
+        data: packs,
+        totalCount: packs.length,
+      };
+    },
+
+    me: async (_, __, { user }) => {
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
+
+      return await prisma.user.findUnique({
+        where: { id: user.id },
+      });
+    }
 
   },
 
@@ -147,7 +157,7 @@ module.exports = {
         if (!mobile) throw new Error("Mobile required");
         if (!otp) throw new Error("OTP required");
 
-        const { accessToken, refreshToken, user } = await verifyOTPService(mobile, otp);
+        const { accessToken, refreshToken, user, isNewUser, hasName } = await verifyOTPService(mobile, otp);
 
         if (res?.setHeader) {
           res.setHeader("Set-Cookie", [
@@ -159,7 +169,7 @@ module.exports = {
         // Log successful login
         await logEvent({ userId: user.id, action: "LOGIN_OTP", details: { mobile } });
 
-        return { user, accessToken, refreshToken };
+        return { user, accessToken, refreshToken, isNewUser, hasName };
       } catch (error) {
         await logEvent({ action: "FAILED_LOGIN_OTP", details: { mobile, error: error.message } });
         throw new Error(error.message || "Failed to authenticate with OTP");
@@ -167,8 +177,9 @@ module.exports = {
     },
 
 
-    refreshToken: async (_, { token }, { res }) => {
+    refreshToken: async (_, __, { req, res }) => {
       try {
+        const token = req.cookies.refreshToken;
         if (!token) throw new Error("Refresh token required");
 
         const { accessToken, refreshToken, user } = await refreshTokenService(token);
@@ -190,21 +201,47 @@ module.exports = {
 
 
     updateUserProfile: async (_, { input }, context) => {
-  if (!context.user) throw new Error("Unauthorized. Please login.");
+      if (!context.user) throw new Error("Unauthorized. Please login.");
 
-  const updatedUser = await prisma.user.update({
-    where: { id: context.user.id },
-    data: {
-      name: input.name,
-      gender: input.gender,
-      birthDate: input.birthDate ? new Date(input.birthDate) : null,
-      birthTime: input.birthTime,
-      occupation: input.occupation,
+      const updatedUser = await prisma.user.update({
+        where: { id: context.user.id },
+        data: {
+          name: input.name,
+          gender: input.gender,
+          birthDate: input.birthDate ? new Date(input.birthDate) : null,
+          birthTime: input.birthTime,
+          occupation: input.occupation,
+        },
+      });
+      await logEvent({ userId: context.user.id, action: "UPDATE_PROFILE", details: input });
+      return updatedUser;
     },
-  });
-  await logEvent({ userId: context.user.id, action: "UPDATE_PROFILE", details: input });
-  return updatedUser;
-},
+
+    // intake for chat 
+
+    createIntake: async (_, { input }, context) => {
+      if (!context.user) {
+        throw new Error("Unauthorized");
+      }
+
+      const intake = await prisma.intake.create({
+        data: {
+          userId: context.user.id,
+          astrologerId: input.astrologerId,
+          name: input.name,
+          mobile: input.mobile,
+          gender: input.gender,
+          birthDate: new Date(input.birthDate),
+          birthTime: input.birthTime,
+          occupation: input.occupation,
+          birthPlace: input.birthPlace,
+          requestType: input.requestType,
+          chatId: input.chatId || null,
+        },
+      });
+
+      return intake;
+    },
 
 
     logout: async (_, __, { user, res }) => {
