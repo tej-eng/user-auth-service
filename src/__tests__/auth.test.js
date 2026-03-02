@@ -39,6 +39,22 @@ beforeAll(async () => {
     RESTART IDENTITY CASCADE;
   `);
 
+await prisma.rechargePack.deleteMany(); // clean first
+
+await prisma.rechargePack.createMany({
+  data: [
+    {
+      name: "Basic Pack",
+      description: "Test Pack",
+      price: 100,
+      coins: 1000,
+      talktime: 60,
+      validityDays: 30,
+      isActive: true,
+    },
+  ],
+});
+
   await redis.flushall();
 
   app = express();
@@ -516,6 +532,58 @@ test("Public astrologer list - no auth required", async () => {
   expect(res.body.data.getAstrologerListBySearch.data).toBeDefined();
 });
 
+test("11. Unauthorized user cannot access recharge packs", async () => {
+  const res = await request(app)
+    .post("/graphql")
+    .send({
+      query: `
+        query {
+          getRechargePacks {
+            data {
+              id
+              name
+            }
+            totalCount
+          }
+        }
+      `,
+    });
 
+  expect(res.body.errors).toBeDefined();
+  expect(res.body.errors[0].message).toBe("Unauthorized. Please login.");
+});
+test("Authenticated user can fetch active recharge packs", async () => {
+
+  await prisma.rechargePack.deleteMany();
+
+  await prisma.rechargePack.create({
+    data: {
+      name: "Basic Pack",
+      description: "Test Pack",
+      price: 100,
+      coins: 1000,
+      talktime: 60,
+      validityDays: 30,
+      isActive: true,
+    },
+  });
+
+  const res = await request(app)
+    .post("/graphql")
+    .set("Authorization", `Bearer ${accessToken}`)
+    .send({
+      query: `
+        query {
+          getRechargePacks {
+            data { id name price }
+            totalCount
+          }
+        }
+      `,
+    });
+
+  expect(res.body.errors).toBeUndefined();
+  expect(res.body.data.getRechargePacks.data.length).toBeGreaterThan(0);
+});
 
 });
