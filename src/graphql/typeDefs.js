@@ -94,10 +94,33 @@ type AstrologerPagination {
 # -----------------------------------------
 # End Astrologer Search Section
 # -----------------------------------------
+# -----------------------------------------
+# start recharge pack section
+# -----------------------------------------
+type RechargePack {
+  id: ID!
+  name: String!
+  description: String
+  price: Float!
+  coins: Int!
+  talktime: Int!
+  validityDays: Int!
+  createdAt: String!
+}
+
+type RechargePackResponse {
+  data: [RechargePack!]!
+  totalCount: Int!
+}
+# -----------------------------------------
+# End recharge pack section
+# -----------------------------------------
+
   type Query {
   me: User
   getUsersDetails(page: Int, limit: Int, search: String): UserPagination!
   getAstrologerListBySearch(searchInput: AstrologerSearchInput): AstrologerPagination!
+  getRechargePacks: RechargePackResponse!
   }
 
   type Mutation {

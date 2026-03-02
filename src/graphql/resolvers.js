@@ -106,24 +106,23 @@ module.exports = {
         throw new Error(error.message || "Failed to fetch astrologer list");
       }
     },
+  getRechargePacks: async (_, __, context) => {
+  if (!context.user) {
+    throw new Error("Unauthorized. Please login.");
+  }
 
+  const packs = await prisma.rechargePack.findMany({
+    where: { isActive: true },
+    orderBy: { price: "asc" },
+  });
 
-    me: async (_, __, { user }) => {
-      if (!user) return null;
-
-      return await prisma.user.findUnique({
-        where: { id: user.id },
-      });
-    },
-
-
+  return {
+    data: packs,
+    totalCount: packs.length,
+  };
+},
 
   },
-
-
-
-
-  // Mutations for auth
 
   Mutation: {
 
