@@ -1,7 +1,7 @@
 const { createClient } = require("redis");
 
 const redis = createClient({
-  url: process.env.REDIS_URL || "redis://redis:6379",
+  url: process.env.REDIS_URL || "redis://dhwaniastro-redis:6379",
 });
 
 redis.on("error", (err) => console.error("Redis Error:", err));

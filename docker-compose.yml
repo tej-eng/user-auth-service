@@ -1,34 +1,15 @@
 services:
-  app:
+
+  user-auth:
     build: .
+    container_name: user-auth-service
     ports:
       - "4000:4000"
-      - "5555:5555"
-    depends_on:
-      - postgres
-      - redis
-    environment:
-      DATABASE_URL: postgresql://postgres:Ammy@postgres:5432/dhwaniastrov2_db
-      REDIS_HOST: redis
     env_file:
       - .env
+    networks:
+      - dhwaniastro-net
 
-  postgres:
-    image: postgres:15
-    container_name: user-auth-service-postgres-1
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: Ammy
-      POSTGRES_DB: dhwaniastrov2_db
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-
-  redis:
-    image: redis:7
-    ports:
-      - "6379:6379"
-
-volumes:
-  pgdata:
+networks:
+  dhwaniastro-net:
+    external: true
