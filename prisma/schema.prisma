@@ -281,7 +281,7 @@ model RechargePack {
   transactions WalletTransaction[]
   payments     Payment[]
   paymentOrders PaymentOrder[]
-
+  coupons       Coupon[]
   @@index([isActive])
   @@index([price])
   @@index([coins])
@@ -513,4 +513,40 @@ model CommissionConfig {
 
   // only one config active
   @@unique([createdAt])
+}
+
+enum CouponType {
+  PERCENTAGE
+  FLAT
+}
+
+enum CouponVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+model Coupon {
+  id            String   @id @default(uuid())
+  code          String   @unique
+  description   String?
+
+  type          CouponType
+  visibility    CouponVisibility
+  status        Boolean  @default(true)
+
+  percentage    Float?
+  flatAmount    Float?
+  maxDiscount   Float?
+
+  minOrderAmount Float?
+  redeemLimit   Int?
+  usedCount     Int      @default(0)
+
+  startDate     DateTime
+  endDate       DateTime
+
+  rechargePacks RechargePack[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
