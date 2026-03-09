@@ -2,68 +2,105 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
-//const helmet = require("helmet");
+const helmet = require("helmet");
 
 const { ApolloServer } = require("@apollo/server");
 const { expressMiddleware } = require("@apollo/server/express4");
 const {
   ApolloServerPluginLandingPageLocalDefault,
+  ApolloServerPluginLandingPageDisabled,
 } = require("@apollo/server/plugin/landingPage/default");
 
 const typeDefs = require("./graphql/typeDefs");
 const resolvers = require("./graphql/resolvers");
-const authMiddleware = require("./middleware/auth");
-const rateLimiter = require("./middleware/rateLimiter");
-const cookie = require("cookie");
+
 const auth = require("./middleware/auth");
+const rateLimiter = require("./middleware/rateLimiter");
 
 async function startServer() {
   const app = express();
 
-  //app.use(helmet());
-  app.use(cors());
+  /* =========================
+     Security Middlewares
+  ========================= */
+
+  app.use(helmet());
+
+  app.use(
+    cors({
+      origin: "*", // change to frontend domain in production
+      credentials: true,
+    })
+  );
+
   app.use(express.json());
+
   app.use(rateLimiter);
 
+  /* =========================
+     Apollo Server
+  ========================= */
+
   const server = new ApolloServer({
-  typeDefs,
-  resolvers,
-  context: async ({ req, res }) => {
-    const authHeader = req.headers["authorization"];
-    let user = null;
+    typeDefs,
+    resolvers,
 
-    if (authHeader?.startsWith("Bearer ")) {
-      const token = authHeader.replace("Bearer ", "");
+    csrfPrevention: true,
 
-      try {
-        
-        user = verifyAccessToken(token);
-      } catch (err) {
-        user = null;
-      }
-    }
+    introspection: process.env.NODE_ENV !== "production",
 
-    return { req, res, user };
-  },
-});
-
+    plugins: [
+      process.env.NODE_ENV === "production"
+        ? ApolloServerPluginLandingPageDisabled()
+        : ApolloServerPluginLandingPageLocalDefault({ embed: true }),
+    ],
+  });
 
   await server.start();
+
+  /* =========================
+     GraphQL Route
+  ========================= */
 
   app.use(
     "/graphql",
     expressMiddleware(server, {
-      context: ({ req, res }) => {
-      const user = auth(req); 
-      return { req, res, user };
+      context: async ({ req, res }) => {
+        let user = null;
+
+        try {
+          user = auth(req);
+        } catch (err) {
+          user = null;
+        }
+
+        return { req, res, user };
       },
     })
   );
 
+  /* =========================
+     Health Check Endpoint
+  ========================= */
+
+  app.get("/health", (req, res) => {
+    res.json({
+      status: "ok",
+      service: "user-auth-service",
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString(),
+    });
+  });
+
+  /* =========================
+     Start Server
+  ========================= */
+
   const PORT = process.env.PORT || 8007;
 
   app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}/graphql`);
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📡 GraphQL endpoint: http://localhost:${PORT}/graphql`);
   });
 }
 
