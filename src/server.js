@@ -6,9 +6,9 @@ const helmet = require("helmet");
 
 const { ApolloServer } = require("@apollo/server");
 const { expressMiddleware } = require("@apollo/server/express4");
+
 const {
   ApolloServerPluginLandingPageLocalDefault,
-  ApolloServerPluginLandingPageDisabled,
 } = require("@apollo/server/plugin/landingPage/default");
 
 const typeDefs = require("./graphql/typeDefs");
@@ -21,6 +21,12 @@ async function startServer() {
   const app = express();
 
   /* =========================
+     Trust Proxy (important when using Apache/Nginx)
+  ========================= */
+
+  app.set("trust proxy", true);
+
+  /* =========================
      Security Middlewares
   ========================= */
 
@@ -28,17 +34,21 @@ async function startServer() {
 
   app.use(
     cors({
-      origin: "*", // change to frontend domain in production
+      origin: "*",
       credentials: true,
     })
   );
 
   app.use(express.json());
 
+  /* =========================
+     Rate Limiting
+  ========================= */
+
   app.use(rateLimiter);
 
   /* =========================
-     Apollo Server
+     Apollo Server Setup
   ========================= */
 
   const server = new ApolloServer({
@@ -49,17 +59,16 @@ async function startServer() {
 
     introspection: process.env.NODE_ENV !== "production",
 
-    plugins: [
-      process.env.NODE_ENV === "production"
-        ? ApolloServerPluginLandingPageDisabled()
-        : ApolloServerPluginLandingPageLocalDefault({ embed: true }),
-    ],
+    plugins:
+      process.env.NODE_ENV !== "production"
+        ? [ApolloServerPluginLandingPageLocalDefault({ embed: true })]
+        : [],
   });
 
   await server.start();
 
   /* =========================
-     GraphQL Route
+     GraphQL Endpoint
   ========================= */
 
   app.use(
@@ -74,7 +83,11 @@ async function startServer() {
           user = null;
         }
 
-        return { req, res, user };
+        return {
+          req,
+          res,
+          user,
+        };
       },
     })
   );
@@ -99,8 +112,7 @@ async function startServer() {
   const PORT = process.env.PORT || 8007;
 
   app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📡 GraphQL endpoint: http://localhost:${PORT}/graphql`);
+    console.log(`Server running on port ${PORT}`);
   });
 }
 
