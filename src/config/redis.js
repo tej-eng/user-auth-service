@@ -1,10 +1,10 @@
 // src/config/redis.js
-
+require("dotenv").config();
 const Redis = require("ioredis");
 
 const redis = new Redis({
-  host: "127.0.0.1",
-  port: 6379,
+  host: process.env.REDIS_HOST ,
+  port: process.env.REDIS_PORT 
   // password: "your_password", // if needed
 });
 
