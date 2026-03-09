@@ -4,7 +4,7 @@ services:
     container_name: user-auth-service
     restart: always
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@dhwaniastro-postgres:5432/astro
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/astro
       NODE_ENV: production
       PORT: 8007
     ports:
