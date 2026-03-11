@@ -193,22 +193,49 @@ me: async (_, __, { user }) => {
       }
     },
 
-    updateUserProfile: async (_, { input }, context) => {
-  if (!context.user) throw new Error("Unauthorized. Please login.");
+   updateUserProfile: async (_, { input }, context) => {
+      if (!context.user) throw new Error("Unauthorized. Please login.");
 
-  const updatedUser = await prisma.user.update({
-    where: { id: context.user.id },
-    data: {
-      name: input.name,
-      gender: input.gender,
-      birthDate: input.birthDate ? new Date(input.birthDate) : null,
-      birthTime: input.birthTime,
-      occupation: input.occupation,
+      const updatedUser = await prisma.user.update({
+        where: { id: context.user.id },
+        data: {
+          name: input.name,
+          gender: input.gender,
+          birthDate: input.birthDate ? new Date(input.birthDate) : null,
+          birthTime: input.birthTime,
+          occupation: input.occupation,
+        },
+      });
+      await logEvent({ userId: context.user.id, action: "UPDATE_PROFILE", details: input });
+      return updatedUser;
     },
-  });
-  await logEvent({ userId: context.user.id, action: "UPDATE_PROFILE", details: input });
-  return updatedUser;
-},
+
+    // intake for chat 
+
+    createIntake: async (_, { input }, context) => {
+      if (!context.user) {
+        throw new Error("Unauthorized");
+      }
+
+      const intake = await prisma.intake.create({
+        data: {
+          userId: context.user.id,
+          astrologerId: input.astrologerId,
+          name: input.name,
+          mobile: input.mobile,
+          gender: input.gender,
+          birthDate: new Date(input.birthDate),
+          birthTime: input.birthTime,
+          occupation: input.occupation,
+          birthPlace: input.birthPlace,
+          requestType: input.requestType,
+          chatId: input.chatId || null,
+        },
+      });
+
+      return intake;
+    },
+
 
     logout: async (_, __, { user, res }) => {
       try {
