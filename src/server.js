@@ -32,12 +32,15 @@ async function startServer() {
 
   app.use(helmet());
 
-  app.use(
-    cors({
-      origin: "*",
-      credentials: true,
-    })
-  );
+ app.use(
+  cors({
+    origin: [
+      "http://localhost:3000",
+      "https://dhwaniastro.com"
+    ],
+    credentials: true
+  })
+);
 
   app.use(express.json());
 
