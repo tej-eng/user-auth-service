@@ -3,7 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
-
+const cookieParser = require("cookie-parser");
 const { ApolloServer } = require("@apollo/server");
 const { expressMiddleware } = require("@apollo/server/express4");
 
@@ -41,7 +41,7 @@ async function startServer() {
     credentials: true
   })
 );
-
+   app.use(cookieParser());
   app.use(express.json());
 
   /* =========================
