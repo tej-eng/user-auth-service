@@ -149,28 +149,50 @@ me: async (_, __, { user }) => {
     },
 
     authWithOtp: async (_, { mobile, otp }, { res }) => {
-      try {
-        if (!mobile) throw new Error("Mobile required");
-        if (!otp) throw new Error("OTP required");
+  try {
+    if (!mobile) throw new Error("Mobile required");
+    if (!otp) throw new Error("OTP required");
 
-        const { accessToken, refreshToken, user, isNewUser, hasName } = await verifyOTPService(mobile, otp);
+    const { accessToken, refreshToken, user, isNewUser, hasName } =
+      await verifyOTPService(mobile, otp);
 
-        if (res?.setHeader) {
-          res.setHeader("Set-Cookie", [
-            cookie.serialize("accessToken", accessToken, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "Strict", maxAge: 60 * 15, path: "/" }),
-            cookie.serialize("refreshToken", refreshToken, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "Strict", maxAge: 60 * 60 * 24 * 7, path: "/" }),
-          ]);
-        }
+    if (res?.setHeader) {
+      res.setHeader("Set-Cookie", [
+        cookie.serialize("accessToken", accessToken, {
+          httpOnly: true,
+          secure: false,
+          sameSite: "Lax",
+          maxAge: 60 * 15,
+          path: "/",
+        }),
+        cookie.serialize("refreshToken", refreshToken, {
+          httpOnly: true,
+          secure: false,
+          sameSite: "Lax",
+          maxAge: 60 * 60 * 24 * 7,
+          path: "/",
+        }),
+      ]);
+    }
 
-        // Log successful login
-        await logEvent({ userId: user.id, action: "LOGIN_OTP", details: { mobile } });
+    await logEvent({
+      userId: user.id,
+      action: "LOGIN_OTP",
+      details: { mobile },
+    });
 
-        return { user, accessToken, refreshToken, isNewUser, hasName };
-      } catch (error) {
-        await logEvent({ action: "FAILED_LOGIN_OTP", details: { mobile, error: error.message } });
-        throw new Error(error.message || "Failed to authenticate with OTP");
-      }
-    },
+    return { user, accessToken, refreshToken, isNewUser, hasName };
+
+  } catch (error) {
+
+    await logEvent({
+      action: "FAILED_LOGIN_OTP",
+      details: { mobile, error: error.message },
+    });
+
+    throw new Error(error.message || "Failed to authenticate with OTP");
+  }
+},
 
     refreshToken: async (_, { token }, { res }) => {
       try {
