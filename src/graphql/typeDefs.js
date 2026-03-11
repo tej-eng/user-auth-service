@@ -26,7 +26,10 @@ module.exports = gql`
     accessToken: String!
     refreshToken: String!
   }
- 
+  type OtpResponse {
+  message: String!
+  otp: String
+}
   type UserPagination {
   data: [User!]!
   totalCount: Int!
@@ -119,7 +122,7 @@ type RechargePackResponse {
   }
 
   type Mutation {
-    requestOtp(mobile: String!): String
+    requestOtp(mobile: String!): OtpResponse!
     authWithOtp(mobile: String!, otp: String!): AuthPayload
     refreshToken(token: String!): AuthPayload
     logout: Boolean

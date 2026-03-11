@@ -28,7 +28,7 @@ async function logEvent(type, mobile, details = {}) {
 // ================= SEND OTP =================
 const sendOTPService = async (mobile) => {
   try {
-    if (!/^\d{6,15}$/.test(mobile)) {
+   if (!/^\+[1-9]\d{5,14}$/.test(mobile)) {
       throw new Error("Invalid mobile number");
     }
 
@@ -44,7 +44,7 @@ const sendOTPService = async (mobile) => {
     // Log OTP generation
     await logEvent("OTP_GENERATED", mobile, { otp });
 
-    return "OTP sent successfully";
+    return { message: "OTP sent successfully", otp };
   } catch (error) {
     await logEvent("OTP_FAILED", mobile, { error: error.message });
     throw new Error(error.message || "Failed to send OTP");
