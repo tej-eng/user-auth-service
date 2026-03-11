@@ -3,13 +3,10 @@ services:
     build: .
     container_name: user-auth-service
     restart: always
-    environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/astro
-      NODE_ENV: production
-      PORT: 8007
+    env_file:
+      - .env   # add this line to load .env automatically
     ports:
       - "8007:8007"
-    cpus: 0.7
     networks:
       - dhwaniastro-net
 
