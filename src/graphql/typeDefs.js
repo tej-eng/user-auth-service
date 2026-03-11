@@ -130,16 +130,24 @@ type AstrologerPagination {
 # -----------------------------------------
 # start recharge pack section
 # -----------------------------------------
-type RechargePack {
-  id: ID!
-  name: String!
-  description: String
-  price: Float!
-  coins: Int!
-  talktime: Int!
-  validityDays: Int!
-  createdAt: String!
-}
+  input RechargePackInput {
+    name: String!
+    description: String
+    price: Float!
+    talktime: Int!
+    isActive: Boolean
+  }
+
+  type RechargePack {
+    id: ID!
+    name: String!
+    description: String
+    price: Float!
+    talktime: Int!
+    isActive: Boolean!
+    createdAt: String!
+    updatedAt: String!
+  }
   type Query {
   getRechargePackById(id: ID!): RechargePack
 }
