@@ -120,6 +120,16 @@ module.exports = {
   };
 },
 
+me: async (_, __, { user }) => {
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
+
+      return await prisma.user.findUnique({
+        where: { id: user.id },
+      });
+    }
+
   },
 
   Mutation: {
