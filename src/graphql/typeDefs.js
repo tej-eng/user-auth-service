@@ -157,6 +157,7 @@ type Intake {
   getUsersDetails(page: Int, limit: Int, search: String): UserPagination!
   getAstrologerListBySearch(searchInput: AstrologerSearchInput): AstrologerPagination!
   getRechargePacks: RechargePackResponse!
+  me: User
   }
 
   type Mutation {
