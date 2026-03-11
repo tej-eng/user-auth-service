@@ -54,34 +54,66 @@ const sendOTPService = async (mobile) => {
 // ================= VERIFY OTP =================
 const verifyOTPService = async (mobile, otp) => {
   try {
-    const isUsed = await redis.get(`otp_used:${mobile}`);
-    if (isUsed) {
-      await logEvent("OTP_REUSED", mobile);
-      throw new Error("OTP already used");
+    if (!mobile || !otp) {
+      throw new Error("Mobile and OTP required");
     }
 
+    // Get stored OTP
     const storedOTP = await redis.get(`otp:${mobile}`);
-    if (!storedOTP || storedOTP !== otp) {
+   console.log("Entered OTP:", otp);
+    console.log("Stored OTP:", storedOTP);
+    if (!storedOTP) {
+      await logEvent("OTP_EXPIRED", mobile);
+      throw new Error("OTP expired. Please request again.");
+    }
+
+   
+
+    if (storedOTP !== otp) {
       const failKey = `login_fail:${mobile}`;
       const fails = await redis.incr(failKey);
-      if (fails === 1) await redis.expire(failKey, 900);
-      if (fails > LOGIN_LIMIT) {
-        await logEvent("LOGIN_FAILED_LIMIT", mobile);
-        throw new Error("Too many failed attempts.");
+
+      if (fails === 1) {
+        await redis.expire(failKey, 900);
       }
 
-      await logEvent("OTP_INVALID", mobile, { enteredOtp: otp, storedOtp: storedOTP });
+      if (fails > LOGIN_LIMIT) {
+        await logEvent("LOGIN_FAILED_LIMIT", mobile);
+        throw new Error("Too many failed attempts. Try later.");
+      }
+
+      await logEvent("OTP_INVALID", mobile, {
+        enteredOtp: otp,
+      });
+
       throw new Error("Invalid OTP");
     }
 
-    await redis.set(`otp_used:${mobile}`, "true", "EX", OTP_EXPIRE);
+    //  OTP VALID → CLEANUP
     await redis.del(`otp:${mobile}`);
     await redis.del(`login_fail:${mobile}`);
 
-    let user = await prisma.user.findUnique({ where: { mobile } });
-    if (!user) user = await prisma.user.create({ data: { mobile } });
-    if (user.isDeleted) throw new Error("Account deleted");
+    //  FIND OR CREATE USER
+    let user = await prisma.user.findUnique({
+      where: { mobile },
+    });
 
+    let isNewUser = false;
+
+    if (!user) {
+      user = await prisma.user.create({
+        data: { mobile },
+      });
+      isNewUser = true;
+    }
+
+    if (user.isDeleted) {
+      throw new Error("Account deleted");
+    }
+
+    const hasName = !!user.name;
+
+    //  GENERATE TOKENS
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
 
@@ -90,12 +122,24 @@ const verifyOTPService = async (mobile, otp) => {
       data: { refreshToken },
     });
 
-    // Log successful login
-    await logEvent("LOGIN_SUCCESS", mobile, { userId: user.id });
+    await logEvent("LOGIN_SUCCESS", mobile, {
+      userId: user.id,
+      isNewUser,
+    });
 
-    return { accessToken, refreshToken, user };
+    return {
+      accessToken,
+      refreshToken,
+      user,
+      isNewUser,
+      hasName,
+    };
+
   } catch (error) {
-    await logEvent("LOGIN_FAILED", mobile, { error: error.message });
+    await logEvent("LOGIN_FAILED", mobile, {
+      error: error.message,
+    });
+
     throw new Error(error.message || "Failed to verify OTP");
   }
 };

@@ -143,7 +143,7 @@ module.exports = {
         if (!mobile) throw new Error("Mobile required");
         if (!otp) throw new Error("OTP required");
 
-        const { accessToken, refreshToken, user } = await verifyOTPService(mobile, otp);
+        const { accessToken, refreshToken, user, isNewUser, hasName } = await verifyOTPService(mobile, otp);
 
         if (res?.setHeader) {
           res.setHeader("Set-Cookie", [
@@ -155,7 +155,7 @@ module.exports = {
         // Log successful login
         await logEvent({ userId: user.id, action: "LOGIN_OTP", details: { mobile } });
 
-        return { user, accessToken, refreshToken };
+        return { user, accessToken, refreshToken, isNewUser, hasName };
       } catch (error) {
         await logEvent({ action: "FAILED_LOGIN_OTP", details: { mobile, error: error.message } });
         throw new Error(error.message || "Failed to authenticate with OTP");

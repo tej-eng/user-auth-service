@@ -59,13 +59,34 @@ model User {
   refreshToken String?   @db.Text
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
-
+  Intake       Intake[]
   wallet       UserWallet?
   payments     Payment[]
   paymentOrders PaymentOrder[]
   sessions     Session[]
 
   @@index([mobile])
+}
+
+model Intake {
+  id           String   @id @default(uuid())
+  userId       String
+  astrologerId String
+  chatId       String?
+  name         String
+  mobile       String
+  gender       Gender?
+  birthDate    DateTime
+  birthTime    String
+  occupation   String
+  birthPlace   String
+  requestType  String
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([astrologerId])
 }
 
 model Astrologer {

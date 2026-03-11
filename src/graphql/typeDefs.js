@@ -17,15 +17,18 @@ module.exports = gql`
     occupation: String
     isActive: Boolean
     isDeleted: Boolean
+    user_status: Int
     createdAt: String
     updatedAt: String
   }
 
-  type AuthPayload {
-    user: User!
-    accessToken: String!
-    refreshToken: String!
-  }
+ type AuthPayload {
+  user: User!
+  accessToken: String!
+  refreshToken: String!
+  isNewUser: Boolean!
+  hasName: Boolean!
+}
   type OtpResponse {
   message: String!
   otp: String
@@ -115,6 +118,41 @@ type RechargePackResponse {
 # End recharge pack section
 # -----------------------------------------
 
+# -----------------------------------------
+# Intake Section
+# -----------------------------------------
+
+input IntakeInput {
+  astrologerId: String!
+  name: String!
+  mobile: String!
+  gender: Gender!
+  birthDate: String!
+  birthTime: String!
+  occupation: String!
+  birthPlace: String!
+  requestType: String!
+  chatId: String
+}
+
+type Intake {
+  id: ID!
+  name: String!
+  mobile: String!
+  gender: Gender!
+  birthDate: String!
+  birthTime: String!
+  occupation: String!
+  birthPlace: String!
+  requestType: String!
+  chatId: String
+  createdAt: String!
+}
+#------------------------------------------
+#end intake section
+
+
+
   type Query {
   getUsersDetails(page: Int, limit: Int, search: String): UserPagination!
   getAstrologerListBySearch(searchInput: AstrologerSearchInput): AstrologerPagination!
@@ -128,5 +166,6 @@ type RechargePackResponse {
     logout: Boolean
     deleteUser(id: ID!): Boolean
     updateUserProfile(input: UpdateUserInput!): User!
+    createIntake(input: IntakeInput!): Intake!
   }
 `;
