@@ -2,9 +2,13 @@ const jwt = require("jsonwebtoken");
 const cookie = require("cookie");
 
 module.exports = (req) => {
-  const cookies = req.headers.cookie ? cookie.parse(req.headers.cookie) : {};
-  const token = cookies.token; 
-  console.log("Extracted token from cookies:", token);
+
+  const cookies = req.headers.cookie
+    ? cookie.parse(req.headers.cookie)
+    : {};
+
+  const token = cookies.accessToken;  
+
   if (!token) return null;
 
   try {

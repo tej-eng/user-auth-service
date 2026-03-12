@@ -148,7 +148,7 @@ me: async (_, __, { user }) => {
       }
     },
 
-    authWithOtp: async (_, { mobile, otp }, { res }) => {
+  authWithOtp: async (_, { mobile, otp }, { res }) => {
   try {
     if (!mobile) throw new Error("Mobile required");
     if (!otp) throw new Error("OTP required");
@@ -157,22 +157,23 @@ me: async (_, __, { user }) => {
       await verifyOTPService(mobile, otp);
 
     if (res?.setHeader) {
-      res.setHeader("Set-Cookie", [
-        cookie.serialize("accessToken", accessToken, {
-          httpOnly: true,
-          secure: false,
-          sameSite: "Lax",
-          maxAge: 60 * 15,
-          path: "/",
-        }),
-        cookie.serialize("refreshToken", refreshToken, {
-          httpOnly: true,
-          secure: false,
-          sameSite: "Lax",
-          maxAge: 60 * 60 * 24 * 7,
-          path: "/",
-        }),
-      ]);
+      res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+      domain: ".dhwaniastro.com",
+      maxAge: 15 * 60 * 1000,
+      path: "/",
+      });
+
+      res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+      domain: ".dhwaniastro.com",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: "/",
+      });
     }
 
     await logEvent({
