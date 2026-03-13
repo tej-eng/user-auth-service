@@ -105,10 +105,6 @@ module.exports = {
       }
     },
   getRechargePacks: async (_, __, context) => {
-  if (!context.user) {
-    throw new Error("Unauthorized. Please login.");
-  }
-
   const packs = await prisma.rechargePack.findMany({
     where: { isActive: true },
     orderBy: { price: "asc" },
