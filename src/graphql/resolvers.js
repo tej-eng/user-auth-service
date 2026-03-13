@@ -116,6 +116,16 @@ module.exports = {
   };
 },
 
+getRechargePackById: async (_, { id }, context) => {
+      if (!context.user) {
+        throw new Error("Unauthorized");
+      }
+
+      return await prisma.rechargePack.findUnique({
+        where: { id },
+      });
+    },
+
 me: async (_, __, { user }) => {
       if (!user) {
         throw new Error("Unauthorized");
