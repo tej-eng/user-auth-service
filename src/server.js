@@ -48,6 +48,7 @@ async function startServer() {
         if (token) {
           try {
             user = verifyAccessToken(token);
+            console.log("Authenticated user:", user);
           } catch {
             user = null;
           }

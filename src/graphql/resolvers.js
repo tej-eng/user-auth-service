@@ -265,10 +265,10 @@ me: async (_, __, { user }) => {
     // intake for chat 
 
     createIntake: async (_, { input }, context) => {
-      console.log("Creating intake with input:", context);
-      if (!context.user) {
-        throw new Error("Unauthorized");
-      }
+      console.log("Creating intake with input:", context.user.id);
+      // if (!context.user) {
+      //   throw new Error("Unauthorized");
+      // }
 
       const intake = await prisma.intake.create({
         data: {
