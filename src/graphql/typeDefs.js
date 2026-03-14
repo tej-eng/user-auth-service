@@ -171,7 +171,7 @@ type UserBasicInfo {
 }
   type UserWallet {
   id: ID!
-  balance: Float
+  balanceCoins: Float
   createdAt: String
   updatedAt: String
 }
