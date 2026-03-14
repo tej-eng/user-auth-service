@@ -133,7 +133,31 @@ me: async (_, __, { user }) => {
       return await prisma.user.findUnique({
         where: { id: user.id },
       });
-    }
+    },
+
+  getUserById: async (_, { id }, context) => {
+  if (!context.user) {
+    throw new Error("Unauthorized");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id },
+    select: {
+      name: true,
+      mobile: true,
+      gender: true,
+      birthDate: true,
+      birthTime: true,
+      occupation: true,
+    },
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  return user;
+},
 
   },
 

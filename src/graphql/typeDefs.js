@@ -152,7 +152,19 @@ type Intake {
 #------------------------------------------
 #end intake section
 
-
+#-----------------------------------------
+# Get User by ID (for admin or internal use)
+#-----------------------------------------
+type UserBasicInfo {
+  id: ID!
+  name: String
+  mobile: String
+  gender: Gender
+  birthDate: String
+  birthTime: String
+  occupation: String
+}
+#---------END--------------------------------
 
   type Query {
   getUsersDetails(page: Int, limit: Int, search: String): UserPagination!
@@ -160,6 +172,7 @@ type Intake {
   getRechargePacks: RechargePackResponse!
   getRechargePackById(id: ID!): RechargePack
   me: User
+  getUserById(id: String!): UserBasicInfo
   }
 
   type Mutation {
