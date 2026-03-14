@@ -265,6 +265,7 @@ me: async (_, __, { user }) => {
     // intake for chat 
 
     createIntake: async (_, { input }, context) => {
+      console.log("Creating intake with input:", context);
       if (!context.user) {
         throw new Error("Unauthorized");
       }
