@@ -142,14 +142,9 @@ me: async (_, __, { user }) => {
 
   const user = await prisma.user.findUnique({
     where: { id },
-    select: {
-      name: true,
-      mobile: true,
-      gender: true,
-      birthDate: true,
-      birthTime: true,
-      occupation: true,
-    },
+    include: {
+      wallet: true
+    }
   });
 
   if (!user) {

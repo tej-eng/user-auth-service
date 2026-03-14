@@ -163,6 +163,17 @@ type UserBasicInfo {
   birthDate: String
   birthTime: String
   occupation: String
+  isActive: Boolean
+  isDeleted: Boolean
+  createdAt: String
+  updatedAt: String
+  wallet: UserWallet
+}
+  type UserWallet {
+  id: ID!
+  balance: Float
+  createdAt: String
+  updatedAt: String
 }
 #---------END--------------------------------
 
