@@ -156,7 +156,7 @@ me: async (_, __, { user }) => {
  getAstrologerById: async (_, { id }, { context }) => {
 
   console.log("Incoming ID:", id);
-  console.log("Context User:", context.user);
+  //console.log("Context User:", context.user);
 
   const astrologer = await prisma.astrologer.findUnique({
     where: { id },
