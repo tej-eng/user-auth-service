@@ -105,6 +105,7 @@ model Astrologer {
   adminRemarks   String?
   price          Int?           @default(0)
   rating         Float?         @default(0)
+  status         Boolean        @default(false)
   addresses        Address[]
   experiences      ExperiencePlatform[]
   interviews       Interview[]

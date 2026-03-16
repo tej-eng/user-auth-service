@@ -65,6 +65,7 @@ type Astrologer {
   skills: [String]
   languages: [String]
   profilePic: String
+  status: Boolean
 }
 
 input AstrologerSearchInput {
@@ -184,6 +185,7 @@ type UserBasicInfo {
   getRechargePackById(id: ID!): RechargePack
   me: User
   getUserById(id: String!): UserBasicInfo
+  getAstrologerById(id: String!): Astrologer
   }
 
   type Mutation {
