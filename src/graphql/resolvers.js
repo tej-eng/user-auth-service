@@ -169,7 +169,7 @@ me: async (_, __, { user }) => {
 },
 getNextChatRequest: async (_, { astrologerId }) => {
 
-  const request = await redis.lIndex(
+  const request = await redis.lindex(
     `chat_queue:${astrologerId}`,
     0
   );
@@ -180,7 +180,7 @@ getNextChatRequest: async (_, { astrologerId }) => {
 },
 skipChatRequest: async (_, { astrologerId }) => {
 
-  await redis.lPop(`chat_queue:${astrologerId}`);
+  await redis.lpop(`chat_queue:${astrologerId}`);
 
   return true;
 },
@@ -321,7 +321,7 @@ skipChatRequest: async (_, { astrologerId }) => {
     createdAt: Date.now()
   };
 
-  await redis.rPush(
+  await redis.rpush(
     `chat_queue:${input.astrologerId}`,
     JSON.stringify(queueData)
   );
@@ -354,7 +354,7 @@ acceptChatRequest: async (_, { roomId }, context) => {
   });
 
   // remove first request from queue
-  await redis.lPop(`chat_queue:${intake.astrologerId}`);
+  await redis.lpop(`chat_queue:${intake.astrologerId}`);
 
   // store active chat
   await redis.set(
