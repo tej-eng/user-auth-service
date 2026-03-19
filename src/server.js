@@ -3,7 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-
+ const helmet = require("helmet");
 const { ApolloServer } = require("@apollo/server");
 const { expressMiddleware } = require("@apollo/server/express4");
 const {
@@ -18,12 +18,17 @@ const { verifyAccessToken } = require("./config/jwt");
 async function startServer() {
   const app = express();
 
-  app.use(
-    cors({
-      origin: "http://localhost:3001",
-      credentials: true,
-    })
-  );
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000",
+      "https://dhwaniastro.com"
+    ],
+    credentials: true,
+  })
+);
+ 
+app.use(helmet());
 
   app.use(cookieParser());
   app.use(express.json());
@@ -53,7 +58,7 @@ async function startServer() {
           }
         }
 
-        return { req, res, user };
+        return {  user };
       },
     })
   );

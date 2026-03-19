@@ -140,7 +140,7 @@ type AstrologerPagination {
 
   type RechargePack {
     id: ID!
-    name: String!
+    name: String! 
     description: String
     price: Float!
     talktime: Int!

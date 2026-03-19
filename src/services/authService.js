@@ -21,8 +21,7 @@ async function logEvent(type, mobile, details = {}) {
       details,
       timestamp: new Date(),
     });
-  } catch (error) {
-  }
+  } catch (error) {}
 }
 
 // ================= SEND OTP =================
@@ -52,7 +51,6 @@ const sendOTPService = async (mobile) => {
   }
 };
 
-
 // ================= VERIFY OTP =================
 
 const verifyOTPService = async (mobile, otp) => {
@@ -63,14 +61,12 @@ const verifyOTPService = async (mobile, otp) => {
 
     // 1️⃣ Get stored OTP
     const storedOTP = await redis.get(`otp:${mobile}`);
-   console.log("Entered OTP:", otp);
+    console.log("Entered OTP:", otp);
     console.log("Stored OTP:", storedOTP);
     if (!storedOTP) {
       await logEvent("OTP_EXPIRED", mobile);
       throw new Error("OTP expired. Please request again.");
     }
-
-   
 
     if (storedOTP !== otp) {
       const failKey = `login_fail:${mobile}`;
@@ -137,7 +133,6 @@ const verifyOTPService = async (mobile, otp) => {
       isNewUser,
       hasName,
     };
-
   } catch (error) {
     await logEvent("LOGIN_FAILED", mobile, {
       error: error.message,
@@ -160,7 +155,8 @@ const refreshTokenService = async (token) => {
     }
 
     const user = await prisma.user.findUnique({ where: { id: decoded.id } });
-    if (!user || user.refreshToken !== token) throw new Error("Invalid refresh token");
+    if (!user || user.refreshToken !== token)
+      throw new Error("Invalid refresh token");
 
     const newAccess = generateAccessToken(user);
     const newRefresh = generateRefreshToken(user);
