@@ -3,6 +3,7 @@ const redis = require("../config/redis");
 const cookie = require("cookie");
 const { sendOTPService, verifyOTPService, refreshTokenService } = require("../services/authService");
 const { connectMongo, getDb } = require("../config/mongo");
+const { v4: uuidv4 } = require("uuid");
 
 // Helper to log events in MongoDB
 async function logEvent({ userId, action, details }) {
@@ -215,6 +216,8 @@ me: async (_, __, { user }) => {
       });
     }
 
+    
+
     await logEvent({
       userId: user.id,
       action: "LOGIN_OTP",
@@ -274,31 +277,98 @@ me: async (_, __, { user }) => {
 
     // intake for chat 
 
-    createIntake: async (_, { input }, context) => {
-      console.log("Creating intake with input:", context.user.id);
-      // if (!context.user) {
-      //   throw new Error("Unauthorized");
-      // }
+  createIntake: async (_, { input }, context) => {
 
-      const intake = await prisma.intake.create({
-        data: {
-          userId: context.user.id,
-          astrologerId: input.astrologerId,
-          name: input.name,
-          mobile: input.mobile,
-          gender: input.gender,
-          birthDate: new Date(input.birthDate),
-          birthTime: input.birthTime,
-          occupation: input.occupation,
-          birthPlace: input.birthPlace,
-          requestType: input.requestType,
-          chatId: input.chatId || null,
-        },
-      });
+  const roomId = uuidv4();
 
-      return intake;
-    },
+  const intake = await prisma.intake.create({
+    data: {
+      userId: context.user.id,
+      astrologerId: input.astrologerId,
+      name: input.name,
+      mobile: input.mobile,
+      gender: input.gender,
+      birthDate: new Date(input.birthDate),
+      birthTime: input.birthTime,
+      occupation: input.occupation,
+      birthPlace: input.birthPlace,
+      requestType: input.requestType,
+      chatId: roomId
+    }
+  });
 
+  const queueData = {
+    roomId,
+    userId: context.user.id,
+    astrologerId: input.astrologerId,
+    createdAt: Date.now()
+  };
+
+  await redis.rPush(
+    `chat_queue:${input.astrologerId}`,
+    JSON.stringify(queueData)
+  );
+
+  return intake;
+},
+acceptChatRequest: async (_, { roomId }, context) => {
+
+  const intake = await prisma.intake.findFirst({
+    where: { chatId: roomId }
+  });
+
+  if (!intake) {
+    throw new Error("Chat request not found");
+  }
+
+  const astrologer = await prisma.astrologer.findUnique({
+    where: { id: intake.astrologerId }
+  });
+
+  const session = await prisma.session.create({
+    data: {
+      userId: intake.userId,
+      astrologerId: intake.astrologerId,
+      type: "CHAT",
+      status: "ONGOING",
+      ratePerMin: Math.round(astrologer.price),
+      startedAt: new Date()
+    }
+  });
+
+  // remove first request from queue
+  await redis.lPop(`chat_queue:${intake.astrologerId}`);
+
+  // store active chat
+  await redis.set(
+    `active_chat:${roomId}`,
+    JSON.stringify({
+      sessionId: session.id,
+      userId: intake.userId,
+      astrologerId: intake.astrologerId,
+      startTime: Date.now()
+    })
+  );
+
+  return session;
+},
+getNextChatRequest: async (_, { astrologerId }) => {
+
+  const request = await redis.lIndex(
+    `chat_queue:${astrologerId}`,
+    0
+  );
+
+  if (!request) return null;
+
+  return JSON.parse(request);
+},
+skipChatRequest: async (_, { astrologerId }) => {
+
+  await redis.lPop(`chat_queue:${astrologerId}`);
+
+  return true;
+},
 
     logout: async (_, __, { user, res }) => {
       try {

@@ -177,7 +177,54 @@ type UserBasicInfo {
   updatedAt: String
 }
 #---------END--------------------------------
+#-----------------------------------------
+# start session section
+#-----------------------------------------
+enum SessionType {
+  CHAT
+  CALL
+}
+  enum SessionStatus {
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+type Session {
+  id: ID!
 
+  userId: String!
+  astrologerId: String!
+
+  type: SessionType!
+  status: SessionStatus!
+
+  ratePerMin: Int
+  durationSec: Int
+
+  coinsDeducted: Int
+  coinsEarned: Int
+  commission: Int
+
+  startedAt: String
+  endedAt: String
+
+  createdAt: String
+}
+  type ChatSessionResponse {
+  sessionId: String!
+  roomId: String!
+  status: SessionStatus!
+}
+#-end session section ------------------
+
+#-----------------start queue section------------------------
+type ChatQueueItem {
+  roomId: String!
+  userId: String!
+  astrologerId: String!
+  createdAt: String!
+}
+#---------End Queue Section-------------------
   type Query {
   getUsersDetails(page: Int, limit: Int, search: String): UserPagination!
   getAstrologerListBySearch(searchInput: AstrologerSearchInput): AstrologerPagination!
@@ -186,6 +233,7 @@ type UserBasicInfo {
   me: User
   getUserById(id: String!): UserBasicInfo
   getAstrologerById(id: String!): Astrologer
+  
   }
 
   type Mutation {
@@ -196,5 +244,8 @@ type UserBasicInfo {
     deleteUser(id: ID!): Boolean
     updateUserProfile(input: UpdateUserInput!): User!
     createIntake(input: IntakeInput!): Intake!
+    acceptChatRequest(roomId: String!): ChatSessionResponse
+    getNextChatRequest(astrologerId: String!): ChatQueueItem
+  skipChatRequest(astrologerId: String!): Boolean
   }
 `;
