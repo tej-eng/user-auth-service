@@ -166,7 +166,24 @@ me: async (_, __, { user }) => {
   console.log("Astrologer Found:", astrologer);
 
   return astrologer;
-}
+},
+getNextChatRequest: async (_, { astrologerId }) => {
+
+  const request = await redis.lIndex(
+    `chat_queue:${astrologerId}`,
+    0
+  );
+
+  if (!request) return null;
+
+  return JSON.parse(request);
+},
+skipChatRequest: async (_, { astrologerId }) => {
+
+  await redis.lPop(`chat_queue:${astrologerId}`);
+
+  return true;
+},
 
 
 
@@ -352,23 +369,7 @@ acceptChatRequest: async (_, { roomId }, context) => {
 
   return session;
 },
-getNextChatRequest: async (_, { astrologerId }) => {
 
-  const request = await redis.lIndex(
-    `chat_queue:${astrologerId}`,
-    0
-  );
-
-  if (!request) return null;
-
-  return JSON.parse(request);
-},
-skipChatRequest: async (_, { astrologerId }) => {
-
-  await redis.lPop(`chat_queue:${astrologerId}`);
-
-  return true;
-},
 
     logout: async (_, __, { user, res }) => {
       try {

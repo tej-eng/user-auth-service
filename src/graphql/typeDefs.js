@@ -233,6 +233,9 @@ type ChatQueueItem {
   me: User
   getUserById(id: String!): UserBasicInfo
   getAstrologerById(id: String!): Astrologer
+  getNextChatRequest(astrologerId: String!): ChatQueueItem
+  skipChatRequest(astrologerId: String!): Boolean
+  }
   
   }
 
@@ -245,7 +248,5 @@ type ChatQueueItem {
     updateUserProfile(input: UpdateUserInput!): User!
     createIntake(input: IntakeInput!): Intake!
     acceptChatRequest(roomId: String!): ChatSessionResponse
-    getNextChatRequest(astrologerId: String!): ChatQueueItem
-  skipChatRequest(astrologerId: String!): Boolean
-  }
+   
 `;
