@@ -88,7 +88,7 @@ const verifyOTPService = async (countryCode, mobile, otp) => {
     }
 
     // Create unique identifier
-    const phoneKey = `${countryCode}${mobile}`;
+    const phoneKey = `${countryCode}-${mobile}`;
 
     // Get stored OTP
     const storedOTP = await redis.get(`otp:${phoneKey}`);
