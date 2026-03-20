@@ -26,51 +26,83 @@ async function logEvent(type, mobile, details = {}) {
 }
 
 // ================= SEND OTP =================
-const sendOTPService = async (mobile) => {
+const sendOTPService = async (countryCode, mobile) => {
   try {
-   if (!/^\+[1-9]\d{5,14}$/.test(mobile)) {
+    if (!countryCode || !mobile) {
+      throw new Error("Country code and mobile required");
+    }
+
+    // Basic validation
+    if (!/^\+[1-9]\d{1,4}$/.test(countryCode)) {
+      throw new Error("Invalid country code");
+    }
+
+    if (!/^\d{6,14}$/.test(mobile)) {
       throw new Error("Invalid mobile number");
     }
 
-    const rateKey = `otp_rate:${mobile}`;
+    // Unique phone key
+    const phoneKey = `${countryCode}-${mobile}`;
+
+    // Rate limiting
+    const rateKey = `otp_rate:${phoneKey}`;
     const count = await redis.incr(rateKey);
-    if (count === 1) await redis.expire(rateKey, 600);
-    if (count > OTP_LIMIT) throw new Error("Too many OTP requests. Try later.");
 
+    if (count === 1) {
+      await redis.expire(rateKey, 600); // 10 min window
+    }
+
+    if (count > OTP_LIMIT) {
+      throw new Error("Too many OTP requests. Try later.");
+    }
+
+    // Generate OTP
     const otp = generateOtp();
-    console.log(`Generated OTP for ${mobile}: ${otp}`);
-    await redis.set(`otp:${mobile}`, otp, "EX", OTP_EXPIRE);
+    console.log(`Generated OTP for ${phoneKey}: ${otp}`);
 
-    // Log OTP generation
-    await logEvent("OTP_GENERATED", mobile, { otp });
+    // Store OTP
+    await redis.set(`otp:${phoneKey}`, otp, "EX", OTP_EXPIRE);
 
-    return { message: "OTP sent successfully", otp };
+    // Log event
+    await logEvent("OTP_GENERATED", phoneKey, { otp });
+
+    return {
+      message: "OTP sent successfully",
+      otp,  //need to remove in production
+    };
+
   } catch (error) {
-    await logEvent("OTP_FAILED", mobile, { error: error.message });
+    await logEvent("OTP_FAILED", `${countryCode}-${mobile}`, {
+      error: error.message,
+    });
+
     throw new Error(error.message || "Failed to send OTP");
   }
 };
 
 // ================= VERIFY OTP =================
-const verifyOTPService = async (mobile, otp) => {
+const verifyOTPService = async (countryCode, mobile, otp) => {
   try {
-    if (!mobile || !otp) {
-      throw new Error("Mobile and OTP required");
+    if (!countryCode || !mobile || !otp) {
+      throw new Error("Country code, mobile and OTP required");
     }
 
+    // Create unique identifier
+    const phoneKey = `${countryCode}${mobile}`;
+
     // Get stored OTP
-    const storedOTP = await redis.get(`otp:${mobile}`);
-   console.log("Entered OTP:", otp);
+    const storedOTP = await redis.get(`otp:${phoneKey}`);
+
+    console.log("Entered OTP:", otp);
     console.log("Stored OTP:", storedOTP);
+
     if (!storedOTP) {
-      await logEvent("OTP_EXPIRED", mobile);
+      await logEvent("OTP_EXPIRED", phoneKey);
       throw new Error("OTP expired. Please request again.");
     }
 
-   
-
     if (storedOTP !== otp) {
-      const failKey = `login_fail:${mobile}`;
+      const failKey = `login_fail:${phoneKey}`;
       const fails = await redis.incr(failKey);
 
       if (fails === 1) {
@@ -78,11 +110,11 @@ const verifyOTPService = async (mobile, otp) => {
       }
 
       if (fails > LOGIN_LIMIT) {
-        await logEvent("LOGIN_FAILED_LIMIT", mobile);
+        await logEvent("LOGIN_FAILED_LIMIT", phoneKey);
         throw new Error("Too many failed attempts. Try later.");
       }
 
-      await logEvent("OTP_INVALID", mobile, {
+      await logEvent("OTP_INVALID", phoneKey, {
         enteredOtp: otp,
       });
 
@@ -90,19 +122,27 @@ const verifyOTPService = async (mobile, otp) => {
     }
 
     //  OTP VALID → CLEANUP
-    await redis.del(`otp:${mobile}`);
-    await redis.del(`login_fail:${mobile}`);
+    await redis.del(`otp:${phoneKey}`);
+    await redis.del(`login_fail:${phoneKey}`);
 
-    //  FIND OR CREATE USER
+    //  FIND OR CREATE USER (COMPOSITE UNIQUE)
     let user = await prisma.user.findUnique({
-      where: { mobile },
+      where: {
+        countryCode_mobile: {
+          countryCode,
+          mobile,
+        },
+      },
     });
 
     let isNewUser = false;
 
     if (!user) {
       user = await prisma.user.create({
-        data: { mobile },
+        data: {
+          countryCode,
+          mobile,
+        },
       });
       isNewUser = true;
     }
@@ -122,7 +162,7 @@ const verifyOTPService = async (mobile, otp) => {
       data: { refreshToken },
     });
 
-    await logEvent("LOGIN_SUCCESS", mobile, {
+    await logEvent("LOGIN_SUCCESS", phoneKey, {
       userId: user.id,
       isNewUser,
     });
@@ -136,7 +176,7 @@ const verifyOTPService = async (mobile, otp) => {
     };
 
   } catch (error) {
-    await logEvent("LOGIN_FAILED", mobile, {
+    await logEvent("LOGIN_FAILED", `${countryCode}${mobile}`, {
       error: error.message,
     });
 

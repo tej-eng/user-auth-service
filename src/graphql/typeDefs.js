@@ -10,6 +10,7 @@ module.exports = gql`
   type User {
     id: ID!
     name: String
+    countryCode: String 
     mobile: String
     gender: Gender
     birthDate: String
@@ -127,6 +128,7 @@ type RechargePackResponse {
 input IntakeInput {
   astrologerId: String!
   name: String!
+  countryCode: String!
   mobile: String!
   gender: Gender!
   birthDate: String!
@@ -240,8 +242,8 @@ type ChatQueueItem {
   }
 
   type Mutation {
-    requestOtp(mobile: String!): OtpResponse!
-    authWithOtp(mobile: String!, otp: String!): AuthPayload
+    requestOtp(countryCode: String!, mobile: String!): OtpResponse!
+    authWithOtp(countryCode: String!, mobile: String!, otp: String!): AuthPayload
     refreshToken(token: String!): AuthPayload
     logout: Boolean
     deleteUser(id: ID!): Boolean

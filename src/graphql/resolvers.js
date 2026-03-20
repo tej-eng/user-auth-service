@@ -24,32 +24,38 @@ async function logEvent({ userId, action, details }) {
 module.exports = {
   Query: {
     getUsersDetails: async (_, { page = 1, limit = 10, search = "" }, context) => {
-      try {
-        const skip = (page - 1) * limit;
-        const whereCondition = search
-          ? { mobile: { contains: search, mode: "insensitive" } }
-          : {};
+  try {
+    const skip = (page - 1) * limit;
 
-        const [users, totalCount] = await Promise.all([
-          prisma.user.findMany({
-            where: whereCondition,
-            skip,
-            take: limit,
-            orderBy: { createdAt: "desc" },
-          }),
-          prisma.user.count({ where: whereCondition }),
-        ]);
+    const whereCondition = search
+      ? {
+          OR: [
+            { mobile: { contains: search, mode: "insensitive" } },
+            { countryCode: { contains: search, mode: "insensitive" } },
+          ],
+        }
+      : {};
 
-        return {
-          data: users,
-          totalCount,
-          currentPage: page,
-          totalPages: Math.ceil(totalCount / limit),
-        };
-      } catch (error) {
-        throw new Error(error.message || "Failed to fetch users");
-      }
-    },
+    const [users, totalCount] = await Promise.all([
+      prisma.user.findMany({
+        where: whereCondition,
+        skip,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.user.count({ where: whereCondition }),
+    ]);
+
+    return {
+      data: users,
+      totalCount,
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit),
+    };
+  } catch (error) {
+    throw new Error(error.message || "Failed to fetch users");
+  }
+},
 
     getAstrologerListBySearch: async (_, { searchInput }) => {
       try {
@@ -190,64 +196,65 @@ skipChatRequest: async (_, { astrologerId }) => {
   },
 
   Mutation: {
-    requestOtp: async (_, { mobile }) => {
-      try {
-        if (!mobile) throw new Error("Mobile required");
-
-        const result = await sendOTPService(mobile);
-
-        // Log OTP request
-        await logEvent({ action: "REQUEST_OTP", details: { mobile } });
-
-        return result;
-      } catch (error) {
-        throw new Error(error.message || "Failed to request OTP");
-      }
-    },
-
-  authWithOtp: async (_, { mobile, otp }, { res }) => {
+    requestOtp: async (_, { countryCode, mobile }) => {
   try {
-    if (!mobile) throw new Error("Mobile required");
+    if (!countryCode || !mobile) {
+      throw new Error("Country code and mobile required");
+    }
+
+    const result = await sendOTPService(countryCode, mobile);
+
+    await logEvent({
+      action: "REQUEST_OTP",
+      details: { countryCode, mobile },
+    });
+
+    return result;
+  } catch (error) {
+    throw new Error(error.message || "Failed to request OTP");
+  }
+},
+
+  authWithOtp: async (_, { countryCode, mobile, otp }, { res }) => {
+  try {
+    if (!countryCode || !mobile) throw new Error("Country code and mobile required");
     if (!otp) throw new Error("OTP required");
 
     const { accessToken, refreshToken, user, isNewUser, hasName } =
-      await verifyOTPService(mobile, otp);
+      await verifyOTPService(countryCode, mobile, otp);
 
     if (res?.setHeader) {
       res.cookie("accessToken", accessToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-      domain: ".dhwaniastro.com",
-      maxAge: 15 * 60 * 1000,
-      path: "/",
+        httpOnly: true,
+        secure: true,
+        sameSite: "none",
+        domain: ".dhwaniastro.com",
+        maxAge: 15 * 60 * 1000,
+        path: "/",
       });
 
       res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-      domain: ".dhwaniastro.com",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      path: "/",
+        httpOnly: true,
+        secure: true,
+        sameSite: "none",
+        domain: ".dhwaniastro.com",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        path: "/",
       });
     }
-
-    
 
     await logEvent({
       userId: user.id,
       action: "LOGIN_OTP",
-      details: { mobile },
+      details: { countryCode, mobile },
     });
 
     return { user, accessToken, refreshToken, isNewUser, hasName };
 
   } catch (error) {
-
     await logEvent({
       action: "FAILED_LOGIN_OTP",
-      details: { mobile, error: error.message },
+      details: { countryCode, mobile, error: error.message },
     });
 
     throw new Error(error.message || "Failed to authenticate with OTP");
@@ -303,6 +310,7 @@ skipChatRequest: async (_, { astrologerId }) => {
       userId: context.user.id,
       astrologerId: input.astrologerId,
       name: input.name,
+      countryCode: input.countryCode,
       mobile: input.mobile,
       gender: input.gender,
       birthDate: new Date(input.birthDate),

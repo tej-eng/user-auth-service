@@ -47,25 +47,26 @@ enum RejectionStage {
 }
 
 model User {
-  id           String    @id @default(uuid())
-  name         String?
-  mobile       String?   @unique
-  gender       Gender?
-  birthDate    DateTime?
-  birthTime    String?
-  occupation   String?
-  isActive     Boolean   @default(true)
-  isDeleted    Boolean   @default(false)
-  refreshToken String?   @db.Text
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  Intake       Intake[]
-  wallet       UserWallet?
-  payments     Payment[]
+  id            String    @id @default(uuid())
+  name          String?
+  countryCode   String?   
+  mobile        String?   @unique
+  gender        Gender?
+  birthDate     DateTime?
+  birthTime     String?
+  occupation    String?
+  isActive      Boolean   @default(true)
+  isDeleted     Boolean   @default(false)
+  refreshToken  String?   @db.Text
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  Intake        Intake[]
+  wallet        UserWallet?
+  payments      Payment[]
   paymentOrders PaymentOrder[]
-  sessions     Session[]
+  sessions      Session[]
 
-  @@index([mobile])
+ @@unique([countryCode, mobile])
 }
 
 model Intake {
