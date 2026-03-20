@@ -124,7 +124,11 @@ type RechargePackResponse {
 # -----------------------------------------
 # Intake Section
 # -----------------------------------------
-
+type CreateIntakeResponse {
+  roomId: String!
+  chatTime: Int!
+  intakeId: String!
+}
 input IntakeInput {
   astrologerId: String!
   name: String!
@@ -136,9 +140,7 @@ input IntakeInput {
   occupation: String!
   birthPlace: String!
   requestType: String!
-  chatId: String
 }
-
 type Intake {
   id: ID!
   name: String!
@@ -250,7 +252,7 @@ type ChatQueueItem {
     logout: Boolean
     deleteUser(id: ID!): Boolean
     updateUserProfile(input: UpdateUserInput!): User!
-    createIntake(input: IntakeInput!): Intake!
+    createIntake(input: IntakeInput!): CreateIntakeResponse!
     acceptChatRequest(roomId: String!): ChatSessionResponse
 }
 `;

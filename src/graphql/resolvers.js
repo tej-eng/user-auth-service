@@ -302,12 +302,45 @@ skipChatRequest: async (_, { astrologerId }) => {
     // intake for chat 
 
   createIntake: async (_, { input }, context) => {
+  const userId = context.user.id;
 
+  // 1️⃣ Generate Room ID
   const roomId = uuidv4();
 
+  // 2️⃣ Get User Wallet
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { wallet: true }
+  });
+
+  if (!user || !user.wallet) {
+    throw new Error("Wallet not found");
+  }
+
+  const walletBalance = user.wallet.balanceCoins || 0;
+
+  // 3️⃣ Get Astrologer Price
+  const astrologer = await prisma.astrologer.findUnique({
+    where: { id: input.astrologerId }
+  });
+
+  if (!astrologer) {
+    throw new Error("Astrologer not found");
+  }
+
+  const pricePerMin = astrologer.price || 1;
+
+  // 4️⃣ Calculate Chat Time
+  const chatTime = Math.floor(walletBalance / pricePerMin);
+
+  if (chatTime <= 0) {
+    throw new Error("Insufficient balance");
+  }
+
+  // 5️⃣ Create Intake
   const intake = await prisma.intake.create({
     data: {
-      userId: context.user.id,
+      userId,
       astrologerId: input.astrologerId,
       name: input.name,
       countryCode: input.countryCode,
@@ -322,10 +355,12 @@ skipChatRequest: async (_, { astrologerId }) => {
     }
   });
 
+  //  Push to Redis Queue
   const queueData = {
     roomId,
-    userId: context.user.id,
+    userId,
     astrologerId: input.astrologerId,
+    chatTime, 
     createdAt: Date.now()
   };
 
@@ -334,7 +369,12 @@ skipChatRequest: async (_, { astrologerId }) => {
     JSON.stringify(queueData)
   );
 
-  return intake;
+  //  Return Response
+  return {
+    roomId,
+    chatTime,
+    intakeId: intake.id
+  };
 },
 acceptChatRequest: async (_, { roomId }, context) => {
 
