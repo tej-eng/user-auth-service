@@ -75,6 +75,7 @@ model Intake {
   astrologerId String
   chatId       String?
   name         String
+  countryCode String
   mobile       String
   gender       Gender?
   birthDate    DateTime
