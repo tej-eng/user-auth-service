@@ -142,6 +142,7 @@ input IntakeInput {
 type Intake {
   id: ID!
   name: String!
+  countryCode: String
   mobile: String!
   gender: Gender!
   birthDate: String!
@@ -161,6 +162,7 @@ type Intake {
 type UserBasicInfo {
   id: ID!
   name: String
+  countryCode: String 
   mobile: String
   gender: Gender
   birthDate: String
