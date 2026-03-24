@@ -106,6 +106,50 @@ getUserProfile: async (_, __, context) => {
     throw new Error(error.message || "Failed to fetch user profile");
   }
 },
+getWalletTransactions: async (_, { page = 1, limit = 10 }, context) => {
+  try {
+    if (!context.user) {
+      throw new Error("Unauthorized");
+    }
+
+    const skip = (page - 1) * limit;
+
+    // 1 Get user's wallet
+    const wallet = await prisma.userWallet.findUnique({
+      where: { userId: context.user.id },
+    });
+
+    if (!wallet) {
+      throw new Error("Wallet not found");
+    }
+
+    // 2️ Fetch transactions
+    const [transactions, totalCount] = await Promise.all([
+      prisma.walletTransaction.findMany({
+        where: {
+          userWalletId: wallet.id,
+        },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.walletTransaction.count({
+        where: {
+          userWalletId: wallet.id,
+        },
+      }),
+    ]);
+
+    return {
+      data: transactions,
+      totalCount,
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit),
+    };
+  } catch (error) {
+    throw new Error(error.message || "Failed to fetch transactions");
+  }
+},
     getAstrologerListBySearch: async (_, { searchInput }) => {
       try {
         const { query, sortField, sortOrder, limit = 10, page = 1 } = searchInput || {};

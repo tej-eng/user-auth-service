@@ -94,7 +94,24 @@ type AstrologerPagination {
   currentPage: Int!
   totalPages: Int!
 }
+#------------START CODE FOR WALLET TRANSACTION----------------
+type WalletTransaction {
+  id: ID!
+  userWalletId: String
+  type: String
+  coins: Int
+  amount: Float
+  description: String
+  createdAt: String
+}
 
+type WalletTransactionResponse {
+  data: [WalletTransaction]
+  totalCount: Int
+  currentPage: Int
+  totalPages: Int
+}
+#--------END CODE FOR WALLET TRANSACTION----------------
 # -----------------------------------------
 # End Astrologer Search Section
 # -----------------------------------------
@@ -253,6 +270,13 @@ type UserWallet {
   skipChatRequest(astrologerId: String!): Boolean
   getUserWallet: UserWallet
   getUserProfile: User
+  getWalletTransactions(
+    page: Int
+    limit: Int
+    type: String
+    fromDate: String
+    toDate: String
+  ): WalletTransactionResponse
   
   
   }
