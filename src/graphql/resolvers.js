@@ -56,7 +56,27 @@ module.exports = {
     throw new Error(error.message || "Failed to fetch users");
   }
 },
+getUserWallet: async (_, __, context) => {
+  try {
+    if (!context.user) {
+      throw new Error("Unauthorized");
+    }
 
+    const wallet = await prisma.userWallet.findUnique({
+      where: {
+        userId: context.user.id,
+      },
+    });
+
+    if (!wallet) {
+      throw new Error("Wallet not found");
+    }
+
+    return wallet;
+  } catch (error) {
+    throw new Error(error.message || "Failed to fetch wallet");
+  }
+},
     getAstrologerListBySearch: async (_, { searchInput }) => {
       try {
         const { query, sortField, sortOrder, limit = 10, page = 1 } = searchInput || {};

@@ -317,8 +317,8 @@ model UserWallet {
   userId       String   @unique
   user         User     @relation(fields: [userId], references: [id])
 
-  balanceCoins Int      @default(0)
-  lockedCoins  Int      @default(0)
+  balanceCoins Float      @default(0)
+  lockedCoins  Float      @default(0)
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -330,7 +330,7 @@ model AstrologerWallet {
   id              String     @id @default(uuid())
   astrologerId    String     @unique
   astrologer      Astrologer @relation(fields: [astrologerId], references: [id])
-  balanceCoins    Int        @default(0)
+  balanceCoins    Float        @default(0)
   totalEarned     Int        @default(0)
   totalWithdrawn  Int        @default(0)
    withdrawals     Withdrawal[]

@@ -231,6 +231,16 @@ type ChatQueueItem {
   createdAt: String!
 }
 #---------End Queue Section-------------------
+#--------start get user wallet----------------
+type UserWallet {
+  id: ID!
+  userId: String!
+  balanceCoins: Float!
+  lockedCoins: Float!
+  createdAt: String!
+  updatedAt: String!
+}
+#---------End get user wallet----------------
   type Query {
   getUsersDetails(page: Int, limit: Int, search: String): UserPagination!
   getAstrologerListBySearch(searchInput: AstrologerSearchInput): AstrologerPagination!
@@ -241,6 +251,7 @@ type ChatQueueItem {
   getAstrologerById(id: String!): Astrologer
   getNextChatRequest(astrologerId: String!): ChatQueueItem
   skipChatRequest(astrologerId: String!): Boolean
+  getUserWallet: UserWallet
   
   
   }
