@@ -77,6 +77,35 @@ getUserWallet: async (_, __, context) => {
     throw new Error(error.message || "Failed to fetch wallet");
   }
 },
+getUserProfile: async (_, __, context) => {
+  try {
+    if (!context.user) {
+      throw new Error("Unauthorized. Please login.");
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: context.user.id },
+      select: {
+        id: true,
+        name: true,
+        mobile: true,
+        countryCode: true,
+        gender: true,
+        birthDate: true,
+        birthTime: true,
+        occupation: true,
+      },
+    });
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    return user;
+  } catch (error) {
+    throw new Error(error.message || "Failed to fetch user profile");
+  }
+},
     getAstrologerListBySearch: async (_, { searchInput }) => {
       try {
         const { query, sortField, sortOrder, limit = 10, page = 1 } = searchInput || {};

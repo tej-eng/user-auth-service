@@ -252,6 +252,7 @@ type UserWallet {
   getNextChatRequest(astrologerId: String!): ChatQueueItem
   skipChatRequest(astrologerId: String!): Boolean
   getUserWallet: UserWallet
+  getUserProfile: User
   
   
   }
