@@ -322,7 +322,7 @@ skipChatRequest: async (_, { astrologerId }) => {
         secure: true,
         sameSite: "none",
         domain: ".dhwaniastro.com",
-        maxAge: 15 * 60 * 1000,
+        maxAge:  1 * 24 * 60 * 60 * 1000, //for testing 1 day, can be changed to 15 * 60 * 1000 for 15 mins in production
         path: "/",
       });
 
