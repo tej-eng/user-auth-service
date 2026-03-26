@@ -394,13 +394,13 @@ skipChatRequest: async (_, { astrologerId }) => {
 
     // intake for chat 
 
-  createIntake: async (_, { input }, context) => {
+ createIntake: async (_, { input }, context) => {
   const userId = context.user.id;
 
-  // 1️⃣ Generate Room ID
+  //  Generate Room ID
   const roomId = uuidv4();
 
-  // 2️⃣ Get User Wallet
+  // Get User Wallet
   const user = await prisma.user.findUnique({
     where: { id: userId },
     include: { wallet: true }
@@ -412,7 +412,7 @@ skipChatRequest: async (_, { astrologerId }) => {
 
   const walletBalance = user.wallet.balanceCoins || 0;
 
-  // 3️⃣ Get Astrologer Price
+  //  Get Astrologer Price
   const astrologer = await prisma.astrologer.findUnique({
     where: { id: input.astrologerId }
   });
@@ -423,14 +423,13 @@ skipChatRequest: async (_, { astrologerId }) => {
 
   const pricePerMin = astrologer.price || 1;
 
-  // 4️⃣ Calculate Chat Time
+  // Calculate Chat Time
   const chatTime = Math.floor(walletBalance / pricePerMin);
 
   if (chatTime <= 0) {
     throw new Error("Insufficient balance");
   }
 
-  // 5️⃣ Create Intake
   const intake = await prisma.intake.create({
     data: {
       userId,
@@ -448,18 +447,24 @@ skipChatRequest: async (_, { astrologerId }) => {
     }
   });
 
-  //  Push to Redis Queue
   const queueData = {
     roomId,
     userId,
     astrologerId: input.astrologerId,
-    chatTime, 
+    chatTime,
     createdAt: Date.now()
   };
 
+  // await redis.set(
+  //   `chat_request:${roomId}`,
+  //   JSON.stringify(queueData),
+  //   "EX",
+  //   7200 //hours to expire, in case something goes wrong with the queue processing, we don't want stale data hanging around forever
+  // );
+
   await redis.rpush(
     `chat_queue:${input.astrologerId}`,
-    JSON.stringify(queueData)
+    roomId
   );
 
   //  Return Response
