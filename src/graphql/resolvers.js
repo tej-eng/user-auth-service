@@ -448,19 +448,33 @@ skipChatRequest: async (_, { astrologerId }) => {
   });
 
   const queueData = {
-    roomId,
-    userId,
-    astrologerId: input.astrologerId,
-    chatTime,
-    createdAt: Date.now()
+      user_id: userId,
+      astrologerId: input.astrologerId,
+      userName: input.name,
+      countryCode: input.countryCode,
+      mobile: input.mobile,
+      gender: input.gender,
+      dateOfBirth: new Date(input.birthDate),
+      timeOfBirth: input.birthTime,
+      occupation: input.occupation,
+      location: input.birthPlace,
+      astro_id: "156983", // for testing with fixed astrologer, can be changed to input.astrologerId in production
+      is_promotional: false,  
+      room_id: roomId,
+      maximum_time: chatTime,
+      user_image: user.profilePic || "",
+      phoneNumber: `${input.countryCode}${input.mobile}`,
+      createdAt: Date.now()
   };
-
-  // await redis.set(
-  //   `chat_request:${roomId}`,
-  //   JSON.stringify(queueData),
-  //   "EX",
-  //   7200 //hours to expire, in case something goes wrong with the queue processing, we don't want stale data hanging around forever
-  // );
+  
+  const exists = await redis.exists(`chat_request_data:${roomId}`);
+ if (exists) return;
+  await redis.set(
+    `chat_request_data:${roomId}`,
+    JSON.stringify(queueData),
+    "EX",
+    7200 //hours to expire, in case something goes wrong with the queue processing, we don't want stale data hanging around forever
+  );
 
   // await redis.rpush(
   //   `chat_queue:${input.astrologerId}`,
