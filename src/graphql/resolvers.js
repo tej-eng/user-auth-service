@@ -462,8 +462,13 @@ skipChatRequest: async (_, { astrologerId }) => {
   //   7200 //hours to expire, in case something goes wrong with the queue processing, we don't want stale data hanging around forever
   // );
 
+  // await redis.rpush(
+  //   `chat_queue:${input.astrologerId}`,
+  //   roomId
+  // );
+
   await redis.rpush(
-    `chat_queue:${input.astrologerId}`,
+    `chat_queue:156983`, // for testing with fixed astrologer, can be changed to input.astrologerId in production
     roomId
   );
 
