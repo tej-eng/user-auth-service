@@ -77,7 +77,7 @@ model Review {
   astrologerId  String
   astrologer    Astrologer @relation(fields: [astrologerId], references: [id])
 
-  sessionId     String?  @unique
+  sessionId     String?  @unique   // REQUIRED
   session       Session? @relation(fields: [sessionId], references: [id])
 
   rating        Int
@@ -454,7 +454,7 @@ model Session {
   review Review?
   startedAt     DateTime?
   endedAt       DateTime?
- 
+  messages      Message[]
   createdAt     DateTime @default(now())
   transactions  WalletTransaction[]
   @@index([userId])
@@ -597,4 +597,29 @@ model Coupon {
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+model Message {
+  id            String   @id @default(uuid())
+
+  msgId         String
+  roomId        String
+
+  senderId      String
+  receiverId    String?
+
+  message       String
+  image         String?
+  sender        String
+
+  replyTo       Json?
+
+  sessionId     String?
+  session       Session? @relation(fields: [sessionId], references: [id])
+
+  createdAt     DateTime @default(now())
+
+  @@index([roomId])
+  @@index([sessionId])
+  @@index([senderId])
 }
