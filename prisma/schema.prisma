@@ -68,35 +68,30 @@ model User {
   reviews Review[]
  @@unique([countryCode, mobile])
 }
-model Review{
- 
+model Review {
   id            String   @id @default(uuid())
 
-  
   userId        String
   user          User     @relation(fields: [userId], references: [id])
 
   astrologerId  String
   astrologer    Astrologer @relation(fields: [astrologerId], references: [id])
 
-  sessionId     String?   // optional (if you want session mapping)
-  session       Session?  @relation(fields: [sessionId], references: [id])
+  sessionId     String?  @unique
+  session       Session? @relation(fields: [sessionId], references: [id])
 
-  
-  rating        Int       
+  rating        Int
   comment       String?
 
-  // Extra (for quick UI)
   userName      String?
   astroName     String?
 
-  createdAt     DateTime  @default(now())
+  createdAt     DateTime @default(now())
 
   @@index([userId])
   @@index([astrologerId])
-  @@index([rating])
-
 }
+
 model Intake {
   id           String   @id @default(uuid())
   userId       String
