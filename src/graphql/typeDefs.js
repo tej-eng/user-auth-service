@@ -233,11 +233,7 @@ type Session {
 
   createdAt: String
 }
-  type ChatSessionResponse {
-  sessionId: String!
-  roomId: String!
-  status: SessionStatus!
-}
+ 
 #-end session section ------------------
 
 #-----------------start queue section------------------------
@@ -258,6 +254,20 @@ type UserWallet {
   updatedAt: String!
 }
 #---------End get user wallet----------------
+#-----------start review-------------------
+input CreateReviewInput {
+  astro_id: String!
+  review_id: String
+  star: Int!
+  comment: String
+  user_name: String
+  astro_name: String
+}
+type CreateReviewResponse {
+  success: Boolean!
+  message: String!
+}
+#--------------end review-------------
   type Query {
   getUsersDetails(page: Int, limit: Int, search: String): UserPagination!
   getAstrologerListBySearch(searchInput: AstrologerSearchInput): AstrologerPagination!
@@ -289,6 +299,6 @@ type UserWallet {
     deleteUser(id: ID!): Boolean
     updateUserProfile(input: UpdateUserInput!): User!
     createIntake(input: IntakeInput!): CreateIntakeResponse!
-    acceptChatRequest(roomId: String!): ChatSessionResponse
+    createReview(input: CreateReviewInput!): CreateReviewResponse!
 }
 `;

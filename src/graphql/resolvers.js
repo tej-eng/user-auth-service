@@ -493,48 +493,73 @@ skipChatRequest: async (_, { astrologerId }) => {
     intakeId: intake.id
   };
 },
-acceptChatRequest: async (_, { roomId }, context) => {
+createReview: async (_, { input }, context) => {
+  const userId = context.user.id;
 
-  const intake = await prisma.intake.findFirst({
-    where: { chatId: roomId }
+  const {
+    astro_id,
+    review_id, // roomId or sessionId
+    star,
+    comment,
+    user_name,
+    astro_name,
+  } = input;
+
+  //  Optional: find session using roomId
+  const session = await prisma.session.findFirst({
+    where: {
+      userId,
+      astrologerId: astro_id,
+      status: "COMPLETED"
+    },
+    orderBy: { createdAt: "desc" }
   });
 
-  if (!intake) {
-    throw new Error("Chat request not found");
-  }
-
-  const astrologer = await prisma.astrologer.findUnique({
-    where: { id: intake.astrologerId }
-  });
-
-  const session = await prisma.session.create({
-    data: {
-      userId: intake.userId,
-      astrologerId: intake.astrologerId,
-      type: "CHAT",
-      status: "ONGOING",
-      ratePerMin: Math.round(astrologer.price),
-      startedAt: new Date()
+  //  Prevent duplicate review
+  const existing = await prisma.review.findFirst({
+    where: {
+      userId,
+      astrologerId: astro_id,
+      sessionId: session?.id
     }
   });
 
-  // remove first request from queue
-  await redis.lpop(`chat_queue:${intake.astrologerId}`);
+  if (existing) {
+    throw new Error("Review already submitted");
+  }
 
-  // store active chat
-  await redis.set(
-    `active_chat:${roomId}`,
-    JSON.stringify({
-      sessionId: session.id,
-      userId: intake.userId,
-      astrologerId: intake.astrologerId,
-      startTime: Date.now()
-    })
-  );
+  //  Create Review
+  const review = await prisma.review.create({
+    data: {
+      userId,
+      astrologerId: astro_id,
+      sessionId: session?.id || null,
+      rating: star,
+      comment,
+      userName: user_name,
+      astroName: astro_name
+    }
+  });
 
-  return session;
+  //  Update astrologer average rating
+  const allReviews = await prisma.review.aggregate({
+    where: { astrologerId: astro_id },
+    _avg: { rating: true }
+  });
+
+  await prisma.astrologer.update({
+    where: { id: astro_id },
+    data: {
+      rating: allReviews._avg.rating || 0
+    }
+  });
+
+  return {
+    success: true,
+    message: "Review submitted successfully",
+    review
+  };
 },
-
 
     logout: async (_, __, { user, res }) => {
       try {

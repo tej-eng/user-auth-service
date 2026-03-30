@@ -65,10 +65,38 @@ model User {
   payments      Payment[]
   paymentOrders PaymentOrder[]
   sessions      Session[]
-
+  reviews Review[]
  @@unique([countryCode, mobile])
 }
+model Review{
+  model Review {
+  id            String   @id @default(uuid())
 
+  
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+
+  astrologerId  String
+  astrologer    Astrologer @relation(fields: [astrologerId], references: [id])
+
+  sessionId     String?   // optional (if you want session mapping)
+  session       Session?  @relation(fields: [sessionId], references: [id])
+
+  
+  rating        Int       
+  comment       String?
+
+  // Extra (for quick UI)
+  userName      String?
+  astroName     String?
+
+  createdAt     DateTime  @default(now())
+
+  @@index([userId])
+  @@index([astrologerId])
+  @@index([rating])
+}
+}
 model Intake {
   id           String   @id @default(uuid())
   userId       String
@@ -118,6 +146,7 @@ model Astrologer {
   approvedBy   Admin?  @relation(fields: [approvedById], references: [id])
   wallet         AstrologerWallet?
   sessions       Session[]
+  reviews Review[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -427,10 +456,10 @@ model Session {
   coinsDeducted Int      @default(0)
   coinsEarned   Int      @default(0)
   commission    Int      @default(0)
-
+  review Review?
   startedAt     DateTime?
   endedAt       DateTime?
-
+ 
   createdAt     DateTime @default(now())
   transactions  WalletTransaction[]
   @@index([userId])
