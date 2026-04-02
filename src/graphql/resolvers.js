@@ -276,7 +276,7 @@ getUserChatHistory: async (_, { page = 1, limit = 10 }, context) => {
     const userId = context.user.id;
     const skip = (page - 1) * limit;
 
-    //  Get distinct roomIds (latest chats)
+    //  Get distinct rooms
     const rooms = await prisma.message.findMany({
       where: {
         OR: [
@@ -297,62 +297,93 @@ getUserChatHistory: async (_, { page = 1, limit = 10 }, context) => {
 
     const roomIds = rooms.map(r => r.roomId);
 
-    //  Fetch full data per room
-    const chats = await Promise.all(
-      roomIds.map(async (roomId) => {
+    if (!roomIds.length) return [];
 
-        //  Last message
-        const lastMessage = await prisma.message.findFirst({
-          where: { roomId },
-          orderBy: { createdAt: "desc" },
-        });
+    //  Get last messages in bulk
+    const lastMessages = await prisma.message.findMany({
+      where: {
+        roomId: { in: roomIds },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
 
-        // Session (VERY IMPORTANT)
-        const session = await prisma.session.findFirst({
-          where: {
-            id: lastMessage?.sessionId, //  depends on your DB
-          },
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                mobile: true,
-              },
+    // Map latest message per room
+    const lastMessageMap = {};
+    for (const msg of lastMessages) {
+      if (!lastMessageMap[msg.roomId]) {
+        lastMessageMap[msg.roomId] = msg;
+      }
+    }
+
+    //  Get sessionIds (filter valid ones)
+    const sessionIds = Object.values(lastMessageMap)
+      .map(m => m.sessionId)
+      .filter(Boolean);
+
+    // Fetch sessions in ONE query
+    let sessions = [];
+    if (sessionIds.length) {
+      sessions = await prisma.session.findMany({
+        where: {
+          id: { in: sessionIds },
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              mobile: true,
             },
-            astrologer: {
-              select: {
-                id: true,
-                name: true,
-                profilePic: true,
-                experience: true,
-                price: true,
-              },
+          },
+          astrologer: {
+            select: {
+              id: true,
+              name: true,
+              profilePic: true,
+              experience: true,
+              price: true,
             },
           },
-        });
+        },
+      });
+    }
 
-        return {
-          roomId,
+    const sessionMap = {};
+    sessions.forEach(s => {
+      sessionMap[s.id] = s;
+    });
 
-          sessionId: session?.id || null,
+    // Final response
+    const chats = roomIds.map((roomId) => {
+      const lastMessage = lastMessageMap[roomId];
+      let session = null;
 
-          startedAt: session?.startedAt || null,
-          endedAt: session?.endedAt || null,
-          status: session?.status || null,
+      // Primary: sessionId
+      if (lastMessage?.sessionId) {
+        session = sessionMap[lastMessage.sessionId] || null;
+      }
 
-          user: session?.user || null,
-          astrologer: session?.astrologer || null,
+      return {
+        roomId,
+        sessionId: session?.id || null,
+        startedAt: session?.startedAt || null,
+        endedAt: session?.endedAt || null,
+        status: session?.status || null,
 
-          lastMessage: lastMessage || null,
-        };
-      })
-    );
+        user: session?.user || null,
+        astrologer: session?.astrologer || null,
+
+        lastMessage: lastMessage || null,
+      };
+    });
 
     return chats;
 
   } catch (error) {
-    throw new Error(error.message);
+    console.error("getUserChatHistory error:", error);
+    throw new Error(error.message || "Failed to fetch chat history");
   }
 },
 
