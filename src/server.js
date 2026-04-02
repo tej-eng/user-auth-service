@@ -20,7 +20,11 @@ async function startServer() {
 
   app.use(
     cors({
-      origin: ["http://localhost:3000","https://dhwani-astro-next-repo.vercel.app/","https://dhwaniastro.com","https://dhwani-astro-v2.vercel.app/"],
+      origin: [
+      "http://localhost:3000",
+      "https://dhwaniastro.com",
+      /https:\/\/dhwani-astro-v2.*\.vercel\.app/  
+    ],
       credentials: true,
     })
   );
