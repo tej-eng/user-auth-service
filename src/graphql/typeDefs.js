@@ -268,6 +268,37 @@ type CreateReviewResponse {
   message: String!
 }
 #--------------end review-------------
+#--------------start chat history----------------
+scalar JSON
+
+type Message {
+  id: String!
+  msgId: String
+  roomId: String
+  senderId: String
+  receiverId: String
+  message: String
+  image: String
+  sender: String
+  replyTo: JSON
+  sessionId: String
+  createdAt: String
+}
+
+type ChatHistory {
+  roomId: String!
+  sessionId: String
+
+  startedAt: String
+  endedAt: String
+  status: String
+
+  user: User
+  astrologer: Astrologer
+
+  lastMessage: Message
+}
+#------END chat history-----
   type Query {
   getUsersDetails(page: Int, limit: Int, search: String): UserPagination!
   getAstrologerListBySearch(searchInput: AstrologerSearchInput): AstrologerPagination!
@@ -288,6 +319,7 @@ type CreateReviewResponse {
     toDate: String
   ): WalletTransactionResponse
   
+  getUserChatHistory(page: Int, limit: Int): [ChatHistory]
   
   }
 

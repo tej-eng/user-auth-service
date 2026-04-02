@@ -4,6 +4,7 @@ const cookie = require("cookie");
 const { sendOTPService, verifyOTPService, refreshTokenService } = require("../services/authService");
 const { connectMongo, getDb } = require("../config/mongo");
 const { v4: uuidv4 } = require("uuid");
+const GraphQLJSON = require("graphql-type-json");
 
 // Helper to log events in MongoDB
 async function logEvent({ userId, action, details }) {
@@ -22,6 +23,7 @@ async function logEvent({ userId, action, details }) {
 }
 
 module.exports = {
+  JSON: GraphQLJSON,
   Query: {
     getUsersDetails: async (_, { page = 1, limit = 10, search = "" }, context) => {
   try {
@@ -266,23 +268,111 @@ me: async (_, __, { user }) => {
 
   return astrologer;
 },
-getNextChatRequest: async (_, { astrologerId }) => {
 
-  const request = await redis.lindex(
-    `chat_queue:${astrologerId}`,
-    0
-  );
+getUserChatHistory: async (_, { page = 1, limit = 10 }, context) => {
+  try {
+    if (!context.user) throw new Error("Unauthorized");
 
-  if (!request) return null;
+    const userId = context.user.id;
+    const skip = (page - 1) * limit;
 
-  return JSON.parse(request);
+    //  Get distinct roomIds (latest chats)
+    const rooms = await prisma.message.findMany({
+      where: {
+        OR: [
+          { senderId: userId },
+          { receiverId: userId },
+        ],
+      },
+      select: {
+        roomId: true,
+      },
+      distinct: ["roomId"],
+      orderBy: {
+        createdAt: "desc",
+      },
+      skip,
+      take: limit,
+    });
+
+    const roomIds = rooms.map(r => r.roomId);
+
+    //  Fetch full data per room
+    const chats = await Promise.all(
+      roomIds.map(async (roomId) => {
+
+        //  Last message
+        const lastMessage = await prisma.message.findFirst({
+          where: { roomId },
+          orderBy: { createdAt: "desc" },
+        });
+
+        // Session (VERY IMPORTANT)
+        const session = await prisma.session.findFirst({
+          where: {
+            id: lastMessage?.sessionId, //  depends on your DB
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                mobile: true,
+              },
+            },
+            astrologer: {
+              select: {
+                id: true,
+                name: true,
+                profilePic: true,
+                experience: true,
+                price: true,
+              },
+            },
+          },
+        });
+
+        return {
+          roomId,
+
+          sessionId: session?.id || null,
+
+          startedAt: session?.startedAt || null,
+          endedAt: session?.endedAt || null,
+          status: session?.status || null,
+
+          user: session?.user || null,
+          astrologer: session?.astrologer || null,
+
+          lastMessage: lastMessage || null,
+        };
+      })
+    );
+
+    return chats;
+
+  } catch (error) {
+    throw new Error(error.message);
+  }
 },
-skipChatRequest: async (_, { astrologerId }) => {
 
-  await redis.lpop(`chat_queue:${astrologerId}`);
+// getNextChatRequest: async (_, { astrologerId }) => {
 
-  return true;
-},
+//   const request = await redis.lindex(
+//     `chat_queue:${astrologerId}`,
+//     0
+//   );
+
+//   if (!request) return null;
+
+//   return JSON.parse(request);
+// },
+// skipChatRequest: async (_, { astrologerId }) => {
+
+//   await redis.lpop(`chat_queue:${astrologerId}`);
+
+//   return true;
+// },
 
 
 
