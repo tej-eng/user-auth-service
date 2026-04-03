@@ -108,48 +108,97 @@ getUserProfile: async (_, __, context) => {
     throw new Error(error.message || "Failed to fetch user profile");
   }
 },
-getWalletTransactions: async (_, { page = 1, limit = 10 }, context) => {
+getUserWalletTransactions: async (_, { filter }, context) => {
   try {
-    if (!context.user) {
-      throw new Error("Unauthorized");
-    }
+    if (!context.user) throw new Error("Unauthorized");
+
+    const {
+      page = 1,
+      limit = 10,
+      type,
+      fromDate,
+      toDate,
+    } = filter || {};
 
     const skip = (page - 1) * limit;
 
-    // 1 Get user's wallet
     const wallet = await prisma.userWallet.findUnique({
       where: { userId: context.user.id },
     });
 
-    if (!wallet) {
-      throw new Error("Wallet not found");
-    }
+    if (!wallet) throw new Error("Wallet not found");
 
-    // 2️ Fetch transactions
+    const where = {
+      userWalletId: wallet.id,
+
+      // HANDLE MULTIPLE TYPES
+      ...(type && type.length > 0
+        ? {
+            type: {
+              in: type, // ["DEBIT", "CREDIT"]
+            },
+          }
+        : {}),
+
+      ...(fromDate || toDate
+        ? {
+            createdAt: {
+              ...(fromDate && { gte: new Date(fromDate) }),
+              ...(toDate && { lte: new Date(toDate) }),
+            },
+          }
+        : {}),
+    };
+
     const [transactions, totalCount] = await Promise.all([
       prisma.walletTransaction.findMany({
-        where: {
-          userWalletId: wallet.id,
+        where,
+        include: {
+          session: {
+            include: {
+              astrologer: {
+                select: { name: true },
+              },
+            },
+          },
         },
         orderBy: { createdAt: "desc" },
         skip,
         take: limit,
       }),
-      prisma.walletTransaction.count({
-        where: {
-          userWalletId: wallet.id,
-        },
-      }),
+
+      prisma.walletTransaction.count({ where }),
     ]);
 
+    const formatted = transactions.map((t) => ({
+      id: t.id,
+      userWalletId: t.userWalletId,
+      astrologerWalletId: t.astrologerWalletId,
+      rechargePackId: t.rechargePackId,
+      sessionId: t.sessionId,
+
+      type: t.type,
+      coins: t.coins,
+      amount: t.amount,
+      description: t.description,
+
+      astrologerName:
+        t.type === "DEBIT"
+          ? t.session?.astrologer?.name || ""
+          : "",
+
+      createdAt: t.createdAt,
+    }));
+
     return {
-      data: transactions,
+      data: formatted,
       totalCount,
       currentPage: page,
       totalPages: Math.ceil(totalCount / limit),
     };
   } catch (error) {
-    throw new Error(error.message || "Failed to fetch transactions");
+    console.error("getUserWalletTransactions error:", error);
+    throw new Error(error.message);
   }
 },
     getAstrologerListBySearch: async (_, { searchInput }) => {

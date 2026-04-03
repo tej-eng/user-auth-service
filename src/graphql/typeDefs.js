@@ -98,10 +98,16 @@ type AstrologerPagination {
 type WalletTransaction {
   id: ID!
   userWalletId: String
+  astrologerWalletId: String
+  rechargePackId: String
+  sessionId: String
+
   type: String
   coins: Int
   amount: Float
   description: String
+
+  astrologerName: String   
   createdAt: String
 }
 
@@ -110,6 +116,13 @@ type WalletTransactionResponse {
   totalCount: Int
   currentPage: Int
   totalPages: Int
+}
+  input WalletTransactionFilter {
+  page: Int
+  limit: Int
+  type: [String]   
+  fromDate: String
+  toDate: String
 }
 #--------END CODE FOR WALLET TRANSACTION----------------
 # -----------------------------------------
@@ -358,13 +371,7 @@ type ChatSessionResponse {
   skipChatRequest(astrologerId: String!): Boolean
   getUserWallet: UserWallet
   getUserProfile: User
-  getWalletTransactions(
-    page: Int
-    limit: Int
-    type: String
-    fromDate: String
-    toDate: String
-  ): WalletTransactionResponse
+  getUserWalletTransactions(filter: WalletTransactionFilter): WalletTransactionResponse
   
   getUserChatHistory(page: Int, limit: Int): [ChatHistory]
   getUserSessions(filter: SessionFilterInput): ChatSessionResponse
