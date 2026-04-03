@@ -207,11 +207,7 @@ enum SessionType {
   CHAT
   CALL
 }
-  enum SessionStatus {
-  ONGOING
-  COMPLETED
-  CANCELLED
-}
+
 type Session {
   id: ID!
 
@@ -299,6 +295,57 @@ type ChatHistory {
   lastMessage: Message
 }
 #------END chat history-----
+#----------------------------start GetUser Sessions----------
+enum SessionStatus {
+  REQUESTED
+  ACCEPTED
+  ONGOING
+  COMPLETED
+  CANCELLED
+  FAILED
+}
+
+input SessionFilterInput {
+  status: SessionStatus
+  fromDate: String
+  toDate: String
+  page: Int
+  limit: Int
+}
+
+type ChatSession {
+  id: ID
+
+  userName: String
+  astrologerName: String
+  astrologerImage: String
+
+  startedAt: String
+  endedAt: String
+
+  durationSec: Int
+  durationMin: Int
+
+  ratePerMin: Int
+  ratePerSecond: Float
+
+  totalCharge: Float
+  coinsEarned: Int
+  commission: Int
+
+  status: SessionStatus
+}
+
+type ChatSessionResponse {
+  data: [ChatSession]
+  totalCount: Int
+  currentPage: Int
+  totalPages: Int
+}
+
+
+
+#-----------------------ENd user sessions-----------------
   type Query {
   getUsersDetails(page: Int, limit: Int, search: String): UserPagination!
   getAstrologerListBySearch(searchInput: AstrologerSearchInput): AstrologerPagination!
@@ -320,6 +367,7 @@ type ChatHistory {
   ): WalletTransactionResponse
   
   getUserChatHistory(page: Int, limit: Int): [ChatHistory]
+  getUserSessions(filter: SessionFilterInput): ChatSessionResponse
   
   }
 

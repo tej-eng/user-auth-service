@@ -387,6 +387,99 @@ getUserChatHistory: async (_, { page = 1, limit = 10 }, context) => {
   }
 },
 
+getUserSessions: async (_, { filter }, context) => {
+  try {
+    if (!context.user) throw new Error("Unauthorized");
+
+    const userId = context.user.id;
+
+    const {
+      status,
+      fromDate,
+      toDate,
+      page = 1,
+      limit = 10,
+    } = filter || {};
+
+    const skip = (page - 1) * limit;
+
+    //  Build dynamic where condition
+    const where = {
+      userId,
+      ...(status && { status }),
+
+      ...(fromDate || toDate
+        ? {
+            createdAt: {
+              ...(fromDate && { gte: new Date(fromDate) }),
+              ...(toDate && { lte: new Date(toDate) }),
+            },
+          }
+        : {}),
+    };
+
+    //  Fetch sessions + count
+    const [sessions, totalCount] = await Promise.all([
+      prisma.session.findMany({
+        where,
+        include: {
+          user: {
+            select: { name: true },
+          },
+          astrologer: {
+            select: { name: true, profilePic: true },
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        skip,
+        take: limit,
+      }),
+
+      prisma.session.count({ where }),
+    ]);
+
+    //  Transform response
+    const formatted = sessions.map((s) => {
+      const ratePerSecond = s.ratePerMin / 60;
+
+      return {
+        id: s.id,
+        userName: s.user?.name || "",
+        astrologerName: s.astrologer?.name || "",
+        astrologerImage: s.astrologer?.profilePic || "",
+
+        status: s.status,
+
+        startedAt: s.startedAt,
+        endedAt: s.endedAt,
+
+        durationSec: s.durationSec,
+        durationMin: Math.ceil(s.durationSec / 60),
+
+        ratePerMin: s.ratePerMin,
+        ratePerSecond: Number(ratePerSecond.toFixed(2)),
+
+        totalCharge: s.coinsDeducted,
+        coinsEarned: s.coinsEarned,
+        commission: s.commission,
+      };
+    });
+
+    return {
+      data: formatted,
+      totalCount,
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit),
+    };
+
+  } catch (error) {
+    console.error("getUserSessions error:", error);
+    throw new Error(error.message || "Failed to fetch sessions");
+  }
+},
+
 // getNextChatRequest: async (_, { astrologerId }) => {
 
 //   const request = await redis.lindex(
