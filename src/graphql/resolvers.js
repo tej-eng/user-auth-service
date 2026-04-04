@@ -60,6 +60,7 @@ module.exports = {
 },
 getUserWallet: async (_, __, context) => {
   try {
+    console.log("getUserWallet context:", context);
     if (!context.user) {
       throw new Error("Unauthorized");
     }
@@ -71,9 +72,10 @@ getUserWallet: async (_, __, context) => {
     });
 
     if (!wallet) {
+      console.log("Wallet not found for userId:", context.user.id);
       throw new Error("Wallet not found");
     }
-
+    console.log("Wallet found:", wallet);
     return wallet;
   } catch (error) {
     throw new Error(error.message || "Failed to fetch wallet");
