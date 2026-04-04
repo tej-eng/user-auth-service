@@ -46,7 +46,6 @@ async function startServer() {
     expressMiddleware(server, {
       context: async ({ req, res }) => {
         const token = req.cookies?.accessToken;
-         console.log("Access token:", token);
         let user = null;
 
         if (token) {

@@ -93,8 +93,6 @@ const verifyOTPService = async (countryCode, mobile, otp) => {
     // Get stored OTP
     const storedOTP = await redis.get(`otp:${phoneKey}`);
 
-    console.log("Entered OTP:", otp);
-    console.log("Stored OTP:", storedOTP);
 
     if (!storedOTP) {
       await logEvent("OTP_EXPIRED", phoneKey);
