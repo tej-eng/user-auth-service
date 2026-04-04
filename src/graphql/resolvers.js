@@ -60,7 +60,7 @@ module.exports = {
 },
 getUserWallet: async (_, __, context) => {
   try {
-    console.log("getUserWallet context:", context);
+    //console.log("getUserWallet context:", context);
     if (!context.user) {
       throw new Error("Unauthorized");
     }
