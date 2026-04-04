@@ -206,12 +206,7 @@ type UserBasicInfo {
   updatedAt: String
   wallet: UserWallet
 }
-  type UserWallet {
-  id: ID!
-  balanceCoins: Float
-  createdAt: String
-  updatedAt: String
-}
+
 #---------END--------------------------------
 #-----------------------------------------
 # start session section
