@@ -757,11 +757,12 @@ getUserSessions: async (_, { filter }, context) => {
   };
 },
 createReview: async (_, { input }, context) => {
+  console.log("createReview input:", input);
   const userId = context.user.id;
 
   const {
     astro_id,
-    review_id, // roomId or sessionId
+    review_id, 
     star,
     comment,
     user_name,
@@ -845,5 +846,7 @@ createReview: async (_, { input }, context) => {
         throw new Error(error.message || "Failed to logout");
       }
     },
+
+
   },
 };
