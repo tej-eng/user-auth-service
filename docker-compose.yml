@@ -4,7 +4,7 @@ services:
     build: .
     container_name: user-auth-service
     ports:
-      - "4000:4000"
+      - "5000:5000"
       - "5555:5555"
       
     env_file:

@@ -14,16 +14,13 @@ const typeDefs = require("./graphql/typeDefs");
 const resolvers = require("./graphql/resolvers");
 const rateLimiter = require("./middleware/rateLimiter");
 const { verifyAccessToken } = require("./config/jwt");
+const aiAnalysisRoute = require("./routes/aiAnalysis");
 
 async function startServer() {
   const app = express();
-
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      "https://dhwaniastro.com"
-    ],
+   origin: ["http://localhost:3000"],
     credentials: true,
   })
 );
@@ -41,6 +38,8 @@ app.use(helmet());
   });
 
   await server.start();
+
+app.use("/api", aiAnalysisRoute);
 
   app.use(
     "/graphql",
@@ -63,7 +62,7 @@ app.use(helmet());
     })
   );
 
-  const PORT = process.env.PORT || 4000;
+  const PORT = process.env.PORT || 5000;
 
   app.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}/graphql`);

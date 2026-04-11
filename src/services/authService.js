@@ -5,9 +5,9 @@ const { generateAccessToken, generateRefreshToken } = require("../config/jwt");
 const jwt = require("jsonwebtoken");
 const { connectMongo, getDb } = require("../config/mongo");
 
-const OTP_EXPIRE = 60; // 1 minutes
-const OTP_LIMIT = 3; // 3 per 10 min
-const LOGIN_LIMIT = 5; // 5 failed attempts
+const OTP_EXPIRE = 60; 
+const OTP_LIMIT = 3; 
+const LOGIN_LIMIT = 5; 
 
 // ================= LOG TO MONGO =================
 async function logEvent(type, mobile, details = {}) {
