@@ -47,25 +47,71 @@ enum RejectionStage {
 }
 
 model User {
-  id           String    @id @default(uuid())
-  name         String?
-  mobile       String?   @unique
-  gender       Gender?
-  birthDate    DateTime?
-  birthTime    String?
-  occupation   String?
-  isActive     Boolean   @default(true)
-  isDeleted    Boolean   @default(false)
-  refreshToken String?   @db.Text
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-
-  wallet       UserWallet?
-  payments     Payment[]
+  id            String    @id @default(uuid())
+  name          String?
+  countryCode   String?   
+  mobile        String?   @unique
+  gender        Gender?
+  birthDate     DateTime?
+  birthTime     String?
+  occupation    String?
+  isActive      Boolean   @default(true)
+  isDeleted     Boolean   @default(false)
+  refreshToken  String?   @db.Text
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  Intake        Intake[]
+  wallet        UserWallet?
+  payments      Payment[]
   paymentOrders PaymentOrder[]
-  sessions     Session[]
+  sessions      Session[]
+  reviews Review[]
+ @@unique([countryCode, mobile])
+}
+model Review {
+  id            String   @id @default(uuid())
 
-  @@index([mobile])
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+
+  astrologerId  String
+  astrologer    Astrologer @relation(fields: [astrologerId], references: [id])
+
+  sessionId     String?  @unique   // REQUIRED
+  session       Session? @relation(fields: [sessionId], references: [id])
+
+  rating        Int
+  comment       String?
+
+  userName      String?
+  astroName     String?
+
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+  @@index([astrologerId])
+}
+
+model Intake {
+  id           String   @id @default(uuid())
+  userId       String
+  astrologerId String
+  chatId       String?
+  name         String
+  countryCode String
+  mobile       String
+  gender       Gender?
+  birthDate    DateTime
+  birthTime    String
+  occupation   String
+  birthPlace   String
+  requestType  String
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([astrologerId])
 }
 
 model Astrologer {
@@ -84,6 +130,7 @@ model Astrologer {
   adminRemarks   String?
   price          Int?           @default(0)
   rating         Float?         @default(0)
+  status         Boolean        @default(false)
   addresses        Address[]
   experiences      ExperiencePlatform[]
   interviews       Interview[]
@@ -94,6 +141,7 @@ model Astrologer {
   approvedBy   Admin?  @relation(fields: [approvedById], references: [id])
   wallet         AstrologerWallet?
   sessions       Session[]
+  reviews Review[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -281,7 +329,7 @@ model RechargePack {
   transactions WalletTransaction[]
   payments     Payment[]
   paymentOrders PaymentOrder[]
-
+  coupons       Coupon[]
   @@index([isActive])
   @@index([price])
   @@index([coins])
@@ -293,8 +341,8 @@ model UserWallet {
   userId       String   @unique
   user         User     @relation(fields: [userId], references: [id])
 
-  balanceCoins Int      @default(0)
-  lockedCoins  Int      @default(0)
+  balanceCoins Float      @default(0)
+  lockedCoins  Float      @default(0)
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -306,7 +354,7 @@ model AstrologerWallet {
   id              String     @id @default(uuid())
   astrologerId    String     @unique
   astrologer      Astrologer @relation(fields: [astrologerId], references: [id])
-  balanceCoins    Int        @default(0)
+  balanceCoins    Float        @default(0)
   totalEarned     Int        @default(0)
   totalWithdrawn  Int        @default(0)
    withdrawals     Withdrawal[]
@@ -403,10 +451,10 @@ model Session {
   coinsDeducted Int      @default(0)
   coinsEarned   Int      @default(0)
   commission    Int      @default(0)
-
+  review Review?
   startedAt     DateTime?
   endedAt       DateTime?
-
+  messages      Message[]
   createdAt     DateTime @default(now())
   transactions  WalletTransaction[]
   @@index([userId])
@@ -513,4 +561,65 @@ model CommissionConfig {
 
   // only one config active
   @@unique([createdAt])
+}
+
+enum CouponType {
+  PERCENTAGE
+  FLAT
+}
+
+enum CouponVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+model Coupon {
+  id            String   @id @default(uuid())
+  code          String   @unique
+  description   String?
+
+  type          CouponType
+  visibility    CouponVisibility
+  status        Boolean  @default(true)
+
+  percentage    Float?
+  flatAmount    Float?
+  maxDiscount   Float?
+
+  minOrderAmount Float?
+  redeemLimit   Int?
+  usedCount     Int      @default(0)
+
+  startDate     DateTime
+  endDate       DateTime
+
+  rechargePacks RechargePack[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Message {
+  id            String   @id @default(uuid())
+
+  msgId         String
+  roomId        String
+
+  senderId      String
+  receiverId    String?
+
+  message       String
+  image         String?
+  sender        String
+
+  replyTo       Json?
+
+  sessionId     String?
+  session       Session? @relation(fields: [sessionId], references: [id])
+
+  createdAt     DateTime @default(now())
+
+  @@index([roomId])
+  @@index([sessionId])
+  @@index([senderId])
 }

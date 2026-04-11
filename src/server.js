@@ -20,7 +20,11 @@ async function startServer() {
 
   app.use(
     cors({
-      origin: "http://localhost:3000",
+      origin: [
+      "http://localhost:3000",
+      "https://dhwaniastro.com",
+      /https:\/\/dhwani-astro-v2.*\.vercel\.app/  
+    ],
       credentials: true,
     })
   );
@@ -42,12 +46,12 @@ async function startServer() {
     expressMiddleware(server, {
       context: async ({ req, res }) => {
         const token = req.cookies?.accessToken;
-
         let user = null;
 
         if (token) {
           try {
             user = verifyAccessToken(token);
+            console.log("Authenticated user:", user);
           } catch {
             user = null;
           }

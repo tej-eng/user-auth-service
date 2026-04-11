@@ -12,6 +12,7 @@ module.exports = gql`
   type User {
     id: ID!
     name: String
+    countryCode: String 
     mobile: String
     gender: Gender
     birthDate: String
@@ -19,17 +20,23 @@ module.exports = gql`
     occupation: String
     isActive: Boolean
     isDeleted: Boolean
+    user_status: Int
     createdAt: String
     updatedAt: String
     user_status: Int
   }
 
-  type AuthPayload {
-    user: User!
-    accessToken: String!
-    refreshToken: String!
-  }
- 
+ type AuthPayload {
+  user: User!
+  accessToken: String!
+  refreshToken: String!
+  isNewUser: Boolean!
+  hasName: Boolean!
+}
+  type OtpResponse {
+  message: String!
+  otp: String
+}
   type UserPagination {
   data: [User!]!
   totalCount: Int!
@@ -63,6 +70,7 @@ type Astrologer {
   skills: [String]
   languages: [String]
   profilePic: String
+  status: Boolean
 }
 
 input AstrologerSearchInput {
@@ -90,7 +98,37 @@ type AstrologerPagination {
   currentPage: Int!
   totalPages: Int!
 }
+#------------START CODE FOR WALLET TRANSACTION----------------
+type WalletTransaction {
+  id: ID!
+  userWalletId: String
+  astrologerWalletId: String
+  rechargePackId: String
+  sessionId: String
 
+  type: String
+  coins: Int
+  amount: Float
+  description: String
+
+  astrologerName: String   
+  createdAt: String
+}
+
+type WalletTransactionResponse {
+  data: [WalletTransaction]
+  totalCount: Int
+  currentPage: Int
+  totalPages: Int
+}
+  input WalletTransactionFilter {
+  page: Int
+  limit: Int
+  type: [String]   
+  fromDate: String
+  toDate: String
+}
+#--------END CODE FOR WALLET TRANSACTION----------------
 # -----------------------------------------
 # End Astrologer Search Section
 # -----------------------------------------
@@ -116,19 +154,238 @@ type RechargePackResponse {
 # End recharge pack section
 # -----------------------------------------
 
+
+# -----------------------------------------
+# Intake Section
+# -----------------------------------------
+type CreateIntakeResponse {
+  roomId: String!
+  chatTime: Int!
+  intakeId: String!
+}
+input IntakeInput {
+  astrologerId: String!
+  name: String!
+  countryCode: String!
+  mobile: String!
+  gender: Gender!
+  birthDate: String!
+  birthTime: String!
+  occupation: String!
+  birthPlace: String!
+  requestType: String!
+}
+type Intake {
+  id: ID!
+  name: String!
+  countryCode: String
+  mobile: String!
+  gender: Gender!
+  birthDate: String!
+  birthTime: String!
+  occupation: String!
+  birthPlace: String!
+  requestType: String!
+  chatId: String
+  createdAt: String!
+}
+#------------------------------------------
+#end intake section
+
+#-----------------------------------------
+# Get User by ID (for admin or internal use)
+#-----------------------------------------
+type UserBasicInfo {
+  id: ID!
+  name: String
+  countryCode: String 
+  mobile: String
+  gender: Gender
+  birthDate: String
+  birthTime: String
+  occupation: String
+  isActive: Boolean
+  isDeleted: Boolean
+  createdAt: String
+  updatedAt: String
+  wallet: UserWallet
+}
+
+#---------END--------------------------------
+#-----------------------------------------
+# start session section
+#-----------------------------------------
+enum SessionType {
+  CHAT
+  CALL
+}
+
+type Session {
+  id: ID!
+
+  userId: String!
+  astrologerId: String!
+
+  type: SessionType!
+  status: SessionStatus!
+
+  ratePerMin: Int
+  durationSec: Int
+
+  coinsDeducted: Int
+  coinsEarned: Int
+  commission: Int
+
+  startedAt: String
+  endedAt: String
+
+  createdAt: String
+}
+ 
+#-end session section ------------------
+
+#-----------------start queue section------------------------
+type ChatQueueItem {
+  roomId: String!
+  userId: String!
+  astrologerId: String!
+  createdAt: String!
+}
+#---------End Queue Section-------------------
+#--------start get user wallet----------------
+type UserWallet {
+  id: ID!
+  userId: String!
+  balanceCoins: Float!
+  lockedCoins: Float!
+  createdAt: String!
+  updatedAt: String!
+}
+#---------End get user wallet----------------
+#-----------start review-------------------
+input CreateReviewInput {
+  astro_id: String!
+  review_id: String
+  star: Int!
+  comment: String
+  user_name: String
+  astro_name: String
+}
+type CreateReviewResponse {
+  success: Boolean!
+  message: String!
+}
+#--------------end review-------------
+#--------------start chat history----------------
+scalar JSON
+
+type Message {
+  id: String!
+  msgId: String
+  roomId: String
+  senderId: String
+  receiverId: String
+  message: String
+  image: String
+  sender: String
+  replyTo: JSON
+  sessionId: String
+  createdAt: String
+}
+
+type ChatHistory {
+  roomId: String!
+  sessionId: String
+
+  startedAt: String
+  endedAt: String
+  status: String
+
+  user: User
+  astrologer: Astrologer
+
+  lastMessage: Message
+}
+#------END chat history-----
+#----------------------------start GetUser Sessions----------
+enum SessionStatus {
+  REQUESTED
+  ACCEPTED
+  ONGOING
+  COMPLETED
+  CANCELLED
+  FAILED
+}
+
+input SessionFilterInput {
+  status: SessionStatus
+  fromDate: String
+  toDate: String
+  page: Int
+  limit: Int
+}
+
+type ChatSession {
+  id: ID
+
+  userName: String
+  astrologerName: String
+  astrologerImage: String
+
+  startedAt: String
+  endedAt: String
+
+  durationSec: Int
+  durationMin: Int
+
+  ratePerMin: Int
+  ratePerSecond: Float
+
+  totalCharge: Float
+  coinsEarned: Int
+  commission: Int
+
+  status: SessionStatus
+}
+
+type ChatSessionResponse {
+  data: [ChatSession]
+  totalCount: Int
+  currentPage: Int
+  totalPages: Int
+}
+
+
+
+#-----------------------ENd user sessions-----------------
   type Query {
   me: User
   getUsersDetails(page: Int, limit: Int, search: String): UserPagination!
   getAstrologerListBySearch(searchInput: AstrologerSearchInput): AstrologerPagination!
   getRechargePacks: RechargePackResponse!
+  getRechargePackById(id: ID!): RechargePack
+  me: User
+  getUserById(id: String!): UserBasicInfo
+  getAstrologerById(id: String!): Astrologer
+  getNextChatRequest(astrologerId: String!): ChatQueueItem
+  skipChatRequest(astrologerId: String!): Boolean
+  getUserWallet: UserWallet
+  getUserProfile: User
+  getUserWalletTransactions(filter: WalletTransactionFilter): WalletTransactionResponse
+  
+  getUserChatHistory(page: Int, limit: Int): [ChatHistory]
+  getUserSessions(filter: SessionFilterInput): ChatSessionResponse
+  
   }
 
   type Mutation {
-    requestOtp(mobile: String!): String
-    authWithOtp(mobile: String!, otp: String!): AuthPayload
+    requestOtp(countryCode: String!, mobile: String!): OtpResponse!
+    authWithOtp(countryCode: String!, mobile: String!, otp: String!): AuthPayload
     refreshToken(token: String!): AuthPayload
     logout: Boolean
     deleteUser(id: ID!): Boolean
     updateUserProfile(input: UpdateUserInput!): User!
-  }
+    createIntake(input: IntakeInput!): CreateIntakeResponse!
+    createReview(input: CreateReviewInput!): CreateReviewResponse!
+}
 `;
