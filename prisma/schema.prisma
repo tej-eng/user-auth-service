@@ -60,7 +60,7 @@ model User {
   refreshToken  String?   @db.Text
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-  Intake        Intake[]
+  intakes        Intake[]
   wallet        UserWallet?
   payments      Payment[]
   paymentOrders PaymentOrder[]
@@ -109,7 +109,7 @@ model Intake {
   createdAt    DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
-
+  astrologer   Astrologer @relation(fields: [astrologerId], references: [id])
   @@index([userId])
   @@index([astrologerId])
 }
