@@ -121,6 +121,7 @@ model Astrologer {
   dateOfBirth    DateTime
   gender         Gender
   displayName    String?
+  intakes        Intake[]
   refreshToken   String? @db.Text
   intakes        Intake[]
   languages      String[]
