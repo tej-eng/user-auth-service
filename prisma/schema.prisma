@@ -120,6 +120,9 @@ model Astrologer {
   name           String
   dateOfBirth    DateTime
   gender         Gender
+  displayName    String?
+  refreshToken   String? @db.Text
+  intakes        Intake[]
   languages      String[]
   skills         String[]
   experience     Int
