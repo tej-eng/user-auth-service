@@ -750,7 +750,7 @@ getUserSessions: async (_, { filter }, context) => {
   //   `chat_queue:${input.astrologerId}`, // for testing with fixed astrologer, can be changed to input.astrologerId in production
   //   roomId
   // );
-  await redis.rPush(`chat_queue:${input.astrologerId}`, JSON.stringify({
+  await redis.rpush(`chat_queue:${input.astrologerId}`, JSON.stringify({
   user_id: userId,
   roomId: roomId,
   maximum_time: chatTime
