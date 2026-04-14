@@ -751,9 +751,9 @@ getUserSessions: async (_, { filter }, context) => {
   //   roomId
   // );
   await redis.rPush(`chat_queue:${input.astrologerId}`, JSON.stringify({
-  user_id: data.user_id,
+  user_id: userId,
   roomId: roomId,
-  maximum_time: data.maximum_time
+  maximum_time: chatTime
 }));
 
   //  Return Response
