@@ -723,7 +723,7 @@ getUserSessions: async (_, { filter }, context) => {
       timeOfBirth: input.birthTime,
       occupation: input.occupation,
       location: input.birthPlace,
-      astro_id: "156983", // for testing with fixed astrologer, can be changed to input.astrologerId in production
+      astro_id: input.astrologerId, // for testing with fixed astrologer, can be changed to input.astrologerId in production
       is_promotional: false,  
       room_id: roomId,
       maximum_time: chatTime,
@@ -747,7 +747,7 @@ getUserSessions: async (_, { filter }, context) => {
   // );
 
   await redis.rpush(
-    `chat_queue:156983`, // for testing with fixed astrologer, can be changed to input.astrologerId in production
+    `chat_queue:${input.astrologerId}`, // for testing with fixed astrologer, can be changed to input.astrologerId in production
     roomId
   );
 
