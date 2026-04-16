@@ -740,21 +740,22 @@ getUserSessions: async (_, { filter }, context) => {
     "EX",
     7200 //hours to expire, in case something goes wrong with the queue processing, we don't want stale data hanging around forever
   );
+ //const queueKey = `chat_queue:${input.astrologerId}`;
+const userQueueKey = `user_in_queue:${input.astrologerId}`;
 
-  // await redis.rpush(
-  //   `chat_queue:${input.astrologerId}`,
-  //   roomId
-  // );
-
-  // await redis.rpush(
-  //   `chat_queue:${input.astrologerId}`, // for testing with fixed astrologer, can be changed to input.astrologerId in production
-  //   roomId
-  // );
+// Check duplicate user
+const alreadyExists = await redis.sIsMember(userQueueKey, userId);
+if (alreadyExists) {
+  return;
+}
+ 
   await redis.rpush(`chat_queue:${input.astrologerId}`, JSON.stringify({
   user_id: userId,
   roomId: roomId,
   maximum_time: chatTime
 }));
+
+await redis.sAdd(userQueueKey, userId);
 
   //  Return Response
   return {
