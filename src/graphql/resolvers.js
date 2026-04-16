@@ -744,7 +744,7 @@ getUserSessions: async (_, { filter }, context) => {
 const userQueueKey = `user_in_queue:${input.astrologerId}`;
 
 // Check duplicate user
-const alreadyExists = await redis.sIsMember(userQueueKey, userId);
+const alreadyExists = await redis.sismember(userQueueKey, userId);
 if (alreadyExists) {
   return;
 }
@@ -755,7 +755,7 @@ if (alreadyExists) {
   maximum_time: chatTime
 }));
 
-await redis.sAdd(userQueueKey, userId);
+await redis.sadd(userQueueKey, userId);
 
   //  Return Response
   return {
