@@ -731,6 +731,19 @@ getUserSessions: async (_, { filter }, context) => {
       phoneNumber: `${input.countryCode}${input.mobile}`,
       createdAt: Date.now()
   };
+
+  const userQueueKey = `user_in_queue:${input.astrologerId}`;
+
+// Check duplicate user
+const alreadyExists = await redis.sismember(userQueueKey, userId);
+if (alreadyExists) {
+  return {
+    roomId,
+    chatTime,
+    intakeId: intake.id,
+    message: "duplicate request. User is already in queue for this astrologer",
+  };
+}
   
   const exists = await redis.exists(`chat_request_data:${roomId}`);
  if (exists) return;
@@ -740,14 +753,6 @@ getUserSessions: async (_, { filter }, context) => {
     "EX",
     7200 //hours to expire, in case something goes wrong with the queue processing, we don't want stale data hanging around forever
   );
- //const queueKey = `chat_queue:${input.astrologerId}`;
-const userQueueKey = `user_in_queue:${input.astrologerId}`;
-
-// Check duplicate user
-const alreadyExists = await redis.sismember(userQueueKey, userId);
-if (alreadyExists) {
-  return;
-}
  
   await redis.rpush(`chat_queue:${input.astrologerId}`, JSON.stringify({
   user_id: userId,
@@ -761,7 +766,8 @@ await redis.sadd(userQueueKey, userId);
   return {
     roomId,
     chatTime,
-    intakeId: intake.id
+    intakeId: intake.id,
+    message: "request send successfully",
   };
 },
 createReview: async (_, { input }, context) => {
