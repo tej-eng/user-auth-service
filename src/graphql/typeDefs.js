@@ -158,6 +158,7 @@ type CreateIntakeResponse {
   roomId: String!
   chatTime: Int!
   intakeId: String!
+  message: String
 }
 input IntakeInput {
   astrologerId: String!
