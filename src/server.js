@@ -1,5 +1,6 @@
 require("dotenv").config();
-
+const { PrismaClient } = require("@prisma/client");
+const prisma = new PrismaClient();
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
@@ -44,21 +45,21 @@ app.use("/api", aiAnalysisRoute);
   app.use(
     "/graphql",
     expressMiddleware(server, {
-      context: async ({ req, res }) => {
-        const token = req.cookies?.accessToken;
+  context: async ({ req, res }) => {
+  const token = req.cookies?.accessToken;
 
-        let user = null;
+  let user = null;
 
-        if (token) {
-          try {
-            user = verifyAccessToken(token);
-          } catch {
-            user = null;
-          }
-        }
+  if (token) {
+    try {
+      user = verifyAccessToken(token);
+    } catch {
+      user = null;
+    }
+  }
 
-        return {  user };
-      },
+  return { user, prisma }; // ✅ FIX
+},
     })
   );
 

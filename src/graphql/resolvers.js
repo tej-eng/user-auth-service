@@ -353,5 +353,37 @@ module.exports = {
         throw new Error(error.message || "Failed to logout");
       }
     },
+
+
+    // new astrologer 
+     createAstrologerApplication: async (_, { input }, { prisma }) => {
+      try {
+        const newApp = await prisma.astrologerApplication.create({
+          data: {
+            name: input.name,
+            phoneNumber: input.phoneNumber,
+            email: input.email,
+            dob: new Date(input.dob),
+            gender: input.gender,
+            languages: input.languages,
+            skills: input.skills,
+            experience: input.experience,
+            about: input.about,
+          },
+        });
+
+        return newApp;
+      } catch (error) {
+        console.error(error);
+
+        if (error.code === "P2002") {
+          throw new Error("Email already exists");
+        }
+
+        throw new Error("Failed to submit application");
+      }
+    },
+  
+    
   },
 };
