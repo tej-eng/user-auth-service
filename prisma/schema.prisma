@@ -41,28 +41,27 @@ model Admin {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  astrologers         Astrologer[]
-  approvedAstrologers Astrologer[] @relation("AdminApprovedAstrologers")
 }
 
 model Role {
-  id          String           @id @default(uuid())
-  name        String           @unique
-  description String?
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  admins      Admin[]
-  permissions RolePermission[]
+  id           String           @id @default(uuid())
+  name         String           @unique
+  description  String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  admins       Admin[]
+  permissions  RolePermission[]
+  staffMembers Staff[]
 }
 
 model Permission {
-  id          String           @id @default(uuid())
-  name        String           @unique
-  description String?
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  roles       RolePermission[]
+  id               String            @id @default(uuid())
+  name             String            @unique
+  description      String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  roles            RolePermission[]
+  staffPermissions StaffPermission[]
 }
 
 model RolePermission {
@@ -76,30 +75,38 @@ model RolePermission {
 }
 
 model Astrologer {
-  id             String               @id @default(uuid())
-  name           String
-  profilePic     String
-  experience     Int
-  email          String               @unique
-  contactNo      String
-  about          String
-  price          Float
-  rating         Float
-  languages      String[]
-  skills         String[]
-  approvalStatus ApprovalStatus       @default(PENDING)
-  approvedById   String?
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
-  adminId        String?
-  addresses      Address[]
-  admin          Admin?               @relation(fields: [adminId], references: [id])
-  approvedBy     Admin?               @relation("AdminApprovedAstrologers", fields: [approvedById], references: [id])
-  documents      AstrologerDocument[]
-  wallet         AstrologerWallet?
-  experiences    ExperiencePlatform[]
-  interviews     Interview[]
-  sessions       Session[]
+  id String @id @default(uuid())
+
+  name        String
+  email       String   @unique
+  phoneNumber String   @unique
+  gender      Gender
+  languages   String[]
+  skills      String[]
+  experience  Int
+  about       String?
+
+  profilePic String?
+  price      Float?
+  rating     Float   @default(0)
+
+  isActive Boolean @default(true)
+
+  approvedById String?
+  approvedBy   Staff?  @relation("ApprovedByRelation", fields: [approvedById], references: [id])
+
+  applicationId String                @unique
+  application   AstrologerApplication @relation(fields: [applicationId], references: [id])
+
+  // 🔥 ADD THESE (missing reverse relations)
+  addresses   Address[]
+  experiences ExperiencePlatform[]
+  wallet      AstrologerWallet?
+  sessions    Session[]
+  documents   AstrologerDocument[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Address {
@@ -119,17 +126,6 @@ model ExperiencePlatform {
   platformName String
   yearsWorked  Int
   astrologer   Astrologer @relation(fields: [astrologerId], references: [id])
-}
-
-model Interview {
-  id              Int             @id @default(autoincrement())
-  astrologerId    String
-  roundNumber     Int
-  interviewerName String
-  scheduledAt     DateTime
-  status          InterviewStatus @default(SCHEDULED)
-  createdAt       DateTime        @default(now())
-  astrologer      Astrologer      @relation(fields: [astrologerId], references: [id])
 }
 
 model RechargePack {
@@ -238,27 +234,6 @@ enum Gender {
   OTHER
 }
 
-enum ApprovalStatus {
-  PENDING
-  INTERVIEW
-  DOCUMENT_VERIFICATION
-  APPROVED
-  REJECTED
-}
-
-enum InterviewStatus {
-  SCHEDULED
-  PASSED
-  FAILED
-  RESCHEDULED
-}
-
-enum DocumentStatus {
-  PENDING
-  VERIFIED
-  REJECTED
-}
-
 enum DocumentType {
   ID_PROOF
   CERTIFICATE
@@ -334,25 +309,117 @@ model Coupon {
 }
 
 // new astrologer application 
+
+// new astrologer application 
 model AstrologerApplication {
   id String @id @default(uuid())
 
+  // 🔹 BASIC INFO
   name        String
-  phoneNumber String
-  email       String
+  phoneNumber String   @unique
+  email       String   @unique
   dob         DateTime
-  gender      String
+  gender      Gender
   languages   String[]
   skills      String[]
   experience  Int
   about       String?
 
-  status ApplicationStatus @default(PENDING)
+  // 🔥 WORKFLOW STATES
+  applicationStatus ApplicationStatus @default(PENDING)
+  interviewStatus   InterviewStatus   @default(PENDING)
+  documentStatus    DocumentStatus    @default(PENDING)
+  approvalStatus    ApprovalStatus    @default(PENDING)
+
+  // 🔹 INTERVIEW DETAILS
+  interviewerId String?
+  interviewer   Staff?  @relation("InterviewerRelation", fields: [interviewerId], references: [id])
+
+  interviewDate DateTime?
+  interviewTime String?
+  round         Int?
+
+  // 🔹 CREATED / HANDLED BY STAFF
+  staffId String?
+  staff   Staff?  @relation("StaffRelation", fields: [staffId], references: [id])
+
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  astrologer Astrologer?
+
+  @@index([applicationStatus])
+  @@index([interviewStatus])
+  @@index([approvalStatus])
+}
+
+model Staff {
+  id       String @id @default(uuid())
+  name     String
+  email    String @unique
+  password String
+
+  roleId       String
+  departmentId String
+
+  isActive  Boolean @default(true)
+  isDeleted Boolean @default(false)
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 🔥 APPLICATION FLOW
+  interviews          AstrologerApplication[] @relation("InterviewerRelation")
+  createdApplications AstrologerApplication[] @relation("StaffRelation")
+  permissions         StaffPermission[]
+  // 🔥 APPROVED ASTROLOGERS
+  approvedAstrologers Astrologer[]            @relation("ApprovedByRelation")
+
+  department Department @relation(fields: [departmentId], references: [id])
+  role       Role       @relation(fields: [roleId], references: [id])
+}
+
+model Department {
+  id           String   @id @default(uuid())
+  name         String   @unique
+  slug         String   @unique
+  description  String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  isDeleted    Boolean  @default(false)
+  staffMembers Staff[]
+}
+
+model StaffPermission {
+  id           String     @id @default(uuid())
+  staffId      String
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  staff        Staff      @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@unique([staffId, permissionId])
 }
 
 enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum InterviewStatus {
+  PENDING
+  SCHEDULED
+  PASSED
+  REJECTED
+}
+
+enum DocumentStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum ApprovalStatus {
   PENDING
   APPROVED
   REJECTED

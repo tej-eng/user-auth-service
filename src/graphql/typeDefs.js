@@ -152,32 +152,69 @@ module.exports = gql`
   }
 
   #-----new astrologer registeration----#
-  type AstrologerApplication {
-    id: ID!
-    name: String!
-    phoneNumber: String!
-    email: String!
-    dob: String!
-    gender: String!
-    languages: [String!]!
-    skills: [String!]!
-    experience: Int!
-    about: String
-    status: String!
-    createdAt: String!
-  }
+ type AstrologerApplication {
+  id: ID!
+  name: String!
+  phoneNumber: String!
+  email: String!
+  dob: String!
+  gender: String!
+  languages: [String!]!
+  skills: [String!]!
+  experience: Int!
+  about: String
 
-  input CreateApplicationInput {
-    name: String!
-    phoneNumber: String!
-    email: String!
-    dob: String!
-    gender: String!
-    languages: [String!]!
-    skills: [String!]!
-    experience: Int!
-    about: String
-  }
+  applicationStatus: ApplicationStatus!
+  interviewStatus: InterviewStatus!
+  documentStatus: DocumentStatus!
+  approvalStatus: ApprovalStatus!
+
+  interviewerId: String
+  interviewDate: String
+  interviewTime: String
+  round: Int
+
+  createdAt: String!
+  updatedAt: String!
+}
+
+input CreateApplicationInput {
+  name: String!
+  phoneNumber: String!
+  email: String!
+  dob: String!
+  gender: String!
+  languages: [String!]!
+  skills: [String!]!
+  experience: Int!
+  about: String
+}
+
+
+  enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum InterviewStatus {
+  PENDING
+  SCHEDULED
+  PASSED
+  REJECTED
+}
+
+enum DocumentStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
 
   # -----------------------------------------
   # End recharge pack section

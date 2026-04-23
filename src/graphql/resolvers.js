@@ -356,33 +356,33 @@ module.exports = {
 
 
     // new astrologer 
-     createAstrologerApplication: async (_, { input }, { prisma }) => {
-      try {
-        const newApp = await prisma.astrologerApplication.create({
-          data: {
-            name: input.name,
-            phoneNumber: input.phoneNumber,
-            email: input.email,
-            dob: new Date(input.dob),
-            gender: input.gender,
-            languages: input.languages,
-            skills: input.skills,
-            experience: input.experience,
-            about: input.about,
-          },
-        });
+   createAstrologerApplication: async (_, { input }, { prisma }) => {
+  try {
+    if (!input.email || !input.name) {
+      throw new Error("Required fields missing");
+    }
 
-        return newApp;
-      } catch (error) {
-        console.error(error);
+    const newApp = await prisma.astrologerApplication.create({
+      data: {
+        name: input.name,
+        phoneNumber: input.phoneNumber,
+        email: input.email,
+        dob: new Date(input.dob),
+        gender: input.gender,
+        languages: input.languages || [],
+        skills: input.skills || [],
+        experience: Number(input.experience),
+        about: input.about || "",
+      },
+    });
 
-        if (error.code === "P2002") {
-          throw new Error("Email already exists");
-        }
+    return newApp;
+  } catch (error) {
+  console.error("FULL ERROR:", error);
 
-        throw new Error("Failed to submit application");
-      }
-    },
+  throw error; // 👈 temporarily this
+}
+},
   
     
   },
