@@ -355,6 +355,15 @@ type ChatSessionResponse {
 
 
 #-----------------------ENd user sessions-----------------
+
+#--------------upload image response----------------
+scalar Upload
+
+type UploadResponse {
+  url: String
+  filename: String
+}
+#-------------------End upload image response---------
   type Query {
   getUsersDetails(page: Int, limit: Int, search: String): UserPagination!
   getAstrologerListBySearch(searchInput: AstrologerSearchInput): AstrologerPagination!
@@ -383,5 +392,6 @@ type ChatSessionResponse {
     updateUserProfile(input: UpdateUserInput!): User!
     createIntake(input: IntakeInput!): CreateIntakeResponse!
     createReview(input: CreateReviewInput!): CreateReviewResponse!
+    uploadImage(file: Upload!): UploadResponse
 }
 `;

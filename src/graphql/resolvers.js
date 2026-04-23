@@ -5,6 +5,8 @@ const { sendOTPService, verifyOTPService, refreshTokenService } = require("../se
 const { connectMongo, getDb } = require("../config/mongo");
 const { v4: uuidv4 } = require("uuid");
 const GraphQLJSON = require("graphql-type-json");
+const path = require("path");
+const fs = require("fs");
 
 // Helper to log events in MongoDB
 async function logEvent({ userId, action, details }) {
@@ -837,6 +839,48 @@ createReview: async (_, { input }, context) => {
     message: "Review submitted successfully",
     review
   };
+},
+uploadImage: async (_, { file }, context) => {
+  try {
+    if (!context.user) {
+      throw new Error("Unauthorized");
+    }
+
+    const { createReadStream, filename, mimetype } = await file;
+
+    // Validate image
+    if (!mimetype.startsWith("image/")) {
+      throw new Error("Only image files are allowed");
+    }
+
+    // Generate unique filename
+    const ext = filename.split(".").pop();
+    const newFileName = `${Date.now()}-${Math.random()
+      .toString(36)
+      .substring(7)}.${ext}`;
+
+    const uploadPath = path.join(__dirname, "..", "..", "uploads", newFileName);
+
+    // Save file
+    await new Promise((resolve, reject) => {
+      const stream = createReadStream();
+      const out = fs.createWriteStream(uploadPath);
+
+      stream.pipe(out);
+      out.on("finish", resolve);
+      out.on("error", reject);
+    });
+
+    // Return URL (adjust domain)
+    const fileUrl = `https://dhwaniastro.com/uploads/${newFileName}`;
+
+    return {
+      url: fileUrl,
+      filename: newFileName,
+    };
+  } catch (error) {
+    throw new Error(error.message || "Upload failed");
+  }
 },
 
     logout: async (_, __, { user, res }) => {

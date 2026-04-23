@@ -14,6 +14,10 @@ const typeDefs = require("./graphql/typeDefs");
 const resolvers = require("./graphql/resolvers");
 const rateLimiter = require("./middleware/rateLimiter");
 const { verifyAccessToken } = require("./config/jwt");
+const { graphqlUploadExpress } = require("graphql-upload");
+const path = require("path");
+
+
 
 async function startServer() {
   const app = express();
@@ -28,7 +32,11 @@ async function startServer() {
       credentials: true,
     })
   );
-
+  app.use(
+  "/uploads",
+  require("express").static(path.join(__dirname, "..", "..", "uploads"))
+);
+app.use(graphqlUploadExpress({ maxFileSize: 10000000, maxFiles: 1 }));
   app.use(cookieParser());
   app.use(express.json());
   app.use(rateLimiter);
