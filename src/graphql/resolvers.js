@@ -7,6 +7,9 @@ const { v4: uuidv4 } = require("uuid");
 const GraphQLJSON = require("graphql-type-json");
 const path = require("path");
 const fs = require("fs");
+const { GraphQLUpload } = require("graphql-upload");
+
+
 
 // Helper to log events in MongoDB
 async function logEvent({ userId, action, details }) {
@@ -26,6 +29,7 @@ async function logEvent({ userId, action, details }) {
 
 module.exports = {
   JSON: GraphQLJSON,
+  Upload: GraphQLUpload,
   Query: {
     getUsersDetails: async (_, { page = 1, limit = 10, search = "" }, context) => {
   try {
