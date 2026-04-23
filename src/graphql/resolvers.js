@@ -841,13 +841,14 @@ createReview: async (_, { input }, context) => {
   };
 },
 uploadImage: async (_, { file }, context) => {
+  console.log("uploadImage called with file:", file);
   try {
     if (!context.user) {
       throw new Error("Unauthorized");
     }
-
+    console.log("Received file:", file);
     const { createReadStream, filename, mimetype } = await file;
-
+   
     // Validate image
     if (!mimetype.startsWith("image/")) {
       throw new Error("Only image files are allowed");
