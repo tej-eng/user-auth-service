@@ -335,17 +335,20 @@ model AstrologerApplication {
   interviewerId String?
   interviewer   Staff?  @relation("InterviewerRelation", fields: [interviewerId], references: [id])
 
-  interviewDate DateTime?
-  interviewTime String?
-  round         Int?
-
+  interviewDate        DateTime?
+  interviewTime        String?
+  round                Int?
+  interviewRemarks     String?
+  interviewTakenAt     DateTime?
+  interviewScheduledAt DateTime?
   // 🔹 CREATED / HANDLED BY STAFF
-  staffId String?
-  staff   Staff?  @relation("StaffRelation", fields: [staffId], references: [id])
+  staffId              String?
+  staff                Staff?    @relation("StaffRelation", fields: [staffId], references: [id])
 
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-  astrologer Astrologer?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  astrologer   Astrologer?
+  astrologerId String?
 
   @@index([applicationStatus])
   @@index([interviewStatus])

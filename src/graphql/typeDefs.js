@@ -152,31 +152,28 @@ module.exports = gql`
   }
 
   #-----new astrologer registeration----#
- type AstrologerApplication {
-  id: ID!
-  name: String!
-  phoneNumber: String!
-  email: String!
-  dob: String!
-  gender: String!
-  languages: [String!]!
-  skills: [String!]!
-  experience: Int!
-  about: String
+  type AstrologerApplication {
+    id: ID!
+    name: String
+    phoneNumber: String
+    email: String
+    gender: String
+    skills: [String]
+    languages: [String]
+    experience: Int
+    applicationStatus: String!
+    interviewStatus: String
+    interviewRemarks: String
+    documentStatus: DocumentStatus
+    approvalStatus: ApprovalStatus
 
-  applicationStatus: ApplicationStatus!
-  interviewStatus: InterviewStatus!
-  documentStatus: DocumentStatus!
-  approvalStatus: ApprovalStatus!
+    interviewerId: String
+    interviewDate: String
+    interviewTime: String
+    round: Int
 
-  interviewerId: String
-  interviewDate: String
-  interviewTime: String
-  round: Int
-
-  createdAt: String!
-  updatedAt: String!
-}
+    createdAt: String
+  }
 
 input CreateApplicationInput {
   name: String!
