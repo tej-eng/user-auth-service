@@ -878,7 +878,7 @@ uploadImage: async (_, { file }, context) => {
     });
 
     // Return URL (adjust domain)
-    const fileUrl = `https://dhwaniastro.com/uploads/${newFileName}`;
+   const fileUrl = `https://dhwaniastro.com/v2/uploads/${newFileName}`;
 
     return {
       url: fileUrl,
