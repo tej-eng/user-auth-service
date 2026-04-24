@@ -865,6 +865,7 @@ uploadImage: async (_, { file }, context) => {
       .substring(7)}.${ext}`;
 
     const uploadPath = path.join(__dirname, "..", "..", "uploads", newFileName);
+    console.log("Saving file toAAAAAAAAAAAAAAA:", uploadPath);
 
     // Save file
     await new Promise((resolve, reject) => {
@@ -884,6 +885,7 @@ uploadImage: async (_, { file }, context) => {
       filename: newFileName,
     };
   } catch (error) {
+    console.error("uploadImage error:", error);
     throw new Error(error.message || "Upload failed");
   }
 },
