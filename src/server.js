@@ -34,7 +34,7 @@ async function startServer() {
   );
   app.use(
   "/uploads",
-  require("express").static(path.join(__dirname, "..", "..", "uploads"))
+  require("express").static(path.join(__dirname, "uploads"))
 );
 app.use(graphqlUploadExpress({ maxFileSize: 10000000, maxFiles: 1 }));
   app.use(cookieParser());
