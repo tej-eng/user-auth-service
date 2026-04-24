@@ -864,7 +864,7 @@ uploadImage: async (_, { file }, context) => {
       .toString(36)
       .substring(7)}.${ext}`;
 
-    const uploadPath = path.join(__dirname, "..", "..", "uploads", newFileName);
+    const uploadPath = path.join(__dirname, "..", "uploads", newFileName);
     console.log("Saving file toAAAAAAAAAAAAAAA:", uploadPath);
 
     // Save file
