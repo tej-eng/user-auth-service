@@ -536,6 +536,68 @@ getUserSessions: async (_, { filter }, context) => {
     throw new Error(error.message || "Failed to fetch sessions");
   }
 },
+getChatMessages: async (_, { roomId, limit = 50, offset = 0 }, context) => {
+  try {
+    if (!context.user) {
+      throw new Error("Unauthorized");
+    }
+
+    if (!roomId) {
+      throw new Error("roomId is required");
+    }
+
+    const redisKey = `chat_messages:${roomId}`;
+
+    // 🔥 Pagination (important for performance)
+    // Example: last 50 messages
+    const start = -(offset + limit);
+    const end = offset === 0 ? -1 : -(offset + 1);
+
+    const rawMessages = await redis.lrange(redisKey, start, end);
+
+    if (!rawMessages || rawMessages.length === 0) {
+      return [];
+    }
+
+    const parsedMessages = [];
+
+    for (const msg of rawMessages) {
+      try {
+        const parsed = JSON.parse(msg);
+
+        parsedMessages.push({
+          msg_id: parsed.msg_id || "",
+          sender_id: parsed.sender_id || "",
+          room_id: parsed.room_id || "",
+          received_id: parsed.received_id || "",
+          message: parsed.message || "",
+          image: parsed.image || null,
+          sender: parsed.sender || "",
+          replyTo: parsed.replyTo || null,
+
+          // 🔥 FIX TIME FORMAT ISSUE
+          time: isNaN(new Date(parsed.time).getTime())
+            ? new Date().toISOString()
+            : new Date(parsed.time).toISOString(),
+        });
+
+      } catch (err) {
+        console.error("Invalid message JSON:", msg);
+      }
+    }
+
+    // 🔥 Ensure correct order (old → new)
+    parsedMessages.sort(
+      (a, b) => new Date(a.time) - new Date(b.time)
+    );
+
+    return parsedMessages;
+
+  } catch (error) {
+    console.error("getChatMessages error:", error);
+    throw new Error(error.message || "Failed to fetch chat messages");
+  }
+},
 
 // getNextChatRequest: async (_, { astrologerId }) => {
 

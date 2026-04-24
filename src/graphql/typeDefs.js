@@ -364,6 +364,20 @@ type UploadResponse {
   filename: String
 }
 #-------------------End upload image response---------
+
+#------------------start for get live chatmessages-----------------------
+type ChatMessage {
+  msg_id: String
+  sender_id: String
+  room_id: String
+  received_id: String
+  message: String
+  image: String
+  sender: String
+  replyTo: JSON
+  time: String
+}
+#-------------------end for get live chatmessages-----------------------
   type Query {
   getUsersDetails(page: Int, limit: Int, search: String): UserPagination!
   getAstrologerListBySearch(searchInput: AstrologerSearchInput): AstrologerPagination!
@@ -380,6 +394,7 @@ type UploadResponse {
   
   getUserChatHistory(page: Int, limit: Int): [ChatHistory]
   getUserSessions(filter: SessionFilterInput): ChatSessionResponse
+  getChatMessages(roomId: String!): [ChatMessage]
   
   }
 
