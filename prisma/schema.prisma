@@ -317,13 +317,15 @@ model AstrologerApplication {
   // 🔹 BASIC INFO
   name        String
   phoneNumber String   @unique
-  email       String   @unique
+  email       String?   @unique
   dob         DateTime
   gender      Gender
   languages   String[]
   skills      String[]
   experience  Int
   about       String?
+    address     String
+  pincode     String?
 
   // 🔥 WORKFLOW STATES
   applicationStatus ApplicationStatus @default(PENDING)

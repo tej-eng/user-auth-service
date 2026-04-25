@@ -178,13 +178,15 @@ module.exports = gql`
 input CreateApplicationInput {
   name: String!
   phoneNumber: String!
-  email: String!
+  email: String
   dob: String!
   gender: String!
   languages: [String!]!
   skills: [String!]!
   experience: Int!
   about: String
+  address: String
+  pincode: String
 }
 
 

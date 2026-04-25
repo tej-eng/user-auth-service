@@ -8,6 +8,9 @@ const {
 } = require("../services/authService");
 const { connectMongo, getDb } = require("../config/mongo");
 
+const { GraphQLUpload } = require("graphql-upload");
+
+
 // Helper to log events in MongoDB
 async function logEvent({ userId, action, details }) {
   try {
@@ -356,34 +359,36 @@ module.exports = {
 
 
     // new astrologer 
-   createAstrologerApplication: async (_, { input }, { prisma }) => {
-  try {
-    if (!input.email || !input.name) {
-      throw new Error("Required fields missing");
-    }
+    createAstrologerApplication: async (_, { input }, { prisma }) => {
+      try {
+        if (!input.phoneNumber || !input.name) {
+          throw new Error("Required fields missing");
+        }
 
-    const newApp = await prisma.astrologerApplication.create({
-      data: {
-        name: input.name,
-        phoneNumber: input.phoneNumber,
-        email: input.email,
-        dob: new Date(input.dob),
-        gender: input.gender,
-        languages: input.languages || [],
-        skills: input.skills || [],
-        experience: Number(input.experience),
-        about: input.about || "",
-      },
-    });
+        const newApp = await prisma.astrologerApplication.create({
+          data: {
+            name: input.name,
+            phoneNumber: input.phoneNumber,
+            email: input.email,
+            dob: new Date(input.dob),
+            gender: input.gender,
+            languages: input.languages || [],
+            skills: input.skills || [],
+            experience: Number(input.experience),
+            about: input.about || "",
+            address: input.address,
+            pincode: input.pincode,
+          },
+        });
 
-    return newApp;
-  } catch (error) {
-  console.error("FULL ERROR:", error);
+        return newApp;
+      } catch (error) {
+        console.error("FULL ERROR:", error);
 
-  throw error; // 👈 temporarily this
-}
-},
-  
-    
+        throw error; 
+      }
+    },
+
+
   },
 };
