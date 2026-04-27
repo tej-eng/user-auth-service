@@ -25,6 +25,7 @@ model User {
   paymentOrders PaymentOrder[]
   sessions      Session[]
   wallet        UserWallet?
+  Review        Review[]
 }
 
 model Admin {
@@ -75,38 +76,93 @@ model RolePermission {
 }
 
 model Astrologer {
-  id String @id @default(uuid())
+  id           String              @id @default(uuid())
+  name         String
+  displayName  String
+  profilePic   String?
+  gender       Gender
+  email        String              @unique
+  contactNo    String
+  password     String
+  experience   Int
+  aboutEnglish String
+  languages    String[]
+  skills       String[]
+  problems     String[]
+  pricing      AstrologerPricing[]
 
-  name        String
-  email       String   @unique
-  phoneNumber String   @unique
-  gender      Gender
-  languages   String[]
-  skills      String[]
-  experience  Int
-  about       String?
+  tags             String
+  vtags            String
+  approvalStatus   ApprovalStatus               @default(PENDING)
+  createdAt        DateTime                     @default(now())
+  updatedAt        DateTime                     @updatedAt
+  refreshToken     String?
+  approvedById     String?
+  createdById      String?
+  addresses        Address[]
+  approvedBy       Staff?                       @relation("ApprovedByRelation", fields: [approvedById], references: [id])
+  createdBy        Staff?                       @relation("CreatedAstrologers", fields: [createdById], references: [id])
+  documents        AstrologerDocument[]
+  rejectionHistory AstrologerRejectionHistory[]
+  wallet           AstrologerWallet?
 
-  profilePic String?
-  price      Float?
-  rating     Float   @default(0)
+  experiences            ExperiencePlatform[]
+  intakes                Intake[]
+  interviews             Interview[]
+  reviews                Review[]
+  sessions               Session[]
+  astrologerCommissionId String?
 
-  isActive Boolean @default(true)
+  applications AstrologerApplication[]
+}
 
-  approvedById String?
-  approvedBy   Staff?  @relation("ApprovedByRelation", fields: [approvedById], references: [id])
+model AstrologerRejectionHistory {
+  id           Int            @id @default(autoincrement())
+  astrologerId String
+  stage        RejectionStage
+  reason       String
+  rejectedBy   String
+  createdAt    DateTime       @default(now())
+  astrologer   Astrologer     @relation(fields: [astrologerId], references: [id])
 
-  applicationId String                @unique
-  application   AstrologerApplication @relation(fields: [applicationId], references: [id])
+  @@index([astrologerId])
+  @@index([stage])
+}
 
-  // 🔥 ADD THESE (missing reverse relations)
-  addresses   Address[]
-  experiences ExperiencePlatform[]
-  wallet      AstrologerWallet?
-  sessions    Session[]
-  documents   AstrologerDocument[]
+model Review {
+  id           String     @id @default(uuid())
+  userId       String
+  astrologerId String
+  sessionId    String?    @unique
+  rating       Int
+  comment      String?
+  userName     String?
+  astroName    String?
+  createdAt    DateTime   @default(now())
+  astrologer   Astrologer @relation(fields: [astrologerId], references: [id])
+  session      Session?   @relation(fields: [sessionId], references: [id])
+  user         User       @relation(fields: [userId], references: [id])
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  @@index([userId])
+  @@index([astrologerId])
+}
+
+model Interview {
+  id              Int             @id @default(autoincrement())
+  astrologerId    String
+  roundNumber     Int
+  interviewerName String
+  scheduledAt     DateTime
+  status          InterviewStatus @default(SCHEDULED)
+  remarks         String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  astrologer      Astrologer      @relation(fields: [astrologerId], references: [id])
+
+  @@unique([astrologerId, roundNumber])
+  @@index([astrologerId])
+  @@index([scheduledAt])
+  @@index([status])
 }
 
 model Address {
@@ -182,6 +238,7 @@ model Session {
   createdAt    DateTime      @default(now())
   astrologer   Astrologer    @relation(fields: [astrologerId], references: [id])
   user         User          @relation(fields: [userId], references: [id])
+  Review       Review?
 }
 
 model Payment {
@@ -202,13 +259,14 @@ model PaymentOrder {
 }
 
 model Intake {
-  id           String @id @default(uuid())
+  id           String     @id @default(uuid())
   userId       String
   astrologerId String
   name         String
   mobile       String
   birthPlace   String
-  user         User   @relation(fields: [userId], references: [id])
+  user         User       @relation(fields: [userId], references: [id])
+  Astrologer   Astrologer @relation(fields: [astrologerId], references: [id])
 }
 
 model AstrologerDocument {
@@ -312,45 +370,38 @@ model Coupon {
 
 // new astrologer application 
 model AstrologerApplication {
-  id String @id @default(uuid())
-
-  // 🔹 BASIC INFO
-  name        String
-  phoneNumber String   @unique
-  email       String?   @unique
-  dob         DateTime
-  gender      Gender
-  languages   String[]
-  skills      String[]
-  experience  Int
-  about       String?
-    address     String
-  pincode     String?
-
-  // 🔥 WORKFLOW STATES
-  applicationStatus ApplicationStatus @default(PENDING)
-  interviewStatus   InterviewStatus   @default(PENDING)
-  documentStatus    DocumentStatus    @default(PENDING)
-  approvalStatus    ApprovalStatus    @default(PENDING)
-
-  // 🔹 INTERVIEW DETAILS
-  interviewerId String?
-  interviewer   Staff?  @relation("InterviewerRelation", fields: [interviewerId], references: [id])
-
+  id                   String            @id @default(uuid())
+  name                 String
+  phoneNumber          String            @unique
+  email                String?           @unique
+  dob                  DateTime
+  gender               Gender
+  languages            String[]
+  skills               String[]
+  experience           Int
+  about                String?
+  address              String
+  pincode              String?
+  applicationStatus    ApplicationStatus @default(PENDING)
+  interviewStatus      InterviewStatus   @default(PENDING)
+  documentStatus       DocumentStatus    @default(PENDING)
+  approvalStatus       ApprovalStatus    @default(PENDING)
+  interviewerId        String?
+  interviewer          Staff?            @relation("InterviewerRelation", fields: [interviewerId], references: [id])
   interviewDate        DateTime?
   interviewTime        String?
   round                Int?
   interviewRemarks     String?
   interviewTakenAt     DateTime?
   interviewScheduledAt DateTime?
-  // 🔹 CREATED / HANDLED BY STAFF
   staffId              String?
-  staff                Staff?    @relation("StaffRelation", fields: [staffId], references: [id])
+  staff                Staff?            @relation("StaffRelation", fields: [staffId], references: [id])
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  astrologerId         String?
+  astrologer           Astrologer?       @relation(fields: [astrologerId], references: [id])
 
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  astrologer   Astrologer?
-  astrologerId String?
+  kycDetail KycDetail?
 
   @@index([applicationStatus])
   @@index([interviewStatus])
@@ -378,9 +429,9 @@ model Staff {
   permissions         StaffPermission[]
   // 🔥 APPROVED ASTROLOGERS
   approvedAstrologers Astrologer[]            @relation("ApprovedByRelation")
-
-  department Department @relation(fields: [departmentId], references: [id])
-  role       Role       @relation(fields: [roleId], references: [id])
+  createdAstrologers  Astrologer[]            @relation("CreatedAstrologers")
+  department          Department              @relation(fields: [departmentId], references: [id])
+  role                Role                    @relation(fields: [roleId], references: [id])
 }
 
 model Department {
@@ -428,4 +479,94 @@ enum ApprovalStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+model KycDetail {
+  id String @id @default(uuid())
+
+  // 🔗 relation
+  astrologerApplicationId String                @unique
+  application             AstrologerApplication @relation(fields: [astrologerApplicationId], references: [id])
+
+  // 🏦 BANK
+  accountHolderName String?
+  accountNumber     String?
+  bankName          String?
+  ifsc              String?
+  branchName        String?
+  panNumber         String?
+
+  // 📄 DOCS
+  profileImage  String?
+  aadhaarImage  String?
+  panImage      String?
+  passbookImage String?
+
+  // 🔥 status
+  status DocumentStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Notification {
+  id String @id @default(uuid())
+
+  staffId String
+  message String
+  isRead  Boolean @default(false)
+
+  createdAt DateTime @default(now())
+}
+
+model PricingConfig {
+  id String @id @default(uuid())
+
+  isFirstOfferEnabled Boolean @default(true)
+  firstChatPrice      Int     @default(0)
+  firstCallPrice      Int     @default(0)
+
+  isSecondOfferEnabled Boolean @default(false)
+  secondChatPrice      Int     @default(0)
+  secondCallPrice      Int     @default(0)
+}
+
+enum OfferType {
+  FREE
+  ONE_RUPEE
+  ORIGINAL
+}
+
+model UserOfferUsage {
+  id     String @id @default(uuid())
+  userId String @unique
+
+  visitCount Int @default(0)
+
+  usedFirst  Boolean @default(false)
+  usedSecond Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AstrologerPricing {
+  id                String      @id @default(uuid())
+  astrologerId      String
+  type              PricingType
+  price             Float
+  offerPrice        Float?
+  commissionPercent Float?
+  isActive          Boolean     @default(true)
+
+  astrologer Astrologer @relation(fields: [astrologerId], references: [id])
+
+  @@unique([astrologerId, type])
+}
+
+enum PricingType {
+  CHAT
+  CALL
+  VIDEO
+  AUDIO
 }

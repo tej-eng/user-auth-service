@@ -6,10 +6,12 @@ const {
   verifyOTPService,
   refreshTokenService,
 } = require("../services/authService");
-const { connectMongo, getDb } = require("../config/mongo");
 
-const { GraphQLUpload } = require("graphql-upload");
+const { PrismaClient } = require("@prisma/client");
+const GraphQLUpload = require("graphql-upload/GraphQLUpload.mjs");
+const GraphQLJSON = require("graphql-type-json");
 
+const { connectMongo } = require("../../../admin-auth-service/src/config/mongo");
 
 // Helper to log events in MongoDB
 async function logEvent({ userId, action, details }) {

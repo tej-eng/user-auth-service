@@ -1,9 +1,8 @@
 require("dotenv").config();
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const cookie = require("cookie");
  const helmet = require("helmet");
 const { ApolloServer } = require("@apollo/server");
 const { expressMiddleware } = require("@apollo/server/express4");
@@ -16,6 +15,7 @@ const resolvers = require("./graphql/resolvers");
 const rateLimiter = require("./middleware/rateLimiter");
 const { verifyAccessToken } = require("./config/jwt");
 const aiAnalysisRoute = require("./routes/aiAnalysis");
+const prisma = require("./config/prisma");
 
 async function startServer() {
   const app = express();
@@ -58,7 +58,7 @@ app.use("/api", aiAnalysisRoute);
     }
   }
 
-  return { user, prisma }; // ✅ FIX
+  return { user, prisma }; 
 },
     })
   );
