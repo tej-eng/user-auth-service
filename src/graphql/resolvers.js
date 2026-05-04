@@ -799,7 +799,7 @@ createIntake: async (_, { input }, context) => {
       phoneNumber: `${input.countryCode}${input.mobile}`,
       createdAt: Date.now()
   };
-  const queueLength = await redis.llen(queueKey);
+  const queueLength = await redis.llen(`chat_queue:${input.astrologerId}`);
 
   if (queueLength > 5) {
     return {
