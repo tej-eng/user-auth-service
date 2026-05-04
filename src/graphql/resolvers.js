@@ -801,7 +801,7 @@ createIntake: async (_, { input }, context) => {
   };
   const queueLength = await redis.llen(`chat_queue:${input.astrologerId}`);
 
-  if (queueLength > 5) {
+  if (queueLength > 4) {
     return {
     roomId,
     chatTime,
