@@ -779,74 +779,124 @@ createIntake: async (_, { input }, context) => {
       chatId: roomId
     }
   });
-
   const queueData = {
+          user_id: userId,
+          astrologerId: input.astrologerId,
+          userName: input.name,
+          countryCode: input.countryCode,
+          mobile: input.mobile,
+          gender: input.gender,
+          dateOfBirth: new Date(input.birthDate),
+          timeOfBirth: input.birthTime,
+          occupation: input.occupation,
+          location: input.birthPlace,
+          astro_id: input.astrologerId, // for testing with fixed astrologer, can be changed to input.astrologerId in production
+          is_promotional: false,  
+          room_id: roomId,
+          maximum_time: chatTime,
+          user_image: user.profilePic || "",
+          phoneNumber: `${input.countryCode}${input.mobile}`,
+          createdAt: Date.now()
+      };
+if(input.requestType.toUpperCase() === "CALL") {
+  const queueLength = await redis.llen(`call_queue:${input.astrologerId}`);
+      if (queueLength > 4) {
+        return {
+        roomId,
+        chatTime,
+        intakeId: intake.id,
+        message: "Sorry, queue is too long. Please try another astrologer.",
+      };
+      }
+
+      const callUserQueueKey = `call_user_in_queue:${input.astrologerId}`;
+
+      // Check duplicate user
+      const alreadyExists = await redis.sismember(callUserQueueKey, userId);
+      if (alreadyExists) {
+      return {
+        roomId,
+        chatTime,
+        intakeId: intake.id,
+        message: "duplicate request. User is already in queue for this astrologer",
+      };
+      }
+      const exists = await redis.exists(`call_request_data:${roomId}`);
+      if (exists) return;
+      await redis.set(
+        `call_request_data:${roomId}`,
+        JSON.stringify(queueData),
+        "EX",
+        7200 //hours to expire, in case something goes wrong with the queue processing, we don't want stale data hanging around forever
+      );
+
+      await redis.rpush(`call_queue:${input.astrologerId}`, JSON.stringify({
       user_id: userId,
-      astrologerId: input.astrologerId,
-      userName: input.name,
-      countryCode: input.countryCode,
-      mobile: input.mobile,
-      gender: input.gender,
-      dateOfBirth: new Date(input.birthDate),
-      timeOfBirth: input.birthTime,
-      occupation: input.occupation,
-      location: input.birthPlace,
-      astro_id: input.astrologerId, // for testing with fixed astrologer, can be changed to input.astrologerId in production
-      is_promotional: false,  
-      room_id: roomId,
-      maximum_time: chatTime,
-      user_image: user.profilePic || "",
-      phoneNumber: `${input.countryCode}${input.mobile}`,
-      createdAt: Date.now()
-  };
-  const queueLength = await redis.llen(`chat_queue:${input.astrologerId}`);
+      roomId: roomId,
+      maximum_time: chatTime
+      }));
 
-  if (queueLength > 4) {
-    return {
-    roomId,
-    chatTime,
-    intakeId: intake.id,
-    message: "Sorry, queue is too long. Please try another astrologer.",
-  };
-  }
+      await redis.sadd(callUserQueueKey, userId);
 
-  const userQueueKey = `user_in_queue:${input.astrologerId}`;
+      //  Return Response
+      return {
+        roomId,
+        chatTime,
+        intakeId: intake.id,
+        message: "request send successfully",
+      };
 
-// Check duplicate user
-const alreadyExists = await redis.sismember(userQueueKey, userId);
-if (alreadyExists) {
-  return {
-    roomId,
-    chatTime,
-    intakeId: intake.id,
-    message: "duplicate request. User is already in queue for this astrologer",
-  };
 }
-  
-  const exists = await redis.exists(`chat_request_data:${roomId}`);
- if (exists) return;
-  await redis.set(
-    `chat_request_data:${roomId}`,
-    JSON.stringify(queueData),
-    "EX",
-    7200 //hours to expire, in case something goes wrong with the queue processing, we don't want stale data hanging around forever
-  );
- 
-  await redis.rpush(`chat_queue:${input.astrologerId}`, JSON.stringify({
-  user_id: userId,
-  roomId: roomId,
-  maximum_time: chatTime
-}));
+else if(input.requestType.toUpperCase() === "CHAT") 
+  {
+      const queueLength = await redis.llen(`chat_queue:${input.astrologerId}`);
+      if (queueLength > 4) {
+        return {
+        roomId,
+        chatTime,
+        intakeId: intake.id,
+        message: "Sorry, queue is too long. Please try another astrologer.",
+      };
+      }
 
-await redis.sadd(userQueueKey, userId);
+      const chatUserQueueKey = `chat_user_in_queue:${input.astrologerId}`;
 
-  //  Return Response
-  return {
-    roomId,
-    chatTime,
-    intakeId: intake.id,
-    message: "request send successfully",
-  };
+      // Check duplicate user
+      const alreadyExists = await redis.sismember(chatUserQueueKey, userId);
+      if (alreadyExists) {
+      return {
+        roomId,
+        chatTime,
+        intakeId: intake.id,
+        message: "duplicate request. User is already in queue for this astrologer",
+      };
+      }
+
+      const exists = await redis.exists(`chat_request_data:${roomId}`);
+      if (exists) return;
+      await redis.set(
+        `chat_request_data:${roomId}`,
+        JSON.stringify(queueData),
+        "EX",
+        7200 //hours to expire, in case something goes wrong with the queue processing, we don't want stale data hanging around forever
+      );
+
+      await redis.rpush(`chat_queue:${input.astrologerId}`, JSON.stringify({
+      user_id: userId,
+      roomId: roomId,
+      maximum_time: chatTime
+      }));
+
+      await redis.sadd(chatUserQueueKey, userId);
+
+      //  Return Response
+      return {
+        roomId,
+        chatTime,
+        intakeId: intake.id,
+        message: "request send successfully",
+      };
+  }
 },
 createReview: async (_, { input }, context) => {
   console.log("createReview input:", input);
