@@ -727,7 +727,7 @@ getChatMessages: async (_, { roomId, limit = 50, offset = 0 }, context) => {
 
     // intake for chat 
 
- createIntake: async (_, { input }, context) => {
+createIntake: async (_, { input }, context) => {
   const userId = context.user.id;
 
   //  Generate Room ID
@@ -799,6 +799,16 @@ getChatMessages: async (_, { roomId, limit = 50, offset = 0 }, context) => {
       phoneNumber: `${input.countryCode}${input.mobile}`,
       createdAt: Date.now()
   };
+  const queueLength = await redis.llen(queueKey);
+
+  if (queueLength > 5) {
+    return {
+      roomId: null,
+      chatTime: 0,
+      intakeId: null,
+      message: "Sorry, queue is too long. Please try another astrologer.",
+    };
+  }
 
   const userQueueKey = `user_in_queue:${input.astrologerId}`;
 
