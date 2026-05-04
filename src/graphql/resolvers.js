@@ -803,11 +803,11 @@ createIntake: async (_, { input }, context) => {
 
   if (queueLength > 5) {
     return {
-      roomId: null,
-      chatTime: 0,
-      intakeId: null,
-      message: "Sorry, queue is too long. Please try another astrologer.",
-    };
+    roomId,
+    chatTime,
+    intakeId: intake.id,
+    message: "Sorry, queue is too long. Please try another astrologer.",
+  };
   }
 
   const userQueueKey = `user_in_queue:${input.astrologerId}`;
