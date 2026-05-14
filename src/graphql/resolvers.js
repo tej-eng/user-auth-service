@@ -835,7 +835,7 @@ if(input.requestType.toUpperCase() === "CALL" || input.requestType.toUpperCase()
       user_id: userId,
       roomId: roomId,
       maximum_time: chatTime,
-      type: input.requestType.toUpperCase() === "CHAT" ? "CHAT":"CALL"
+      type: input.requestType.toUpperCase() === "CHAT" ? "chat":"call"
       }));
 
       await redis.sadd(userQueueKey, userId);
