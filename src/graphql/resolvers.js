@@ -600,23 +600,37 @@ getChatMessages: async (_, { roomId, limit = 50, offset = 0 }, context) => {
   }
 },
 
-// getNextChatRequest: async (_, { astrologerId }) => {
+recentIntakes: async (_, __, context) => {
+  try {
+    const userId = context.user.id;
 
-//   const request = await redis.lindex(
-//     `chat_queue:${astrologerId}`,
-//     0
-//   );
+    if (!userId) {
+      throw new Error("Unauthorized");
+    }
 
-//   if (!request) return null;
+    const recentIntakes = await prisma.intake.findMany({
+      where: {
+        userId: userId
+      },
+      orderBy: {
+        createdAt: "desc"
+      },
+      take: 5,
+      include: {
+        astrologer: true // optional if you want astrologer details
+      }
+    });
 
-//   return JSON.parse(request);
-// },
-// skipChatRequest: async (_, { astrologerId }) => {
+    return {
+      success: true,
+      message: "Recent intake fetched successfully",
+      data: recentIntakes
+    };
 
-//   await redis.lpop(`chat_queue:${astrologerId}`);
-
-//   return true;
-// },
+  } catch (error) {
+    throw new Error(error.message);
+  }
+},
 
 
 
@@ -851,6 +865,9 @@ if(input.requestType.toUpperCase() === "CALL" || input.requestType.toUpperCase()
 }
 
 },
+
+
+
 createReview: async (_, { input }, context) => {
   console.log("createReview input:", input);
   const userId = context.user.id;

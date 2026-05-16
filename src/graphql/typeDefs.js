@@ -378,6 +378,14 @@ type ChatMessage {
   time: String
 }
 #-------------------end for get live chatmessages-----------------------
+
+#------------------start recent intake response-----------------------
+type RecentIntakeResponse {
+  success: Boolean
+  message: String
+  data: [Intake]
+}
+#-------------------end recent intake response-----------------------
   type Query {
   getUsersDetails(page: Int, limit: Int, search: String): UserPagination!
   getAstrologerListBySearch(searchInput: AstrologerSearchInput): AstrologerPagination!
@@ -395,6 +403,7 @@ type ChatMessage {
   getUserChatHistory(page: Int, limit: Int): [ChatHistory]
   getUserSessions(filter: SessionFilterInput): ChatSessionResponse
   getChatMessages(roomId: String!): [ChatMessage]
+  recentIntakes: RecentIntakeResponse
   
   }
 
