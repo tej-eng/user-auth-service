@@ -386,6 +386,17 @@ type RecentIntakeResponse {
   data: [Intake]
 }
 #-------------------end recent intake response-----------------------
+#------------------start code for razorpay order-----------------------
+input CreateRazorpayOrderInput {
+  rechargePackId: String!
+}
+type RazorpayOrderResponse {
+  success: Boolean!
+  orderId: String
+  amount: Int
+  currency: String
+}
+#--------------------end code for razorpay order-----------------------
   type Query {
   getUsersDetails(page: Int, limit: Int, search: String): UserPagination!
   getAstrologerListBySearch(searchInput: AstrologerSearchInput): AstrologerPagination!
@@ -417,5 +428,6 @@ type RecentIntakeResponse {
     createIntake(input: IntakeInput!): CreateIntakeResponse!
     createReview(input: CreateReviewInput!): CreateReviewResponse!
     uploadImage(file: Upload!): UploadResponse
+   createRazorpayOrder(input: CreateRazorpayOrderInput!): RazorpayOrderResponse
 }
 `;

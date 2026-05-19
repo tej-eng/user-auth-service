@@ -9,8 +9,11 @@ const path = require("path");
 const fs = require("fs");
 const { GraphQLUpload } = require("graphql-upload");
 const { type } = require("os");
-
-
+const Razorpay = require("razorpay");
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
 
 // Helper to log events in MongoDB
 async function logEvent({ userId, action, details }) {
@@ -979,6 +982,75 @@ uploadImage: async (_, { file }, context) => {
   } catch (error) {
     console.error("uploadImage error:", error);
     throw new Error(error.message || "Upload failed");
+  }
+},
+
+createRazorpayOrder: async (_, { input }, context) => {
+  try {
+    // ======================
+    // AUTH CHECK
+    // ======================
+    if (!context.user) {
+      throw new Error("Unauthorized");
+    }
+
+    const userId = context.user.id;
+
+    const { rechargePackId } = input;
+
+    // ======================
+    // VALIDATE PACK
+    // ======================
+    const pack = await prisma.rechargePack.findUnique({
+      where: { id: rechargePackId },
+    });
+
+    if (!pack) {
+      throw new Error("Recharge pack not found");
+    }
+
+    // ======================
+    // CREATE ORDER ID
+    // ======================
+    const receiptId = uuidv4();
+
+    // ======================
+    // CREATE RAZORPAY ORDER
+    // ======================
+    const order = await razorpay.orders.create({
+      amount: Math.round(pack.price * 100), // paise
+      currency: "INR",
+      receipt: receiptId,
+      notes: {
+        userId,
+        rechargePackId: pack.id,
+        coins: pack.coins,
+      },
+    });
+
+    // ======================
+    // OPTIONAL: SAVE ORDER IN DB
+    // ======================
+    await prisma.paymentOrder.create({
+      data: {
+        userId,
+        rechargePackId: pack.id,
+        razorpayOrderId: order.id,
+        amount: pack.price,
+        coins: pack.coins,
+        status: "CREATED",
+      },
+    });
+
+    return {
+      success: true,
+      orderId: order.id,
+      amount: order.amount,
+      currency: order.currency,
+    };
+  } catch (error) {
+    console.error("createRazorpayOrder error:", error);
+    throw new Error(error.message || "Failed to create order");
   }
 },
 

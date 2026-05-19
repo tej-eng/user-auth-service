@@ -303,7 +303,7 @@ model Permission {
   @@index([name])       
   @@index([createdAt])  
 }
-
+// need to verify
 model RolePermission {
   id           String @id @default(uuid())
   roleId       String
@@ -554,6 +554,8 @@ model PaymentOrder {
   @@index([razorpayOrderId])
   @@index([status])
 }
+
+// needddddddddddddddddddd
 model CommissionConfig {
   id            String  @id @default(uuid())
 
@@ -625,4 +627,16 @@ model Message {
   @@index([roomId])
   @@index([sessionId])
   @@index([senderId])
+}
+
+model PaymentOrder {
+  id              String   @id @default(uuid())
+  userId          String
+  rechargePackId  String?
+  razorpayOrderId String   @unique
+  amount          Int
+  coins           Int
+  status          String   @default("CREATED") // CREATED, PAID, FAILED
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
