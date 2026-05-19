@@ -629,14 +629,4 @@ model Message {
   @@index([senderId])
 }
 
-model PaymentOrder {
-  id              String   @id @default(uuid())
-  userId          String
-  rechargePackId  String?
-  razorpayOrderId String   @unique
-  amount          Int
-  coins           Int
-  status          String   @default("CREATED") // CREATED, PAID, FAILED
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-}
+
