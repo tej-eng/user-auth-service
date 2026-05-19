@@ -555,7 +555,7 @@ model PaymentOrder {
   @@index([status])
 }
 
-// needddddddddddddddddddd
+
 model CommissionConfig {
   id            String  @id @default(uuid())
 
@@ -564,7 +564,7 @@ model CommissionConfig {
 
   createdAt     DateTime @default(now())
 
-  // only one config active
+  
   @@unique([createdAt])
 }
 
