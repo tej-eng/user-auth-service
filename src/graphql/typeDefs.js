@@ -75,6 +75,7 @@ input AstrologerSearchInput {
   sortOrder: SortOrder # ASC or DESC
   limit: Int           # Items per page
   page: Int            # Page number
+  type: String
 }
 
 enum SortField {

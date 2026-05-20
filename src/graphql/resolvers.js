@@ -213,60 +213,105 @@ getUserWalletTransactions: async (_, { filter }, context) => {
     throw new Error(error.message);
   }
 },
-    getAstrologerListBySearch: async (_, { searchInput }) => {
-      try {
-        const { query, sortField, sortOrder, limit = 10, page = 1 } = searchInput || {};
-        const skip = (page - 1) * limit;
+   getAstrologerListBySearch: async (_, { searchInput }) => {
+  try {
+    const {
+      query,
+      sortField,
+      sortOrder,
+      limit = 10,
+      page = 1,
+      type = "CHAT", // CHAT / CALL / VIDEO / AUDIO
+    } = searchInput || {};
 
-        let orderBy = { createdAt: "desc" };
-        if (sortField) {
-          const sortMap = { EXPERIENCE: "experience", PRICE: "price", RATING: "rating" };
-          if (sortMap[sortField]) {
-            orderBy = { [sortMap[sortField]]: sortOrder === "ASC" ? "asc" : "desc" };
-          }
-        }
+    const skip = (page - 1) * limit;
 
-        const where = {
-          approvalStatus: "APPROVED",
-          ...(query && {
-            OR: [
-              { name: { contains: query, mode: "insensitive" } },
-              { skills: { has: query } },
-              { languages: { has: query } },
-            ],
-          }),
+    let orderBy = { createdAt: "desc" };
+
+    if (sortField) {
+      const sortMap = {
+        EXPERIENCE: "experience",
+        RATING: "rating",
+      };
+
+      if (sortMap[sortField]) {
+        orderBy = {
+          [sortMap[sortField]]:
+            sortOrder === "ASC" ? "asc" : "desc",
         };
-
-        const [astrologers, totalCount] = await Promise.all([
-          prisma.astrologer.findMany({
-            where,
-            orderBy,
-            skip,
-            take: limit,
-            select: {
-              id: true,
-              profilePic: true,
-              name: true,
-              experience: true,
-              price: true,
-              rating: true,
-              skills: true,
-              languages: true,
-            },
-          }),
-          prisma.astrologer.count({ where }),
-        ]);
-
-        return {
-          data: astrologers,
-          totalCount,
-          currentPage: page,
-          totalPages: Math.ceil(totalCount / limit),
-        };
-      } catch (error) {
-        throw new Error(error.message || "Failed to fetch astrologer list");
       }
-    },
+    }
+
+    const where = {
+      ...(query && {
+        OR: [
+          {
+            name: {
+              contains: query,
+              mode: "insensitive",
+            },
+          },
+          {
+            skills: {
+              has: query,
+            },
+          },
+          {
+            languages: {
+              has: query,
+            },
+          },
+        ],
+      }),
+    };
+
+    const [astrologers, totalCount] = await Promise.all([
+      prisma.astrologer.findMany({
+        where,
+        orderBy,
+        skip,
+        take: limit,
+
+        include: {
+          pricing: {
+            where: {
+              type,
+              isActive: true,
+            },
+          },
+        },
+      }),
+
+      prisma.astrologer.count({ where }),
+    ]);
+
+    const formattedData = astrologers.map((astro) => ({
+      id: astro.id,
+      profilePic: astro.profilePic,
+      name: astro.name,
+      experience: astro.experience,
+      rating: astro.rating,
+      skills: astro.skills,
+      languages: astro.languages,
+
+      price: astro.pricing?.[0]?.price || 0,
+      offerPrice: astro.pricing?.[0]?.offerPrice || 0,
+      commissionPercent:
+        astro.pricing?.[0]?.commissionPercent || 0,
+    }));
+
+    return {
+      data: formattedData,
+      totalCount,
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit),
+    };
+  } catch (error) {
+    throw new Error(
+      error.message || "Failed to fetch astrologer list"
+    );
+  }
+},
   getRechargePacks: async (_, __, context) => {
   const packs = await prisma.rechargePack.findMany({
     where: { isActive: true },
@@ -552,7 +597,7 @@ getChatMessages: async (_, { roomId, limit = 50, offset = 0 }, context) => {
 
     const redisKey = `chat_messages:${roomId}`;
 
-    // 🔥 Pagination (important for performance)
+    //  Pagination (important for performance)
     // Example: last 50 messages
     const start = -(offset + limit);
     const end = offset === 0 ? -1 : -(offset + 1);
@@ -579,7 +624,7 @@ getChatMessages: async (_, { roomId, limit = 50, offset = 0 }, context) => {
           sender: parsed.sender || "",
           replyTo: parsed.replyTo || null,
 
-          // 🔥 FIX TIME FORMAT ISSUE
+          //  FIX TIME FORMAT ISSUE
           time: isNaN(new Date(parsed.time).getTime())
             ? new Date().toISOString()
             : new Date(parsed.time).toISOString(),
@@ -590,7 +635,7 @@ getChatMessages: async (_, { roomId, limit = 50, offset = 0 }, context) => {
       }
     }
 
-    // 🔥 Ensure correct order (old → new)
+    //  Ensure correct order (old → new)
     parsedMessages.sort(
       (a, b) => new Date(a.time) - new Date(b.time)
     );
