@@ -387,14 +387,16 @@ type RecentIntakeResponse {
 }
 #-------------------end recent intake response-----------------------
 #------------------start code for razorpay order-----------------------
-input CreateRazorpayOrderInput {
+
+input CreateOrderInput {
   rechargePackId: String!
 }
-type RazorpayOrderResponse {
+
+type CreateOrderResponse {
   success: Boolean!
-  orderId: String
-  amount: Int
-  currency: String
+  orderId: String!
+  amount: Int!
+  currency: String!
 }
 #--------------------end code for razorpay order-----------------------
   type Query {
@@ -428,6 +430,6 @@ type RazorpayOrderResponse {
     createIntake(input: IntakeInput!): CreateIntakeResponse!
     createReview(input: CreateReviewInput!): CreateReviewResponse!
     uploadImage(file: Upload!): UploadResponse
-   createRazorpayOrder(input: CreateRazorpayOrderInput!): RazorpayOrderResponse
+    createOrder(input: CreateOrderInput!): CreateOrderResponse!
 }
 `;

@@ -985,7 +985,7 @@ uploadImage: async (_, { file }, context) => {
   }
 },
 
-createRazorpayOrder: async (_, { input }, context) => {
+createOrder: async (_, { input }, context) => {
   try {
     // ======================
     // AUTH CHECK
