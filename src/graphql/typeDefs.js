@@ -58,15 +58,16 @@ module.exports = gql`
 # -----------------------------------------
 
 type Astrologer {
-  id: ID!
+  id: ID
+  profilePic: String
   name: String
   experience: Int
   price: Float
+  offerPrice: Float
+  commissionPercent: Float
   rating: Float
   skills: [String]
   languages: [String]
-  profilePic: String
-  status: Boolean
 }
 
 input AstrologerSearchInput {
