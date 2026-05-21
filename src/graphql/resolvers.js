@@ -1099,39 +1099,49 @@ createOrder: async (_, { input }, context) => {
   }
 },
     // new astrologer
-    createAstrologerApplication: async (_, { input }, { prisma }) => {
-      try {
-        console.log("createAstrologerApplication inputAAAAAAAAA:", input);
-        if (!input.phoneNumber || !input.name) {
-          throw new Error("Required fields missing");
-        }
-        console.log("PRISMA MODEL:", prisma.astrologerApplication);
-        const newApp = await prisma.astrologerApplication.create({
-          data: {
-            name: input.name,
-            phoneNumber: input.phoneNumber,
-            email: input.email,
-            dob: new Date(input.dob),
-            gender: input.gender,
-            languages: input.languages || [],
-            problems: input.problems || [],
+    // new astrologer
+createAstrologerApplication: async (_, { input }) => {
+  try {
+    console.log("createAstrologerApplication input:", input);
 
-            skills: input.skills || [],
-            experience: Number(input.experience),
-            about: input.about || "",
-            address: input.address,
-            pincode: input.pincode,
-          },
-        });
-        console.log("createAstrologerApplication result:", newApp);
+    if (!input.phoneNumber || !input.name) {
+      throw new Error("Required fields missing");
+    }
 
-        return newApp;
-      } catch (error) {
-        console.error("FULL ERROR:", error);
+    console.log(
+      "PRISMA MODEL:",
+      prisma.astrologerApplication
+    );
 
-        throw error;
-      }
-    },
+    const newApp =
+      await prisma.astrologerApplication.create({
+        data: {
+          name: input.name,
+          phoneNumber: input.phoneNumber,
+          email: input.email,
+          dob: input.dob ? new Date(input.dob) : null,
+          gender: input.gender,
+          languages: input.languages || [],
+          problems: input.problems || [],
+          skills: input.skills || [],
+          experience: Number(input.experience) || 0,
+          about: input.about || "",
+          address: input.address || "",
+          pincode: input.pincode || "",
+        },
+      });
+
+    console.log(
+      "createAstrologerApplication result:",
+      newApp
+    );
+
+    return newApp;
+  } catch (error) {
+    console.error("FULL ERROR:", error);
+    throw error;
+  }
+},
 
     logout: async (_, __, { user, res }) => {
       try {
