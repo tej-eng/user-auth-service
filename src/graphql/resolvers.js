@@ -1098,6 +1098,38 @@ createOrder: async (_, { input }, context) => {
     throw new Error(error.message || "Failed to create order");
   }
 },
+    // new astrologer
+    createAstrologerApplication: async (_, { input }, { prisma }) => {
+      try {
+        if (!input.phoneNumber || !input.name) {
+          throw new Error("Required fields missing");
+        }
+
+        const newApp = await prisma.astrologerApplication.create({
+          data: {
+            name: input.name,
+            phoneNumber: input.phoneNumber,
+            email: input.email,
+            dob: new Date(input.dob),
+            gender: input.gender,
+            languages: input.languages || [],
+            problems: input.problems || [],
+
+            skills: input.skills || [],
+            experience: Number(input.experience),
+            about: input.about || "",
+            address: input.address,
+            pincode: input.pincode,
+          },
+        });
+
+        return newApp;
+      } catch (error) {
+        console.error("FULL ERROR:", error);
+
+        throw error;
+      }
+    },
 
     logout: async (_, __, { user, res }) => {
       try {

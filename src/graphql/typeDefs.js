@@ -401,6 +401,47 @@ type CreateOrderResponse {
   currency: String!
 }
 #--------------------end code for razorpay order-----------------------
+#------------------start code for astrologer application-----------------------
+ input CreateApplicationInput {
+    name: String!
+    phoneNumber: String!
+    email: String
+    dob: String!
+    gender: String!
+    languages: [String!]!
+    problems: [String!]!
+
+    skills: [String!]!
+    experience: Int!
+    about: String
+    address: String
+    pincode: String
+  }
+      type AstrologerApplication {
+    id: ID!
+    name: String
+    phoneNumber: String
+    email: String
+    gender: String
+    skills: [String]
+    languages: [String]
+    problems: [String]
+
+    experience: Int
+    applicationStatus: String!
+    interviewStatus: String
+    interviewRemarks: String
+    documentStatus: DocumentStatus
+    approvalStatus: ApprovalStatus
+
+    interviewerId: String
+    interviewDate: String
+    interviewTime: String
+    round: Int
+
+    createdAt: String
+  }
+#-------------------start code for astrologer application-----------------------
   type Query {
   getUsersDetails(page: Int, limit: Int, search: String): UserPagination!
   getAstrologerListBySearch(searchInput: AstrologerSearchInput): AstrologerPagination!
@@ -433,5 +474,8 @@ type CreateOrderResponse {
     createReview(input: CreateReviewInput!): CreateReviewResponse!
     uploadImage(file: Upload!): UploadResponse
     createOrder(input: CreateOrderInput!): CreateOrderResponse!
+      createAstrologerApplication(
+      input: CreateApplicationInput!
+    ): AstrologerApplication!
 }
 `;
