@@ -402,7 +402,27 @@ type CreateOrderResponse {
 }
 #--------------------end code for razorpay order-----------------------
 #------------------start code for astrologer application-----------------------
-
+enum ApplicationStatus {
+    PENDING
+    APPROVED
+    REJECTED
+  }
+  enum InterviewStatus {
+    PENDING
+    SCHEDULED
+    PASSED
+    REJECTED
+  }
+  enum DocumentStatus {
+    PENDING
+    VERIFIED
+    REJECTED
+  }
+    enum ApprovalStatus {
+    PENDING
+    APPROVED
+    REJECTED
+  }
 
  input CreateApplicationInput {
     name: String!
@@ -419,7 +439,30 @@ type CreateOrderResponse {
     address: String
     pincode: String
   }
-    
+  type AstrologerApplication {
+    id: ID!
+    name: String
+    phoneNumber: String
+    email: String
+    gender: String
+    skills: [String]
+    languages: [String]
+    problems: [String]
+
+    experience: Int
+    applicationStatus: String!
+    interviewStatus: String
+    interviewRemarks: String
+    documentStatus: DocumentStatus
+    approvalStatus: ApprovalStatus
+
+    interviewerId: String
+    interviewDate: String
+    interviewTime: String
+    round: Int
+
+    createdAt: String
+  }
 #-------------------start code for astrologer application-----------------------
   type Query {
   getUsersDetails(page: Int, limit: Int, search: String): UserPagination!
