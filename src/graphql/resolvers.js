@@ -1105,7 +1105,7 @@ createOrder: async (_, { input }, context) => {
         if (!input.phoneNumber || !input.name) {
           throw new Error("Required fields missing");
         }
-
+        console.log("PRISMA MODEL:", prisma.astrologerApplication);
         const newApp = await prisma.astrologerApplication.create({
           data: {
             name: input.name,
