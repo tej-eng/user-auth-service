@@ -1101,6 +1101,7 @@ createOrder: async (_, { input }, context) => {
     // new astrologer
     createAstrologerApplication: async (_, { input }, { prisma }) => {
       try {
+        console.log("createAstrologerApplication inputAAAAAAAAA:", input);
         if (!input.phoneNumber || !input.name) {
           throw new Error("Required fields missing");
         }
@@ -1122,6 +1123,7 @@ createOrder: async (_, { input }, context) => {
             pincode: input.pincode,
           },
         });
+        console.log("createAstrologerApplication result:", newApp);
 
         return newApp;
       } catch (error) {
