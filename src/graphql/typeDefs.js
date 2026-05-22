@@ -55,6 +55,7 @@ module.exports = gql`
   # -----------------------------------------
 # -----------------------------------------
 # Astrologer Public Search Configuration
+
 # -----------------------------------------
 
 type AstrologerPricing {
