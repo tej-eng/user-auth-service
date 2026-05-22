@@ -275,7 +275,7 @@ module.exports = {
               pricing: {
                 where: {
                   type,
-                  //isActive: true,
+                  isActive: true,
                 },
               },
             },
@@ -298,7 +298,7 @@ module.exports = {
             price: p.price,
             offerPrice: p.offerPrice,
             commissionPercent: p.commissionPercent,
-            //isActive: p.isActive,
+            isActive: p.isActive,
           })),
         }));
 
