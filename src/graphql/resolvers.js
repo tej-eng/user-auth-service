@@ -361,18 +361,13 @@ me: async (_, __, { user }) => {
 
   return user;
 },
- getAstrologerById: async (_, { id }, { context }) => {
-
-
-  //console.log("Context User:", context.user);
-
-  const astrologer = await prisma.astrologer.findUnique({
+ getAstrologerById: async (_, { id }) => {
+  return await prisma.astrologer.findUnique({
     where: { id },
+    include: {
+      pricing: true,
+    },
   });
-
-  console.log("Astrologer Found:", astrologer);
-
-  return astrologer;
 },
 
 getUserChatHistory: async (_, { page = 1, limit = 10 }, context) => {
@@ -793,13 +788,13 @@ recentIntakes: async (_, __, context) => {
 createIntake: async (_, { input }, context) => {
   const userId = context.user.id;
 
-  //  Generate Room ID
+  // Generate Room ID
   const roomId = uuidv4();
 
   // Get User Wallet
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    include: { wallet: true }
+    include: { wallet: true },
   });
 
   if (!user || !user.wallet) {
@@ -808,18 +803,46 @@ createIntake: async (_, { input }, context) => {
 
   const walletBalance = user.wallet.balanceCoins || 0;
 
-  //  Get Astrologer Price
+  // Get Astrologer with Pricing
   const astrologer = await prisma.astrologer.findUnique({
-    where: { id: input.astrologerId }
+    where: { id: input.astrologerId },
+    include: {
+      pricing: {
+        where: {
+          type:
+            input.requestType.toUpperCase() === "CALL"
+              ? "CALL"
+              : "CHAT",
+          isActive: true,
+        },
+      },
+    },
   });
 
   if (!astrologer) {
     throw new Error("Astrologer not found");
   }
 
-  const pricePerMin = astrologer.price || 1;
+  // Get pricing according to request type
+  const pricing = astrologer.pricing?.[0];
 
-  // Calculate Chat Time
+  if (!pricing) {
+    throw new Error(
+      `${input.requestType} pricing not configured for astrologer`
+    );
+  }
+
+  // Use offer price if available otherwise normal price
+  const pricePerMin =
+    pricing.offerPrice && pricing.offerPrice > 0
+      ? pricing.offerPrice
+      : pricing.price;
+
+  if (!pricePerMin || pricePerMin <= 0) {
+    throw new Error("Invalid astrologer pricing");
+  }
+
+  // Calculate Chat/Call Time
   const chatTime = Math.floor(walletBalance / pricePerMin);
 
   if (chatTime <= 0) {
@@ -839,79 +862,100 @@ createIntake: async (_, { input }, context) => {
       occupation: input.occupation,
       birthPlace: input.birthPlace,
       requestType: input.requestType,
-      chatId: roomId
-    }
+      chatId: roomId,
+    },
   });
+
   const queueData = {
-          user_id: userId,
-          astrologerId: input.astrologerId,
-          userName: input.name,
-          countryCode: input.countryCode,
-          mobile: input.mobile,
-          gender: input.gender,
-          dateOfBirth: new Date(input.birthDate),
-          timeOfBirth: input.birthTime,
-          occupation: input.occupation,
-          location: input.birthPlace,
-          astro_id: input.astrologerId, // for testing with fixed astrologer, can be changed to input.astrologerId in production
-          is_promotional: false,  
-          room_id: roomId,
-          maximum_time: chatTime,
-          user_image: user.profilePic || "",
-          phoneNumber: `${input.countryCode}${input.mobile}`,
-          createdAt: Date.now()
-      };
-if(input.requestType.toUpperCase() === "CALL" || input.requestType.toUpperCase() === "CHAT") {
-  const queueLength = await redis.llen(`queue:${input.astrologerId}`);
-      if (queueLength > 4) {
-        return {
-        roomId,
-        chatTime,
-        intakeId: intake.id,
-        message: "Sorry, queue is too long. Please try another astrologer.",
-      };
-      }
+    user_id: userId,
+    astrologerId: input.astrologerId,
+    userName: input.name,
+    countryCode: input.countryCode,
+    mobile: input.mobile,
+    gender: input.gender,
+    dateOfBirth: new Date(input.birthDate),
+    timeOfBirth: input.birthTime,
+    occupation: input.occupation,
+    location: input.birthPlace,
+    astro_id: input.astrologerId,
+    is_promotional: false,
+    room_id: roomId,
+    maximum_time: chatTime,
+    user_image: user.profilePic || "",
+    phoneNumber: `${input.countryCode}${input.mobile}`,
+    createdAt: Date.now(),
+  };
 
-      const userQueueKey = `user_in_queue:${input.astrologerId}`;
+  if (
+    input.requestType.toUpperCase() === "CALL" ||
+    input.requestType.toUpperCase() === "CHAT"
+  ) {
+    const queueLength = await redis.llen(
+      `queue:${input.astrologerId}`
+    );
 
-      // Check duplicate user
-      const alreadyExists = await redis.sismember(userQueueKey, userId);
-      if (alreadyExists) {
+    if (queueLength > 4) {
       return {
         roomId,
         chatTime,
         intakeId: intake.id,
-        message: "duplicate request. User is already in queue for this astrologer",
+        message:
+          "Sorry, queue is too long. Please try another astrologer.",
       };
-      }
-      const exists = await redis.exists(`request_data:${roomId}`);
-      if (exists) return;
-      await redis.set(
-        `request_data:${roomId}`,
-        JSON.stringify(queueData),
-        "EX",
-        7200 //hours to expire, in case something goes wrong with the queue processing, we don't want stale data hanging around forever
-      );
+    }
 
-      await redis.rpush(`queue:${input.astrologerId}`, JSON.stringify({
-      user_id: userId,
-      roomId: roomId,
-      maximum_time: chatTime,
-      type: input.requestType.toUpperCase() === "CHAT" ? "chat":"call"
-      }));
+    const userQueueKey = `user_in_queue:${input.astrologerId}`;
 
-      await redis.sadd(userQueueKey, userId);
+    // Check duplicate user
+    const alreadyExists = await redis.sismember(
+      userQueueKey,
+      userId
+    );
 
-      //  Return Response
+    if (alreadyExists) {
       return {
         roomId,
         chatTime,
         intakeId: intake.id,
-        message: "request send successfully",
+        message:
+          "duplicate request. User is already in queue for this astrologer",
       };
+    }
 
-}
+    const exists = await redis.exists(`request_data:${roomId}`);
 
+    if (exists) return;
+
+    await redis.set(
+      `request_data:${roomId}`,
+      JSON.stringify(queueData),
+      "EX",
+      7200
+    );
+
+    await redis.rpush(
+      `queue:${input.astrologerId}`,
+      JSON.stringify({
+        user_id: userId,
+        roomId: roomId,
+        maximum_time: chatTime,
+        type:
+          input.requestType.toUpperCase() === "CHAT"
+            ? "chat"
+            : "call",
+      })
+    );
+
+    await redis.sadd(userQueueKey, userId);
+
+    // Return Response
+    return {
+      roomId,
+      chatTime,
+      intakeId: intake.id,
+      message: "request send successfully",
+    };
+  }
 },
 
 

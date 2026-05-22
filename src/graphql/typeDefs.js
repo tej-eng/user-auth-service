@@ -57,17 +57,24 @@ module.exports = gql`
 # Astrologer Public Search Configuration
 # -----------------------------------------
 
+type AstrologerPricing {
+  type: String
+  price: Float
+  offerPrice: Float
+  commissionPercent: Float
+  isActive: Boolean
+}
+
 type Astrologer {
   id: ID
   profilePic: String
   name: String
   experience: Int
-  price: Float
-  offerPrice: Float
-  commissionPercent: Float
   rating: Float
   skills: [String]
   languages: [String]
+
+  pricing: [AstrologerPricing]
 }
 
 input AstrologerSearchInput {
@@ -156,12 +163,25 @@ type RechargePackResponse {
 # -----------------------------------------
 # Intake Section
 # -----------------------------------------
+
+enum PricingType {
+  CHAT
+  CALL
+  VIDEO
+  AUDIO
+}
+
 type CreateIntakeResponse {
   roomId: String!
   chatTime: Int!
   intakeId: String!
   message: String
+
+  # NEW
+  pricePerMin: Float
+  pricingType: PricingType
 }
+
 input IntakeInput {
   astrologerId: String!
   name: String!
@@ -174,6 +194,7 @@ input IntakeInput {
   birthPlace: String!
   requestType: String!
 }
+
 type Intake {
   id: ID!
   name: String!
@@ -186,10 +207,16 @@ type Intake {
   birthPlace: String!
   requestType: String!
   chatId: String
+
+  # OPTIONAL ADDITIONS
+  pricePerMin: Float
+  pricingType: PricingType
+
   createdAt: String!
 }
+
 #------------------------------------------
-#end intake section
+# end intake section
 
 #-----------------------------------------
 # Get User by ID (for admin or internal use)
