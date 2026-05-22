@@ -275,7 +275,7 @@ module.exports = {
               pricing: {
                 where: {
                   type,
-                  isActive: true,
+                  //isActive: true,
                 },
               },
             },
@@ -293,9 +293,13 @@ module.exports = {
           skills: astro.skills,
           languages: astro.languages,
 
-          price: astro.pricing?.[0]?.price || 0,
-          offerPrice: astro.pricing?.[0]?.offerPrice || 0,
-          commissionPercent: astro.pricing?.[0]?.commissionPercent || 0,
+          pricing: astro.pricing.map((p) => ({
+            type: p.type,
+            price: p.price,
+            offerPrice: p.offerPrice,
+            commissionPercent: p.commissionPercent,
+            //isActive: p.isActive,
+          })),
         }));
 
         return {
