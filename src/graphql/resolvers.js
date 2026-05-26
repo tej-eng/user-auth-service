@@ -663,6 +663,62 @@ getUserChatHistory: async (_, { filter = {} }, context) => {
     );
   }
 },
+
+getChatMessagesBySessionId: async (
+  _,
+  { sessionId },
+  context
+) => {
+  try {
+    if (!context.user) {
+      throw new Error("Unauthorized");
+    }
+
+    if (!sessionId) {
+      throw new Error("Session ID is required");
+    }
+
+    const messages = await prisma.message.findMany({
+      where: {
+        sessionId,
+      },
+
+      orderBy: {
+        createdAt: "asc",
+      },
+    });
+
+    return messages.map((msg) => ({
+      id: msg.id,
+      msgId: msg.msgId,
+      roomId: msg.roomId,
+
+      senderId: msg.senderId,
+      receiverId: msg.receiverId,
+
+      message: msg.message,
+      image: msg.image,
+
+      sender: msg.sender,
+
+      replyTo: msg.replyTo,
+
+      createdAt: msg.createdAt
+        ? msg.createdAt.toISOString()
+        : null,
+    }));
+  } catch (error) {
+    console.error(
+      "getChatMessagesBySessionId error:",
+      error
+    );
+
+    throw new Error(
+      error.message ||
+        "Failed to fetch session messages"
+    );
+  }
+},
     getUserSessions: async (_, { filter }, context) => {
       try {
         if (!context.user) throw new Error("Unauthorized");

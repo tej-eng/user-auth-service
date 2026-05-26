@@ -567,6 +567,7 @@ type ChatAstrologer {
 }
 
 #--------------------End code for chat history-----------------------
+
   type Query {
   getUsersDetails(page: Int, limit: Int, search: String): UserPagination!
   getAstrologerListBySearch(searchInput: AstrologerSearchInput): AstrologerPagination!
@@ -588,6 +589,9 @@ type ChatAstrologer {
   getUserSessions(filter: SessionFilterInput): ChatSessionResponse
   getChatMessages(roomId: String!): [ChatMessage]
   recentIntakes: RecentIntakeResponse
+   getChatMessagesBySessionId(
+    sessionId: String!
+  ): [ChatMessage]
   
   }
 
