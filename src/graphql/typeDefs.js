@@ -494,22 +494,82 @@ enum ApplicationStatus {
 #-------------------start code for astrologer application-----------------------
 
 #------------------start code for chat history-----------------------
-input UserChatHistoryFilterInput {
-  page: Int
-  limit: Int
-
-  astrologerName: String
-  status: SessionStatus
-
-  startDate: String
-  endDate: String
+type UserChatHistoryResponse {
+  success: Boolean!
+  summary: ChatHistorySummary!
+  data: [UserChatHistoryItem!]!
+  totalCount: Int!
+  currentPage: Int!
+  totalPages: Int!
 }
 
-type ChatHistoryResponse {
-  data: [ChatHistory]
-  totalCount: Int
-  currentPage: Int
-  totalPages: Int
+type ChatHistorySummary {
+  totalCoinsDeducted: Int!
+  totalCoinsEarned: Int!
+  totalCommission: Int!
+  totalRecords: Int!
+}
+
+type UserChatHistoryItem {
+  srNo: Int
+
+  roomId: String
+  sessionId: String
+
+  startedAt: String
+  endedAt: String
+  createdAt: String
+
+  status: String
+
+  durationSec: Int
+  durationMinutes: Int
+
+  ratePerMin: Int
+
+  coinsDeducted: Int
+  coinsEarned: Int
+  commission: Int
+
+  user: ChatUser
+  astrologer: ChatAstrologer
+
+  lastMessage: ChatMessage
+}
+
+type ChatUser {
+  id: String
+  name: String
+  mobile: String
+  countryCode: String
+}
+
+type ChatAstrologer {
+  id: String
+  name: String
+  profilePic: String
+  experience: Int
+  rating: Float
+  skills: [String]
+  languages: [String]
+}
+
+type ChatMessage {
+  id: String
+  msgId: String
+  roomId: String
+
+  senderId: String
+  receiverId: String
+
+  sender: String
+
+  message: String
+  image: String
+
+  replyTo: JSON
+
+  createdAt: String
 }
 #--------------------End code for chat history-----------------------
   type Query {
@@ -526,9 +586,9 @@ type ChatHistoryResponse {
   getUserProfile: User
   getUserWalletTransactions(filter: WalletTransactionFilter): WalletTransactionResponse
   
-  getUserChatHistory(
+ getUserChatHistory(
   filter: UserChatHistoryFilterInput
-): ChatHistoryResponse
+): UserChatHistoryResponse
 
   getUserSessions(filter: SessionFilterInput): ChatSessionResponse
   getChatMessages(roomId: String!): [ChatMessage]

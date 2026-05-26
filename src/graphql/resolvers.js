@@ -392,7 +392,9 @@ getUserChatHistory: async (_, { filter = {} }, context) => {
     console.log("USER ID:", userId);
     console.log("FILTER:", filter);
 
-    // SESSION FILTER
+    /* =========================================
+       SESSION FILTER
+    ========================================= */
     const sessionWhere = {
       userId,
 
@@ -426,14 +428,18 @@ getUserChatHistory: async (_, { filter = {} }, context) => {
 
     console.log("SESSION WHERE:", sessionWhere);
 
-    // TOTAL COUNT
+    /* =========================================
+       TOTAL COUNT
+    ========================================= */
     const totalCount = await prisma.session.count({
       where: sessionWhere,
     });
 
     console.log("TOTAL COUNT:", totalCount);
 
-    // FETCH SESSIONS
+    /* =========================================
+       FETCH SESSIONS
+    ========================================= */
     const sessions = await prisma.session.findMany({
       where: sessionWhere,
 
@@ -479,6 +485,19 @@ getUserChatHistory: async (_, { filter = {} }, context) => {
           },
 
           take: 1,
+
+          select: {
+            id: true,
+            msgId: true,
+            roomId: true,
+            senderId: true,
+            receiverId: true,
+            message: true,
+            image: true,
+            sender: true,
+            replyTo: true,
+            createdAt: true,
+          },
         },
       },
 
@@ -492,10 +511,43 @@ getUserChatHistory: async (_, { filter = {} }, context) => {
 
     console.log("FINAL SESSIONS:", sessions.length);
 
-    const data = sessions.map((session) => {
+    /* =========================================
+       SUMMARY
+    ========================================= */
+    let totalCoinsDeducted = 0;
+    let totalCoinsEarned = 0;
+    let totalCommission = 0;
+
+    sessions.forEach((session) => {
+      totalCoinsDeducted += session.coinsDeducted || 0;
+      totalCoinsEarned += session.coinsEarned || 0;
+      totalCommission += session.commission || 0;
+    });
+
+    /* =========================================
+       RESPONSE DATA
+    ========================================= */
+    const data = sessions.map((session, index) => {
       const lastMessage = session.messages?.[0] || null;
 
+      // duration in minutes
+      let durationMinutes = 0;
+
+      if (session.durationSec) {
+        durationMinutes = Math.ceil(
+          session.durationSec / 60
+        );
+      }
+
+      // active pricing
+      const activePricing =
+        session.astrologer?.pricing?.find(
+          (p) => p.type === "CHAT"
+        ) || session.astrologer?.pricing?.[0];
+
       return {
+        srNo: skip + index + 1,
+
         roomId: lastMessage?.roomId || null,
 
         sessionId: session.id,
@@ -508,25 +560,89 @@ getUserChatHistory: async (_, { filter = {} }, context) => {
           ? session.endedAt.toISOString()
           : null,
 
+        createdAt: session.createdAt
+          ? session.createdAt.toISOString()
+          : null,
+
         status: session.status,
 
-        user: session.user,
+        durationSec: session.durationSec || 0,
 
-        astrologer: session.astrologer,
+        durationMinutes,
+
+        ratePerMin:
+          session.ratePerMin ||
+          activePricing?.offerPrice ||
+          activePricing?.price ||
+          0,
+
+        coinsDeducted:
+          session.coinsDeducted || 0,
+
+        coinsEarned:
+          session.coinsEarned || 0,
+
+        commission:
+          session.commission || 0,
+
+        user: {
+          id: session.user?.id,
+          name: session.user?.name,
+          mobile: session.user?.mobile,
+          countryCode:
+            session.user?.countryCode,
+        },
+
+        astrologer: {
+          id: session.astrologer?.id,
+          name: session.astrologer?.name,
+          profilePic:
+            session.astrologer?.profilePic,
+          experience:
+            session.astrologer?.experience,
+          rating: session.astrologer?.rating,
+          skills: session.astrologer?.skills,
+          languages:
+            session.astrologer?.languages,
+        },
 
         lastMessage: lastMessage
           ? {
-              ...lastMessage,
+              id: lastMessage.id,
+              msgId: lastMessage.msgId,
+              roomId: lastMessage.roomId,
+              senderId: lastMessage.senderId,
+              receiverId:
+                lastMessage.receiverId,
+              sender: lastMessage.sender,
+              message: lastMessage.message,
+              image: lastMessage.image,
+              replyTo: lastMessage.replyTo,
 
-              createdAt: lastMessage.createdAt
-                ? lastMessage.createdAt.toISOString()
-                : null,
+              createdAt:
+                lastMessage.createdAt
+                  ? lastMessage.createdAt.toISOString()
+                  : null,
             }
           : null,
       };
     });
-console.log("========== END =============", data);
+
+    console.log(
+      "========== END =============",
+      data
+    );
+
     return {
+      success: true,
+
+      summary: {
+        totalCoinsDeducted,
+        totalCoinsEarned,
+        totalCommission,
+        totalRecords: totalCount,
+      },
+
       data,
 
       totalCount,
@@ -542,7 +658,8 @@ console.log("========== END =============", data);
     );
 
     throw new Error(
-      error.message || "Failed to fetch chat history"
+      error.message ||
+        "Failed to fetch chat history"
     );
   }
 },
