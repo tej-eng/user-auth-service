@@ -494,6 +494,18 @@ enum ApplicationStatus {
 #-------------------start code for astrologer application-----------------------
 
 #------------------start code for chat history-----------------------
+
+input UserChatHistoryFilterInput {
+  page: Int
+  limit: Int
+
+  astrologerName: String
+  status: SessionStatus
+
+  startDate: String
+  endDate: String
+}
+
 type UserChatHistoryResponse {
   success: Boolean!
   summary: ChatHistorySummary!
@@ -554,23 +566,6 @@ type ChatAstrologer {
   languages: [String]
 }
 
-type ChatMessage {
-  id: String
-  msgId: String
-  roomId: String
-
-  senderId: String
-  receiverId: String
-
-  sender: String
-
-  message: String
-  image: String
-
-  replyTo: JSON
-
-  createdAt: String
-}
 #--------------------End code for chat history-----------------------
   type Query {
   getUsersDetails(page: Int, limit: Int, search: String): UserPagination!
