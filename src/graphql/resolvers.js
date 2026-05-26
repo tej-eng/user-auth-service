@@ -385,10 +385,12 @@ getUserChatHistory: async (_, { filter = {} }, context) => {
     } = filter;
 
     const userId = context.user.id;
-    console.log("getUserChatHistory called with filter:", filter, "userId:", userId);
-    const skip = (page - 1) * limit;
 
-    // STEP 1: Get roomIds
+    console.log("============= START =============");
+    console.log("USER ID:", userId);
+    console.log("FILTER:", filter);
+
+    // STEP 1
     const rooms = await prisma.message.findMany({
       where: {
         OR: [
@@ -405,20 +407,15 @@ getUserChatHistory: async (_, { filter = {} }, context) => {
       },
     });
 
+    console.log("ROOMS:", rooms);
+
     const roomIds = rooms
       .map((r) => r.roomId)
       .filter(Boolean);
 
-    if (!roomIds.length) {
-      return {
-        data: [],
-        totalCount: 0,
-        currentPage: page,
-        totalPages: 0,
-      };
-    }
+    console.log("ROOM IDS:", roomIds);
 
-    // STEP 2: Latest messages
+    // STEP 2
     const messages = await prisma.message.findMany({
       where: {
         roomId: {
@@ -430,6 +427,8 @@ getUserChatHistory: async (_, { filter = {} }, context) => {
       },
     });
 
+    console.log("MESSAGES COUNT:", messages.length);
+
     const lastMessageMap = {};
 
     for (const msg of messages) {
@@ -438,7 +437,9 @@ getUserChatHistory: async (_, { filter = {} }, context) => {
       }
     }
 
-    // STEP 3: Session IDs
+    console.log("LAST MESSAGE MAP:", lastMessageMap);
+
+    // STEP 3
     const sessionIds = [
       ...new Set(
         Object.values(lastMessageMap)
@@ -447,24 +448,25 @@ getUserChatHistory: async (_, { filter = {} }, context) => {
       ),
     ];
 
-    if (!sessionIds.length) {
-      return {
-        data: [],
-        totalCount: 0,
-        currentPage: page,
-        totalPages: 0,
-      };
-    }
+    console.log("SESSION IDS:", sessionIds);
 
-    // STEP 4: Dynamic session filters
+    // CHECK sessions directly
+    const rawSessions = await prisma.session.findMany({
+      where: {
+        id: {
+          in: sessionIds,
+        },
+      },
+    });
+
+    console.log("RAW SESSIONS:", rawSessions);
+
     const sessionWhere = {
       id: {
         in: sessionIds,
       },
 
-      ...(status && {
-        status,
-      }),
+      ...(status && { status }),
 
       ...(startDate || endDate
         ? {
@@ -472,7 +474,6 @@ getUserChatHistory: async (_, { filter = {} }, context) => {
               ...(startDate && {
                 gte: new Date(startDate),
               }),
-
               ...(endDate && {
                 lte: new Date(endDate),
               }),
@@ -490,49 +491,23 @@ getUserChatHistory: async (_, { filter = {} }, context) => {
       }),
     };
 
-    // STEP 5: Total count
+    console.log(
+      "SESSION WHERE:",
+      JSON.stringify(sessionWhere, null, 2)
+    );
+
     const totalCount = await prisma.session.count({
       where: sessionWhere,
     });
 
-    // STEP 6: Sessions
+    console.log("TOTAL COUNT:", totalCount);
+
     const sessions = await prisma.session.findMany({
       where: sessionWhere,
 
       include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            mobile: true,
-            countryCode: true,
-          },
-        },
-
-        astrologer: {
-          select: {
-            id: true,
-            name: true,
-            profilePic: true,
-            experience: true,
-            rating: true,
-            skills: true,
-            languages: true,
-
-            pricing: {
-              where: {
-                isActive: true,
-              },
-              select: {
-                type: true,
-                price: true,
-                offerPrice: true,
-                commissionPercent: true,
-                isActive: true,
-              },
-            },
-          },
-        },
+        user: true,
+        astrologer: true,
 
         messages: {
           orderBy: {
@@ -541,69 +516,19 @@ getUserChatHistory: async (_, { filter = {} }, context) => {
           take: 1,
         },
       },
-
-      orderBy: {
-        createdAt: "desc",
-      },
-
-      skip,
-      take: limit,
     });
 
-    // STEP 7: Response
-    const data = sessions.map((session) => {
-      const lastMessage =
-        session.messages?.[0] || null;
+    console.log("FINAL SESSIONS:", sessions);
 
-      return {
-        roomId: lastMessage?.roomId || null,
-
-        sessionId: session.id,
-
-        startedAt: session.startedAt
-          ? session.startedAt.toISOString()
-          : null,
-
-        endedAt: session.endedAt
-          ? session.endedAt.toISOString()
-          : null,
-
-        status: session.status,
-
-        user: session.user,
-
-        astrologer: session.astrologer,
-
-        lastMessage: lastMessage
-          ? {
-              ...lastMessage,
-
-              createdAt: lastMessage.createdAt
-                ? lastMessage.createdAt.toISOString()
-                : null,
-            }
-          : null,
-      };
-    });
-    console.log("getUserChatHistory response data:", data);
     return {
-      data,
-
+      data: sessions,
       totalCount,
-
       currentPage: page,
-
       totalPages: Math.ceil(totalCount / limit),
     };
   } catch (error) {
-    console.error(
-      "getUserChatHistory error:",
-      error
-    );
-
-    throw new Error(
-      error.message || "Failed to fetch chat history"
-    );
+    console.error("ERROR:", error);
+    throw new Error(error.message);
   }
 },
     getUserSessions: async (_, { filter }, context) => {
