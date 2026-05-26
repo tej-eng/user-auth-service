@@ -430,6 +430,68 @@ type CreateOrderResponse {
 }
 #--------------------end code for razorpay order-----------------------
 #------------------start code for astrologer application-----------------------
+
+#------------------------start code for chat history--------------------
+// ============================================
+// USER GRAPHQL TYPES
+// ============================================
+
+type UserChatMessage {
+  id: String
+  msgId: String
+  roomId: String
+  senderId: String
+  receiverId: String
+  sender: String
+  message: String
+  image: String
+  replyTo: JSON
+  createdAt: DateTime
+}
+
+type UserChatHistory {
+  sessionId: String
+  roomId: String
+
+  type: String
+  status: String
+
+  astrologerId: String
+  astrologerName: String
+  astrologerProfile: String
+  astrologerMobile: String
+
+  startedAt: DateTime
+  endedAt: DateTime
+
+  durationSec: Int
+
+  coinsDeducted: Int
+  coinsEarned: Int
+
+  createdAt: DateTime
+
+  messages: [UserChatMessage]
+}
+
+type UserChatHistoryResponse {
+  data: [UserChatHistory]
+  totalCount: Int
+  currentPage: Int
+  totalPages: Int
+}
+
+input UserChatHistoryInput {
+  sessionId: String
+  status: SessionStatus
+  startDate: String
+  endDate: String
+  page: Int
+  limit: Int
+}
+
+
+#-------------------------END code for chat history-------------------
 enum ApplicationStatus {
     PENDING
     APPROVED
@@ -510,6 +572,9 @@ enum ApplicationStatus {
   getUserSessions(filter: SessionFilterInput): ChatSessionResponse
   getChatMessages(roomId: String!): [ChatMessage]
   recentIntakes: RecentIntakeResponse
+   getUserChatHistory(
+    searchInput: UserChatHistoryInput
+  ): UserChatHistoryResponse
   
   }
 

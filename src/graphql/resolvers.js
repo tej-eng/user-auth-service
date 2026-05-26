@@ -569,6 +569,167 @@ module.exports = {
         throw new Error(error.message || "Failed to fetch sessions");
       }
     },
+    getUserChatHistory: async (
+  _,
+  {
+    searchInput: {
+      sessionId,
+      status,
+      startDate,
+      endDate,
+      page = 1,
+      limit = 10,
+    } = {},
+  },
+  { prisma, user }
+) => {
+  try {
+
+    // =========================
+    // AUTH CHECK
+    // =========================
+    if (!user?.id) {
+      throw new Error("Unauthorized");
+    }
+
+    const skip = (page - 1) * limit;
+
+    // =========================
+    // WHERE CLAUSE
+    // =========================
+    const whereClause = {
+      userId: user.id,
+      type: "CHAT",
+    };
+
+    // =========================
+    // SESSION FILTER
+    // =========================
+    if (sessionId) {
+      whereClause.id = sessionId;
+    }
+
+    // =========================
+    // STATUS FILTER
+    // =========================
+    if (status) {
+      whereClause.status = status;
+    }
+
+    // =========================
+    // DATE FILTER
+    // =========================
+    if (startDate && endDate) {
+      whereClause.createdAt = {
+        gte: new Date(startDate),
+        lte: new Date(endDate),
+      };
+    }
+
+    // =========================
+    // FETCH DATA
+    // =========================
+    const [sessions, totalCount] = await Promise.all([
+
+      prisma.session.findMany({
+        where: whereClause,
+
+        include: {
+
+          astrologer: {
+            select: {
+              id: true,
+              name: true,
+              profilePic: true,
+              contactNo: true,
+            },
+          },
+
+          messages: {
+            orderBy: {
+              createdAt: "asc",
+            },
+
+            select: {
+              id: true,
+              msgId: true,
+              roomId: true,
+              senderId: true,
+              receiverId: true,
+              sender: true,
+              message: true,
+              image: true,
+              replyTo: true,
+              createdAt: true,
+            },
+          },
+        },
+
+        orderBy: {
+          createdAt: "desc",
+        },
+
+        skip,
+        take: limit,
+      }),
+
+      prisma.session.count({
+        where: whereClause,
+      }),
+    ]);
+
+    // =========================
+    // FORMAT RESPONSE
+    // =========================
+    const formattedData = sessions.map((session) => ({
+
+      sessionId: session.id,
+
+      roomId:
+        session.messages?.length > 0
+          ? session.messages[0].roomId
+          : null,
+
+      type: session.type,
+      status: session.status,
+
+      astrologerId: session.astrologer?.id,
+      astrologerName: session.astrologer?.name,
+      astrologerProfile: session.astrologer?.profilePic,
+      astrologerMobile: session.astrologer?.contactNo,
+
+      startedAt: session.startedAt,
+      endedAt: session.endedAt,
+
+      durationSec: session.durationSec,
+
+      coinsDeducted: session.coinsDeducted,
+      coinsEarned: session.coinsEarned,
+
+      createdAt: session.createdAt,
+
+      messages: session.messages,
+    }));
+
+    return {
+      data: formattedData,
+      totalCount,
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit),
+    };
+
+  } catch (error) {
+
+    console.error(
+      "getUserChatHistory error:",
+      error
+    );
+
+    throw new Error(
+      "Failed to fetch user chat history"
+    );
+  }
+},
     getChatMessages: async (_, { roomId, limit = 50, offset = 0 }, context) => {
       try {
         if (!context.user) {
