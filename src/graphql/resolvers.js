@@ -385,6 +385,7 @@ getUserChatHistory: async (_, { filter = {} }, context) => {
     } = filter;
 
     const userId = context.user.id;
+    console.log("getUserChatHistory called with filter:", filter, "userId:", userId);
     const skip = (page - 1) * limit;
 
     // STEP 1: Get roomIds
@@ -584,7 +585,7 @@ getUserChatHistory: async (_, { filter = {} }, context) => {
           : null,
       };
     });
-
+    console.log("getUserChatHistory response data:", data);
     return {
       data,
 
