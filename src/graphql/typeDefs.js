@@ -74,7 +74,10 @@ type Astrologer {
   rating: Float
   skills: [String]
   languages: [String]
-
+  about: String
+  tags : String
+  vtags :String
+  
   pricing: [AstrologerPricing]
 }
 
