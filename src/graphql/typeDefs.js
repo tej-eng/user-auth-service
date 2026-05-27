@@ -777,6 +777,8 @@ type RemedyResponse {
 
   getRemedies: RemedyResponse!
 
+  getAboutPage: AboutPage
+
   
   }
 
