@@ -213,105 +213,105 @@ module.exports = {
         throw new Error(error.message);
       }
     },
-    getAstrologerListBySearch: async (_, { searchInput }) => {
-      try {
-        const {
-          query,
-          sortField,
-          sortOrder,
-          limit = 10,
-          page = 1,
-          type = "CHAT", // CHAT / CALL / VIDEO / AUDIO
-        } = searchInput || {};
+  getAstrologerListBySearch: async (_, { searchInput }) => {
+  try {
+    const {
+      query,
+      sortField,
+      sortOrder,
+      limit = 10,
+      page = 1,
+      type,
+    } = searchInput || {};
 
-        const skip = (page - 1) * limit;
+    const skip = (page - 1) * limit;
 
-        let orderBy = { createdAt: "desc" };
+    let orderBy = { createdAt: "desc" };
 
-        if (sortField) {
-          const sortMap = {
-            EXPERIENCE: "experience",
-            RATING: "rating",
-          };
+    if (sortField) {
+      const sortMap = {
+        EXPERIENCE: "experience",
+        RATING: "rating",
+      };
 
-          if (sortMap[sortField]) {
-            orderBy = {
-              [sortMap[sortField]]: sortOrder === "ASC" ? "asc" : "desc",
-            };
-          }
-        }
-
-        const where = {
-          ...(query && {
-            OR: [
-              {
-                name: {
-                  contains: query,
-                  mode: "insensitive",
-                },
-              },
-              {
-                skills: {
-                  has: query,
-                },
-              },
-              {
-                languages: {
-                  has: query,
-                },
-              },
-            ],
-          }),
+      if (sortMap[sortField]) {
+        orderBy = {
+          [sortMap[sortField]]: sortOrder === "ASC" ? "asc" : "desc",
         };
-
-        const [astrologers, totalCount] = await Promise.all([
-          prisma.astrologer.findMany({
-            where,
-            orderBy,
-            skip,
-            take: limit,
-
-            include: {
-              pricing: {
-                where: {
-                  type,
-                  isActive: true,
-                },
-              },
-            },
-          }),
-
-          prisma.astrologer.count({ where }),
-        ]);
-
-        const formattedData = astrologers.map((astro) => ({
-          id: astro.id,
-          profilePic: astro.profilePic,
-          name: astro.name,
-          experience: astro.experience,
-          rating: astro.rating,
-          skills: astro.skills,
-          languages: astro.languages,
-
-          pricing: astro.pricing.map((p) => ({
-            type: p.type,
-            price: p.price,
-            offerPrice: p.offerPrice,
-            commissionPercent: p.commissionPercent,
-            isActive: p.isActive,
-          })),
-        }));
-
-        return {
-          data: formattedData,
-          totalCount,
-          currentPage: page,
-          totalPages: Math.ceil(totalCount / limit),
-        };
-      } catch (error) {
-        throw new Error(error.message || "Failed to fetch astrologer list");
       }
-    },
+    }
+
+    const where = {
+      ...(query && {
+        OR: [
+          {
+            name: {
+              contains: query,
+              mode: "insensitive",
+            },
+          },
+          {
+            skills: {
+              has: query,
+            },
+          },
+          {
+            languages: {
+              has: query,
+            },
+          },
+        ],
+      }),
+    };
+
+    const [astrologers, totalCount] = await Promise.all([
+      prisma.astrologer.findMany({
+        where,
+        orderBy,
+        skip,
+        take: limit,
+
+        include: {
+          pricing: {
+            where: {
+              isActive: true,
+              ...(type && { type }),
+            },
+          },
+        },
+      }),
+
+      prisma.astrologer.count({ where }),
+    ]);
+
+    const formattedData = astrologers.map((astro) => ({
+      id: astro.id,
+      profilePic: astro.profilePic,
+      name: astro.name,
+      experience: astro.experience,
+      rating: astro.rating,
+      skills: astro.skills,
+      languages: astro.languages,
+
+      pricing: astro.pricing.map((p) => ({
+        type: p.type,
+        price: p.price,
+        offerPrice: p.offerPrice,
+        commissionPercent: p.commissionPercent,
+        isActive: p.isActive,
+      })),
+    }));
+
+    return {
+      data: formattedData,
+      totalCount,
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit),
+    };
+  } catch (error) {
+    throw new Error(error.message || "Failed to fetch astrologer list");
+  }
+},
     getRechargePacks: async (_, __, context) => {
       const packs = await prisma.rechargePack.findMany({
         where: { isActive: true },
