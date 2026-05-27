@@ -975,3 +975,124 @@ model FraudLog {
   @@index([status])
   @@index([createdAt])
 }
+
+
+// --------------------------------------------------------------------------
+enum CmsStatus {
+  DRAFT
+  PUBLISHED
+}
+model AboutPage {
+  id String @id @default(uuid())
+
+  pageType String @default("about-us")
+
+  heroTitle String?
+
+  heroDescription String? @db.Text
+
+  mentors Json?
+
+  founders Json?
+
+  metaTitle String?
+  metaDescription String?
+  keywords String[]
+
+  status CmsStatus @default(DRAFT)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([pageType])
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model PrivacyPage {
+  id String @id @default(uuid())
+
+  pageType String @default("privacy-policy")
+
+  title String?
+
+  content String? @db.Text
+
+  metaTitle String?
+  metaDescription String?
+
+  keywords String[]
+
+  status CmsStatus @default(DRAFT)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([pageType])
+
+  @@index([status])
+  @@index([createdAt])
+}
+model RefundPolicyPage {
+  id String @id @default(uuid())
+
+  pageType String @default("refund-policy")
+
+  title String?
+
+  content String? @db.Text
+
+  metaTitle String?
+  metaDescription String?
+
+  keywords String[]
+
+  status CmsStatus @default(DRAFT)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([pageType])
+
+  @@index([status])
+  @@index([createdAt])
+}
+model DisclaimerPage {
+  id String @id @default(uuid())
+
+  pageType String @default("disclaimer")
+
+  title String?
+
+  content String? @db.Text
+
+  metaTitle String?
+  metaDescription String?
+
+  keywords String[]
+
+  status CmsStatus @default(DRAFT)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([pageType])
+
+  @@index([status])
+  @@index([createdAt])
+}
+model Remedy {
+  id String @id @default(uuid())
+
+  title String
+  description String @db.Text
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([createdAt])
+  @@index([isActive])
+}
