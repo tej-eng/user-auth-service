@@ -1024,6 +1024,74 @@ getTestimonials: async () => {
     );
   }
 },
+
+getRemedies: async () => {
+  try {
+    const remedies = await prisma.remedy.findMany({
+      where: {
+        isActive: true,
+      },
+
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return {
+      data: remedies.map((item) => ({
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        isActive: item.isActive,
+        createdAt: item.createdAt.toISOString(),
+        updatedAt: item.updatedAt.toISOString(),
+      })),
+
+      totalCount: remedies.length,
+    };
+  } catch (error) {
+    console.error("getRemedies error:", error);
+
+    throw new Error("Failed to fetch remedies");
+  }
+},
+getAboutPage: async () => {
+  try {
+    const aboutPage = await prisma.aboutPage.findFirst({
+      where: {
+        status: "PUBLISHED",
+      },
+    });
+
+    if (!aboutPage) {
+      throw new Error("About page not found");
+    }
+
+    return {
+      id: aboutPage.id,
+      pageType: aboutPage.pageType,
+      heroTitle: aboutPage.heroTitle,
+      heroDescription: aboutPage.heroDescription,
+
+      mentors: aboutPage.mentors || [],
+
+      founders: aboutPage.founders || [],
+
+      metaTitle: aboutPage.metaTitle,
+      metaDescription: aboutPage.metaDescription,
+      keywords: aboutPage.keywords || [],
+
+      status: aboutPage.status,
+
+      createdAt: aboutPage.createdAt.toISOString(),
+      updatedAt: aboutPage.updatedAt.toISOString(),
+    };
+  } catch (error) {
+    console.error("getAboutPage error:", error);
+
+    throw new Error("Failed to fetch about page");
+  }
+},
 getChatMessagesBySessionId: async (
   _,
   { sessionId },

@@ -695,7 +695,48 @@ type TestimonialResponse {
 }
 
 #------------------ END TESTIMONIAL SECTION ------------------
+#------------------ START ABOUT PAGE SECTION ------------------
+type MentorFounder {
+  name: String
+  image: String
+  description: String
+  designation: String
+}
 
+type AboutPage {
+  id: ID!
+  pageType: String
+  heroTitle: String
+  heroDescription: String
+
+  mentors: [MentorFounder]
+  founders: [MentorFounder]
+
+  metaTitle: String
+  metaDescription: String
+  keywords: [String]
+
+  status: String
+
+  createdAt: String
+  updatedAt: String
+}
+#------------------ END ABOUT PAGE SECTION ------------------
+#------------------ START REMEDY SECTION ------------------
+type Remedy {
+  id: ID!
+  title: String!
+  description: String!
+  isActive: Boolean!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type RemedyResponse {
+  data: [Remedy!]!
+  totalCount: Int!
+}
+  #-----------------------------------------
   type Query {
   getUsersDetails(page: Int, limit: Int, search: String): UserPagination!
   getAstrologerListBySearch(searchInput: AstrologerSearchInput): AstrologerPagination!
@@ -733,6 +774,8 @@ type TestimonialResponse {
   getFaqs: FaqResponse!
 
   getTestimonials: TestimonialResponse!
+
+  getRemedies: RemedyResponse!
 
   
   }
