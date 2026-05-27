@@ -568,6 +568,54 @@ type ChatAstrologer {
 
 #--------------------End code for chat history-----------------------
 
+#------------------start code for call history-----------------------
+
+input UserCallHistoryFilterInput {
+  page: Int
+  limit: Int
+
+  astrologerName: String
+  status: SessionStatus
+
+  startDate: String
+  endDate: String
+}
+
+type UserCallHistoryResponse {
+  success: Boolean!
+  summary: ChatHistorySummary!
+  data: [UserCallHistoryItem!]!
+  totalCount: Int!
+  currentPage: Int!
+  totalPages: Int!
+}
+
+type UserCallHistoryItem {
+  srNo: Int
+
+  sessionId: String
+
+  startedAt: String
+  endedAt: String
+  createdAt: String
+
+  status: String
+
+  durationSec: Int
+  durationMinutes: Int
+
+  ratePerMin: Int
+
+  coinsDeducted: Int
+  coinsEarned: Int
+  commission: Int
+
+  user: ChatUser
+  astrologer: ChatAstrologer
+}
+
+#--------------------End code for call history-----------------------
+
   type Query {
   getUsersDetails(page: Int, limit: Int, search: String): UserPagination!
   getAstrologerListBySearch(searchInput: AstrologerSearchInput): AstrologerPagination!
@@ -592,6 +640,10 @@ type ChatAstrologer {
    getChatMessagesBySessionId(
     sessionId: String!
   ): [ChatMessage]
+
+  getUserCallHistory(
+  filter: UserCallHistoryFilterInput
+): UserCallHistoryResponse
   
   }
 

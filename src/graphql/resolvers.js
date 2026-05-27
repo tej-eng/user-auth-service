@@ -663,6 +663,258 @@ getUserChatHistory: async (_, { filter = {} }, context) => {
     );
   }
 },
+getUserCallHistory: async (_, { filter = {} }, context) => {
+  try {
+    if (!context.user) {
+      throw new Error("Unauthorized");
+    }
+
+    const {
+      page = 1,
+      limit = 10,
+      astrologerName,
+      status,
+      startDate,
+      endDate,
+    } = filter;
+
+    const userId = context.user.id;
+
+    const skip = (page - 1) * limit;
+
+    console.log("========== START CALL HISTORY =============");
+    console.log("USER ID:", userId);
+    console.log("FILTER:", filter);
+
+    /* =========================================
+       SESSION FILTER
+    ========================================= */
+    const sessionWhere = {
+      userId,
+
+      // ONLY CALL SESSIONS
+      type: "CALL",
+
+      ...(status && {
+        status,
+      }),
+
+      ...(startDate || endDate
+        ? {
+            createdAt: {
+              ...(startDate && {
+                gte: new Date(startDate),
+              }),
+
+              ...(endDate && {
+                lte: new Date(endDate),
+              }),
+            },
+          }
+        : {}),
+
+      ...(astrologerName && {
+        astrologer: {
+          name: {
+            contains: astrologerName,
+            mode: "insensitive",
+          },
+        },
+      }),
+    };
+
+    console.log("SESSION WHERE:", sessionWhere);
+
+    /* =========================================
+       TOTAL COUNT
+    ========================================= */
+    const totalCount = await prisma.session.count({
+      where: sessionWhere,
+    });
+
+    console.log("TOTAL COUNT:", totalCount);
+
+    /* =========================================
+       FETCH SESSIONS
+    ========================================= */
+    const sessions = await prisma.session.findMany({
+      where: sessionWhere,
+
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            mobile: true,
+            countryCode: true,
+          },
+        },
+
+        astrologer: {
+          select: {
+            id: true,
+            name: true,
+            profilePic: true,
+            experience: true,
+            rating: true,
+            skills: true,
+            languages: true,
+
+            pricing: {
+              where: {
+                isActive: true,
+              },
+
+              select: {
+                type: true,
+                price: true,
+                offerPrice: true,
+                commissionPercent: true,
+                isActive: true,
+              },
+            },
+          },
+        },
+      },
+
+      orderBy: {
+        createdAt: "desc",
+      },
+
+      skip,
+      take: limit,
+    });
+
+    console.log("FINAL CALL SESSIONS:", sessions.length);
+
+    /* =========================================
+       SUMMARY
+    ========================================= */
+    let totalCoinsDeducted = 0;
+    let totalCoinsEarned = 0;
+    let totalCommission = 0;
+
+    sessions.forEach((session) => {
+      totalCoinsDeducted += session.coinsDeducted || 0;
+      totalCoinsEarned += session.coinsEarned || 0;
+      totalCommission += session.commission || 0;
+    });
+
+    /* =========================================
+       RESPONSE DATA
+    ========================================= */
+    const data = sessions.map((session, index) => {
+      // duration in minutes
+      let durationMinutes = 0;
+
+      if (session.durationSec) {
+        durationMinutes = Math.ceil(
+          session.durationSec / 60
+        );
+      }
+
+      // active pricing
+      const activePricing =
+        session.astrologer?.pricing?.find(
+          (p) => p.type === "CALL"
+        ) || session.astrologer?.pricing?.[0];
+
+      return {
+        srNo: skip + index + 1,
+
+        sessionId: session.id,
+
+        startedAt: session.startedAt
+          ? session.startedAt.toISOString()
+          : null,
+
+        endedAt: session.endedAt
+          ? session.endedAt.toISOString()
+          : null,
+
+        createdAt: session.createdAt
+          ? session.createdAt.toISOString()
+          : null,
+
+        status: session.status,
+
+        durationSec: session.durationSec || 0,
+
+        durationMinutes,
+
+        ratePerMin:
+          session.ratePerMin ||
+          activePricing?.offerPrice ||
+          activePricing?.price ||
+          0,
+
+        coinsDeducted:
+          session.coinsDeducted || 0,
+
+        coinsEarned:
+          session.coinsEarned || 0,
+
+        commission:
+          session.commission || 0,
+
+        user: {
+          id: session.user?.id,
+          name: session.user?.name,
+          mobile: session.user?.mobile,
+          countryCode:
+            session.user?.countryCode,
+        },
+
+        astrologer: {
+          id: session.astrologer?.id,
+          name: session.astrologer?.name,
+          profilePic:
+            session.astrologer?.profilePic,
+          experience:
+            session.astrologer?.experience,
+          rating: session.astrologer?.rating,
+          skills: session.astrologer?.skills,
+          languages:
+            session.astrologer?.languages,
+        },
+      };
+    });
+
+    console.log(
+      "========== END CALL HISTORY =============",
+      data
+    );
+
+    return {
+      success: true,
+
+      summary: {
+        totalCoinsDeducted,
+        totalCoinsEarned,
+        totalCommission,
+        totalRecords: totalCount,
+      },
+
+      data,
+
+      totalCount,
+
+      currentPage: page,
+
+      totalPages: Math.ceil(totalCount / limit),
+    };
+  } catch (error) {
+    console.error(
+      "getUserCallHistory error:",
+      error
+    );
+
+    throw new Error(
+      error.message ||
+        "Failed to fetch call history"
+    );
+  }
+},
 
 getChatMessagesBySessionId: async (
   _,
