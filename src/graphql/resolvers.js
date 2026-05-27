@@ -952,6 +952,37 @@ getGifts: async (_, __, context) => {
     );
   }
 },
+
+getBanners: async (_, { language }) => {
+  try {
+    const whereCondition = {
+      status: true,
+
+      ...(language && {
+        language,
+      }),
+    };
+
+    const banners = await prisma.banner.findMany({
+      where: whereCondition,
+
+      orderBy: {
+        sortorder: "asc",
+      },
+    });
+
+    return {
+      data: banners,
+      totalCount: banners.length,
+    };
+  } catch (error) {
+    console.error("getBanners error:", error);
+
+    throw new Error(
+      error.message || "Failed to fetch banners"
+    );
+  }
+},
 getChatMessagesBySessionId: async (
   _,
   { sessionId },

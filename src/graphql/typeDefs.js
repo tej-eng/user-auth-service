@@ -637,6 +637,28 @@ type GiftResponse {
 }
 
 #------------------ END GIFT SECTION ------------------
+#------------------ START BANNER SECTION ------------------
+
+type Banner {
+  id: ID!
+  heading: String
+  subheading: String
+  slug: String
+  sortorder: Int
+  bannerlink: String
+  language: String
+  imageUrl: String
+  status: Boolean
+  createdAt: String
+  updatedAt: String
+}
+
+type BannerResponse {
+  data: [Banner!]!
+  totalCount: Int!
+}
+
+#------------------ END BANNER SECTION ------------------
 
   type Query {
   getUsersDetails(page: Int, limit: Int, search: String): UserPagination!
@@ -669,6 +691,8 @@ type GiftResponse {
 
 
   getGifts: GiftResponse!
+
+  getBanners(language: String): BannerResponse!
   
   }
 
