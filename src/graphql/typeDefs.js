@@ -659,6 +659,42 @@ type BannerResponse {
 }
 
 #------------------ END BANNER SECTION ------------------
+#------------------ START FAQ SECTION ------------------
+
+type Faq {
+  id: ID!
+  question: String!
+  answer: String!
+  createdAt: String
+  updatedAt: String
+}
+
+type FaqResponse {
+  data: [Faq!]!
+  totalCount: Int!
+}
+
+#------------------ END FAQ SECTION ------------------
+
+#------------------ START TESTIMONIAL SECTION ------------------
+
+type Testimonial {
+  id: ID!
+  name: String!
+  address: String
+  content: String!
+  image: String
+  rating: Int
+  createdAt: String
+  updatedAt: String
+}
+
+type TestimonialResponse {
+  data: [Testimonial!]!
+  totalCount: Int!
+}
+
+#------------------ END TESTIMONIAL SECTION ------------------
 
   type Query {
   getUsersDetails(page: Int, limit: Int, search: String): UserPagination!
@@ -693,6 +729,11 @@ type BannerResponse {
   getGifts: GiftResponse!
 
   getBanners(language: String): BannerResponse!
+
+  getFaqs: FaqResponse!
+
+  getTestimonials: TestimonialResponse!
+
   
   }
 

@@ -983,6 +983,47 @@ getBanners: async (_, { language }) => {
     );
   }
 },
+getFaqs: async () => {
+  try {
+    const faqs = await prisma.faq.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return {
+      data: faqs,
+      totalCount: faqs.length,
+    };
+  } catch (error) {
+    console.error("getFaqs error:", error);
+
+    throw new Error(
+      error.message || "Failed to fetch FAQs"
+    );
+  }
+},
+
+getTestimonials: async () => {
+  try {
+    const testimonials = await prisma.testimonial.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return {
+      data: testimonials,
+      totalCount: testimonials.length,
+    };
+  } catch (error) {
+    console.error("getTestimonials error:", error);
+
+    throw new Error(
+      error.message || "Failed to fetch testimonials"
+    );
+  }
+},
 getChatMessagesBySessionId: async (
   _,
   { sessionId },
