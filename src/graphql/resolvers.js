@@ -916,6 +916,42 @@ getUserCallHistory: async (_, { filter = {} }, context) => {
   }
 },
 
+getGifts: async (_, __, context) => {
+  try {
+    // ==============================
+    // AUTH CHECK
+    // ==============================
+    if (!context.user) {
+      throw new Error("Unauthorized");
+    }
+
+    console.log("USER:", context.user);
+
+    // ==============================
+    // FETCH GIFTS
+    // ==============================
+    const gifts = await prisma.gift.findMany({
+      where: {
+        status: "active",
+      },
+
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return {
+      data: gifts,
+      totalCount: gifts.length,
+    };
+  } catch (error) {
+    console.error("getGifts error:", error);
+
+    throw new Error(
+      error.message || "Failed to fetch gifts"
+    );
+  }
+},
 getChatMessagesBySessionId: async (
   _,
   { sessionId },

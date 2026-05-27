@@ -619,6 +619,25 @@ type UserCallHistoryItem {
 
 #--------------------End code for call history-----------------------
 
+#------------------ START GIFT SECTION ------------------
+
+type Gift {
+  id: ID!
+  name: String!
+  amount: Float!
+  image: String
+  status: String
+  createdAt: String
+  updatedAt: String
+}
+
+type GiftResponse {
+  data: [Gift!]!
+  totalCount: Int!
+}
+
+#------------------ END GIFT SECTION ------------------
+
   type Query {
   getUsersDetails(page: Int, limit: Int, search: String): UserPagination!
   getAstrologerListBySearch(searchInput: AstrologerSearchInput): AstrologerPagination!
@@ -647,6 +666,9 @@ type UserCallHistoryItem {
   getUserCallHistory(
   filter: UserCallHistoryFilterInput
 ): UserCallHistoryResponse
+
+
+  getGifts: GiftResponse!
   
   }
 
