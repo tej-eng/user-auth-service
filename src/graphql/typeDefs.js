@@ -737,6 +737,31 @@ type RemedyResponse {
   totalCount: Int!
 }
   #-----------------------------------------
+ #------------------START APP VERSION SECTION ------------------
+  enum PlatformType {
+  ANDROID
+  IOS
+}
+
+type AppVersion {
+  id: ID!
+  platform: PlatformType!
+  latestVersion: String
+  minimumVersion: String
+
+  forceUpdate: Boolean
+  maintenanceMode: Boolean
+  maintenanceMessage: String
+
+  playStoreUrl: String
+  appStoreUrl: String
+
+  releaseNotes: String
+
+  createdAt: String
+  updatedAt: String
+}
+ #--------END APP VERSION SECTION --------------------
   type Query {
   getUsersDetails(page: Int, limit: Int, search: String): UserPagination!
   getAstrologerListBySearch(searchInput: AstrologerSearchInput): AstrologerPagination!
@@ -778,6 +803,8 @@ type RemedyResponse {
   getRemedies: RemedyResponse!
 
   getAboutPage: AboutPage
+
+  getAppVersion(platform: PlatformType!): AppVersion
 
   
   }

@@ -1092,6 +1092,64 @@ getAboutPage: async () => {
     throw new Error("Failed to fetch about page");
   }
 },
+
+getAppVersion: async (_, { platform }) => {
+  try {
+    const appVersion = await prisma.appVersion.findFirst({
+      where: {
+        platform,
+      },
+
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    if (!appVersion) {
+      throw new Error("App version not found");
+    }
+
+    return {
+      id: appVersion.id,
+
+      platform: appVersion.platform,
+
+      latestVersion: appVersion.latestVersion,
+
+      minimumVersion: appVersion.minimumVersion,
+
+      forceUpdate: appVersion.forceUpdate,
+
+      maintenanceMode:
+        appVersion.maintenanceMode,
+
+      maintenanceMessage:
+        appVersion.maintenanceMessage,
+
+      playStoreUrl: appVersion.playStoreUrl,
+
+      appStoreUrl: appVersion.appStoreUrl,
+
+      releaseNotes: appVersion.releaseNotes,
+
+      createdAt:
+        appVersion.createdAt.toISOString(),
+
+      updatedAt:
+        appVersion.updatedAt.toISOString(),
+    };
+  } catch (error) {
+    console.error(
+      "getAppVersion error:",
+      error
+    );
+
+    throw new Error(
+      error.message ||
+        "Failed to fetch app version"
+    );
+  }
+},
 getChatMessagesBySessionId: async (
   _,
   { sessionId },
