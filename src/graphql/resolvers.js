@@ -1379,6 +1379,76 @@ getChatMessagesBySessionId: async (
         throw new Error(error.message);
       }
     },
+  getFreeServices: async () => {
+  try {
+    const services = await prisma.freeService.findMany({
+      where: {
+        isActive: true,
+      },
+      orderBy: [
+        {
+          order: "asc",
+        },
+        {
+          createdAt: "desc",
+        },
+      ],
+    });
+
+    return {
+      data: services.map((item) => ({
+        id: item.id,
+        title: item.title,
+        slug: item.slug,
+        href: item.href,
+        icon: item.icon,
+        isActive: item.isActive,
+        order: item.order,
+        createdAt: item.createdAt.toISOString(),
+        updatedAt: item.updatedAt.toISOString(),
+      })),
+      totalCount: services.length,
+    };
+  } catch (error) {
+    console.error("getFreeServices error:", error);
+
+    throw new Error(
+      error.message || "Failed to fetch free services"
+    );
+  }
+},
+
+getFreeServiceById: async (_, { id }) => {
+  try {
+    const service = await prisma.freeService.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!service) {
+      throw new Error("Free service not found");
+    }
+
+    return {
+      id: service.id,
+      title: service.title,
+      slug: service.slug,
+      href: service.href,
+      icon: service.icon,
+      isActive: service.isActive,
+      order: service.order,
+      createdAt: service.createdAt.toISOString(),
+      updatedAt: service.updatedAt.toISOString(),
+    };
+  } catch (error) {
+    console.error("getFreeServiceById error:", error);
+
+    throw new Error(
+      error.message || "Failed to fetch free service"
+    );
+  }
+},
   },
 
   Mutation: {
@@ -1673,67 +1743,116 @@ getChatMessagesBySessionId: async (
     },
 
     createReview: async (_, { input }, context) => {
-      console.log("createReview input:", input);
-      const userId = context.user.id;
+  try {
+    console.log("createReview input:", input);
 
-      const { astro_id, review_id, star, comment, user_name, astro_name } =
-        input;
+    if (!context.user) {
+      throw new Error("Unauthorized");
+    }
 
-      //  Optional: find session using roomId
-      const session = await prisma.session.findFirst({
-        where: {
-          userId,
-          astrologerId: astro_id,
-          status: "COMPLETED",
-        },
-        orderBy: { createdAt: "desc" },
-      });
+    const userId = context.user.id;
 
-      //  Prevent duplicate review
-      const existing = await prisma.review.findFirst({
-        where: {
-          userId,
-          astrologerId: astro_id,
-          sessionId: session?.id,
-        },
-      });
+    const { astro_id, star, comment } = input;
 
-      if (existing) {
-        throw new Error("Review already submitted");
-      }
+    // Validate rating
+    if (star < 1 || star > 5) {
+      throw new Error("Rating must be between 1 and 5");
+    }
 
-      //  Create Review
-      const review = await prisma.review.create({
-        data: {
-          userId,
-          astrologerId: astro_id,
-          sessionId: session?.id || null,
-          rating: star,
-          comment,
-          userName: user_name,
-          astroName: astro_name,
-        },
-      });
+    // Find latest completed session
+    const session = await prisma.session.findFirst({
+      where: {
+        userId,
+        astrologerId: astro_id,
+        status: "COMPLETED",
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
 
-      //  Update astrologer average rating
-      const allReviews = await prisma.review.aggregate({
-        where: { astrologerId: astro_id },
-        _avg: { rating: true },
-      });
+    if (!session) {
+      throw new Error(
+        "No completed session found with this astrologer"
+      );
+    }
 
-      await prisma.astrologer.update({
+    // Prevent duplicate review for same session
+    const existingReview = await prisma.review.findFirst({
+      where: {
+        userId,
+        astrologerId: astro_id,
+        sessionId: session.id,
+      },
+    });
+
+    if (existingReview) {
+      throw new Error("Review already submitted");
+    }
+
+    // Fetch user + astrologer names
+    const [user, astrologer] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { name: true },
+      }),
+
+      prisma.astrologer.findUnique({
         where: { id: astro_id },
-        data: {
-          rating: allReviews._avg.rating || 0,
-        },
-      });
+        select: { name: true },
+      }),
+    ]);
 
-      return {
-        success: true,
-        message: "Review submitted successfully",
-        review,
-      };
-    },
+    // Create review
+    const review = await prisma.review.create({
+      data: {
+        userId,
+        astrologerId: astro_id,
+        sessionId: session.id,
+
+        rating: star,
+        comment: comment || null,
+
+        userName: user?.name || null,
+        astroName: astrologer?.name || null,
+
+        isFlagged: false,
+      },
+    });
+
+    // Calculate average rating
+    const avgRating = await prisma.review.aggregate({
+      where: {
+        astrologerId: astro_id,
+      },
+      _avg: {
+        rating: true,
+      },
+    });
+
+    // Update astrologer rating
+    await prisma.astrologer.update({
+      where: {
+        id: astro_id,
+      },
+      data: {
+        rating: avgRating._avg.rating || 0,
+      },
+    });
+
+    return {
+      success: true,
+      message: "Review submitted successfully",
+      review,
+    };
+  } catch (error) {
+    console.error("createReview error:", error);
+
+    throw new Error(
+      error.message || "Failed to submit review"
+    );
+  }
+},
     uploadImage: async (_, { file }, context) => {
       console.log("uploadImage called with file:", file);
       try {

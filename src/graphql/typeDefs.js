@@ -293,18 +293,42 @@ type UserWallet {
 }
 #---------End get user wallet----------------
 #-----------start review-------------------
+#----------- START REVIEW -------------------
+
+type Review {
+  id: ID!
+
+  userId: String!
+  astrologerId: String!
+
+  sessionId: String
+
+  rating: Int!
+  comment: String
+  reply: String
+
+  isFlagged: Boolean
+
+  userName: String
+  astroName: String
+
+  createdAt: String
+  updatedAt: String
+}
+
 input CreateReviewInput {
   astro_id: String!
-  review_id: String
   star: Int!
   comment: String
-  user_name: String
-  astro_name: String
 }
+
 type CreateReviewResponse {
   success: Boolean!
   message: String!
+  review: Review
 }
+
+#----------- END REVIEW -------------------
 #--------------end review-------------
 #--------------start chat history----------------
 scalar JSON
@@ -762,6 +786,26 @@ type AppVersion {
   updatedAt: String
 }
  #--------END APP VERSION SECTION --------------------
+ #------------START free services section----------------
+
+ type FreeService {
+  id: ID!
+  title: String!
+  slug: String!
+  href: String!
+  icon: String!
+  isActive: Boolean!
+  order: Int!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type FreeServiceResponse {
+  data: [FreeService!]!
+  totalCount: Int!
+}
+
+ #------------END free services section----------------
   type Query {
   getUsersDetails(page: Int, limit: Int, search: String): UserPagination!
   getAstrologerListBySearch(searchInput: AstrologerSearchInput): AstrologerPagination!
@@ -806,6 +850,10 @@ type AppVersion {
 
   getAppVersion(platform: PlatformType!): AppVersion
 
+  getFreeServices: FreeServiceResponse!
+
+  getFreeServiceById(id: ID!): FreeService
+
   
   }
 
@@ -823,5 +871,7 @@ type AppVersion {
       createAstrologerApplication(
       input: CreateApplicationInput!
     ): AstrologerApplication!
+
+   
 }
 `;
