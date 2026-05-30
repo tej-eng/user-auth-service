@@ -1096,6 +1096,10 @@ model Remedy {
   @@index([createdAt])
   @@index([isActive])
 }
+enum PlatformType {
+    ANDROID
+    IOS
+  }
 model AppVersion {
   id String @id @default(uuid())
 
