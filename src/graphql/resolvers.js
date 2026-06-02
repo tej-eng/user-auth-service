@@ -213,105 +213,105 @@ module.exports = {
         throw new Error(error.message);
       }
     },
-  getAstrologerListBySearch: async (_, { searchInput }) => {
-  try {
-    const {
-      query,
-      sortField,
-      sortOrder,
-      limit = 10,
-      page = 1,
-      type,
-    } = searchInput || {};
+    getAstrologerListBySearch: async (_, { searchInput }) => {
+      try {
+        const {
+          query,
+          sortField,
+          sortOrder,
+          limit = 10,
+          page = 1,
+          type,
+        } = searchInput || {};
 
-    const skip = (page - 1) * limit;
+        const skip = (page - 1) * limit;
 
-    let orderBy = { createdAt: "desc" };
+        let orderBy = { createdAt: "desc" };
 
-    if (sortField) {
-      const sortMap = {
-        EXPERIENCE: "experience",
-        RATING: "rating",
-      };
+        if (sortField) {
+          const sortMap = {
+            EXPERIENCE: "experience",
+            RATING: "rating",
+          };
 
-      if (sortMap[sortField]) {
-        orderBy = {
-          [sortMap[sortField]]: sortOrder === "ASC" ? "asc" : "desc",
+          if (sortMap[sortField]) {
+            orderBy = {
+              [sortMap[sortField]]: sortOrder === "ASC" ? "asc" : "desc",
+            };
+          }
+        }
+
+        const where = {
+          ...(query && {
+            OR: [
+              {
+                name: {
+                  contains: query,
+                  mode: "insensitive",
+                },
+              },
+              {
+                skills: {
+                  has: query,
+                },
+              },
+              {
+                languages: {
+                  has: query,
+                },
+              },
+            ],
+          }),
         };
+
+        const [astrologers, totalCount] = await Promise.all([
+          prisma.astrologer.findMany({
+            where,
+            orderBy,
+            skip,
+            take: limit,
+
+            include: {
+              pricing: {
+                where: {
+                  isActive: true,
+                  ...(type && { type }),
+                },
+              },
+            },
+          }),
+
+          prisma.astrologer.count({ where }),
+        ]);
+
+        const formattedData = astrologers.map((astro) => ({
+          id: astro.id,
+          profilePic: astro.profilePic,
+          name: astro.name,
+          experience: astro.experience,
+          rating: astro.rating,
+          skills: astro.skills,
+          languages: astro.languages,
+
+          pricing: astro.pricing.map((p) => ({
+            type: p.type,
+            price: p.price,
+            offerPrice: p.offerPrice,
+            commissionPercent: p.commissionPercent,
+            isActive: p.isActive,
+          })),
+        }));
+
+        return {
+          data: formattedData,
+          totalCount,
+          currentPage: page,
+          totalPages: Math.ceil(totalCount / limit),
+        };
+      } catch (error) {
+        throw new Error(error.message || "Failed to fetch astrologer list");
       }
-    }
-
-    const where = {
-      ...(query && {
-        OR: [
-          {
-            name: {
-              contains: query,
-              mode: "insensitive",
-            },
-          },
-          {
-            skills: {
-              has: query,
-            },
-          },
-          {
-            languages: {
-              has: query,
-            },
-          },
-        ],
-      }),
-    };
-
-    const [astrologers, totalCount] = await Promise.all([
-      prisma.astrologer.findMany({
-        where,
-        orderBy,
-        skip,
-        take: limit,
-
-        include: {
-          pricing: {
-            where: {
-              isActive: true,
-              ...(type && { type }),
-            },
-          },
-        },
-      }),
-
-      prisma.astrologer.count({ where }),
-    ]);
-
-    const formattedData = astrologers.map((astro) => ({
-      id: astro.id,
-      profilePic: astro.profilePic,
-      name: astro.name,
-      experience: astro.experience,
-      rating: astro.rating,
-      skills: astro.skills,
-      languages: astro.languages,
-
-      pricing: astro.pricing.map((p) => ({
-        type: p.type,
-        price: p.price,
-        offerPrice: p.offerPrice,
-        commissionPercent: p.commissionPercent,
-        isActive: p.isActive,
-      })),
-    }));
-
-    return {
-      data: formattedData,
-      totalCount,
-      currentPage: page,
-      totalPages: Math.ceil(totalCount / limit),
-    };
-  } catch (error) {
-    throw new Error(error.message || "Failed to fetch astrologer list");
-  }
-},
+    },
     getRechargePacks: async (_, __, context) => {
       const packs = await prisma.rechargePack.findMany({
         where: { isActive: true },
@@ -369,842 +369,768 @@ module.exports = {
         },
       });
     },
-getUserChatHistory: async (_, { filter = {} }, context) => {
-  try {
-    if (!context.user) {
-      throw new Error("Unauthorized");
-    }
+    getUserChatHistory: async (_, { filter = {} }, context) => {
+      try {
+        if (!context.user) {
+          throw new Error("Unauthorized");
+        }
 
-    const {
-      page = 1,
-      limit = 10,
-      astrologerName,
-      status,
-      startDate,
-      endDate,
-    } = filter;
+        const {
+          page = 1,
+          limit = 10,
+          astrologerName,
+          status,
+          startDate,
+          endDate,
+        } = filter;
 
-    const userId = context.user.id;
+        const userId = context.user.id;
 
-    const skip = (page - 1) * limit;
+        const skip = (page - 1) * limit;
 
-    console.log("========== START =============");
-    console.log("USER ID:", userId);
-    console.log("FILTER:", filter);
+        console.log("========== START =============");
+        console.log("USER ID:", userId);
+        console.log("FILTER:", filter);
 
-    /* =========================================
+        /* =========================================
        SESSION FILTER
     ========================================= */
-    const sessionWhere = {
-      userId,
+        const sessionWhere = {
+          userId,
 
-      ...(status && {
-        status,
-      }),
+          ...(status && {
+            status,
+          }),
 
-      ...(startDate || endDate
-        ? {
-            createdAt: {
-              ...(startDate && {
-                gte: new Date(startDate),
-              }),
+          ...(startDate || endDate
+            ? {
+                createdAt: {
+                  ...(startDate && {
+                    gte: new Date(startDate),
+                  }),
 
-              ...(endDate && {
-                lte: new Date(endDate),
-              }),
+                  ...(endDate && {
+                    lte: new Date(endDate),
+                  }),
+                },
+              }
+            : {}),
+
+          ...(astrologerName && {
+            astrologer: {
+              name: {
+                contains: astrologerName,
+                mode: "insensitive",
+              },
             },
-          }
-        : {}),
+          }),
+        };
 
-      ...(astrologerName && {
-        astrologer: {
-          name: {
-            contains: astrologerName,
-            mode: "insensitive",
-          },
-        },
-      }),
-    };
+        console.log("SESSION WHERE:", sessionWhere);
 
-    console.log("SESSION WHERE:", sessionWhere);
-
-    /* =========================================
+        /* =========================================
        TOTAL COUNT
     ========================================= */
-    const totalCount = await prisma.session.count({
-      where: sessionWhere,
-    });
+        const totalCount = await prisma.session.count({
+          where: sessionWhere,
+        });
 
-    console.log("TOTAL COUNT:", totalCount);
+        console.log("TOTAL COUNT:", totalCount);
 
-    /* =========================================
+        /* =========================================
        FETCH SESSIONS
     ========================================= */
-    const sessions = await prisma.session.findMany({
-      where: sessionWhere,
+        const sessions = await prisma.session.findMany({
+          where: sessionWhere,
 
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            mobile: true,
-            countryCode: true,
-          },
-        },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                mobile: true,
+                countryCode: true,
+              },
+            },
 
-        astrologer: {
-          select: {
-            id: true,
-            name: true,
-            profilePic: true,
-            experience: true,
-            rating: true,
-            skills: true,
-            languages: true,
+            astrologer: {
+              select: {
+                id: true,
+                name: true,
+                profilePic: true,
+                experience: true,
+                rating: true,
+                skills: true,
+                languages: true,
 
-            pricing: {
-              where: {
-                isActive: true,
+                pricing: {
+                  where: {
+                    isActive: true,
+                  },
+
+                  select: {
+                    type: true,
+                    price: true,
+                    offerPrice: true,
+                    commissionPercent: true,
+                    isActive: true,
+                  },
+                },
+              },
+            },
+
+            messages: {
+              orderBy: {
+                createdAt: "desc",
               },
 
+              take: 1,
+
               select: {
-                type: true,
-                price: true,
-                offerPrice: true,
-                commissionPercent: true,
-                isActive: true,
+                id: true,
+                msgId: true,
+                roomId: true,
+                senderId: true,
+                receiverId: true,
+                message: true,
+                image: true,
+                sender: true,
+                replyTo: true,
+                createdAt: true,
               },
             },
           },
-        },
 
-        messages: {
           orderBy: {
             createdAt: "desc",
           },
 
-          take: 1,
+          skip,
+          take: limit,
+        });
 
-          select: {
-            id: true,
-            msgId: true,
-            roomId: true,
-            senderId: true,
-            receiverId: true,
-            message: true,
-            image: true,
-            sender: true,
-            replyTo: true,
-            createdAt: true,
-          },
-        },
-      },
+        console.log("FINAL SESSIONS:", sessions.length);
 
-      orderBy: {
-        createdAt: "desc",
-      },
-
-      skip,
-      take: limit,
-    });
-
-    console.log("FINAL SESSIONS:", sessions.length);
-
-    /* =========================================
+        /* =========================================
        SUMMARY
     ========================================= */
-    let totalCoinsDeducted = 0;
-    let totalCoinsEarned = 0;
-    let totalCommission = 0;
+        let totalCoinsDeducted = 0;
+        let totalCoinsEarned = 0;
+        let totalCommission = 0;
 
-    sessions.forEach((session) => {
-      totalCoinsDeducted += session.coinsDeducted || 0;
-      totalCoinsEarned += session.coinsEarned || 0;
-      totalCommission += session.commission || 0;
-    });
+        sessions.forEach((session) => {
+          totalCoinsDeducted += session.coinsDeducted || 0;
+          totalCoinsEarned += session.coinsEarned || 0;
+          totalCommission += session.commission || 0;
+        });
 
-    /* =========================================
+        /* =========================================
        RESPONSE DATA
     ========================================= */
-    const data = sessions.map((session, index) => {
-      const lastMessage = session.messages?.[0] || null;
+        const data = sessions.map((session, index) => {
+          const lastMessage = session.messages?.[0] || null;
 
-      // duration in minutes
-      let durationMinutes = 0;
+          // duration in minutes
+          let durationMinutes = 0;
 
-      if (session.durationSec) {
-        durationMinutes = Math.ceil(
-          session.durationSec / 60
-        );
+          if (session.durationSec) {
+            durationMinutes = Math.ceil(session.durationSec / 60);
+          }
+
+          // active pricing
+          const activePricing =
+            session.astrologer?.pricing?.find((p) => p.type === "CHAT") ||
+            session.astrologer?.pricing?.[0];
+
+          return {
+            srNo: skip + index + 1,
+
+            roomId: lastMessage?.roomId || null,
+
+            sessionId: session.id,
+
+            startedAt: session.startedAt
+              ? session.startedAt.toISOString()
+              : null,
+
+            endedAt: session.endedAt ? session.endedAt.toISOString() : null,
+
+            createdAt: session.createdAt
+              ? session.createdAt.toISOString()
+              : null,
+
+            status: session.status,
+
+            durationSec: session.durationSec || 0,
+
+            durationMinutes,
+
+            ratePerMin:
+              session.ratePerMin ||
+              activePricing?.offerPrice ||
+              activePricing?.price ||
+              0,
+
+            coinsDeducted: session.coinsDeducted || 0,
+
+            coinsEarned: session.coinsEarned || 0,
+
+            commission: session.commission || 0,
+
+            user: {
+              id: session.user?.id,
+              name: session.user?.name,
+              mobile: session.user?.mobile,
+              countryCode: session.user?.countryCode,
+            },
+
+            astrologer: {
+              id: session.astrologer?.id,
+              name: session.astrologer?.name,
+              profilePic: session.astrologer?.profilePic,
+              experience: session.astrologer?.experience,
+              rating: session.astrologer?.rating,
+              skills: session.astrologer?.skills,
+              languages: session.astrologer?.languages,
+            },
+
+            lastMessage: lastMessage
+              ? {
+                  id: lastMessage.id,
+                  msgId: lastMessage.msgId,
+                  roomId: lastMessage.roomId,
+                  senderId: lastMessage.senderId,
+                  receiverId: lastMessage.receiverId,
+                  sender: lastMessage.sender,
+                  message: lastMessage.message,
+                  image: lastMessage.image,
+                  replyTo: lastMessage.replyTo,
+
+                  createdAt: lastMessage.createdAt
+                    ? lastMessage.createdAt.toISOString()
+                    : null,
+                }
+              : null,
+          };
+        });
+
+        console.log("========== END =============", data);
+
+        return {
+          success: true,
+
+          summary: {
+            totalCoinsDeducted,
+            totalCoinsEarned,
+            totalCommission,
+            totalRecords: totalCount,
+          },
+
+          data,
+
+          totalCount,
+
+          currentPage: page,
+
+          totalPages: Math.ceil(totalCount / limit),
+        };
+      } catch (error) {
+        console.error("getUserChatHistory error:", error);
+
+        throw new Error(error.message || "Failed to fetch chat history");
       }
+    },
+    getUserCallHistory: async (_, { filter = {} }, context) => {
+      try {
+        if (!context.user) {
+          throw new Error("Unauthorized");
+        }
 
-      // active pricing
-      const activePricing =
-        session.astrologer?.pricing?.find(
-          (p) => p.type === "CHAT"
-        ) || session.astrologer?.pricing?.[0];
+        const {
+          page = 1,
+          limit = 10,
+          astrologerName,
+          status,
+          startDate,
+          endDate,
+        } = filter;
 
-      return {
-        srNo: skip + index + 1,
+        const userId = context.user.id;
 
-        roomId: lastMessage?.roomId || null,
+        const skip = (page - 1) * limit;
 
-        sessionId: session.id,
+        console.log("========== START CALL HISTORY =============");
+        console.log("USER ID:", userId);
+        console.log("FILTER:", filter);
 
-        startedAt: session.startedAt
-          ? session.startedAt.toISOString()
-          : null,
-
-        endedAt: session.endedAt
-          ? session.endedAt.toISOString()
-          : null,
-
-        createdAt: session.createdAt
-          ? session.createdAt.toISOString()
-          : null,
-
-        status: session.status,
-
-        durationSec: session.durationSec || 0,
-
-        durationMinutes,
-
-        ratePerMin:
-          session.ratePerMin ||
-          activePricing?.offerPrice ||
-          activePricing?.price ||
-          0,
-
-        coinsDeducted:
-          session.coinsDeducted || 0,
-
-        coinsEarned:
-          session.coinsEarned || 0,
-
-        commission:
-          session.commission || 0,
-
-        user: {
-          id: session.user?.id,
-          name: session.user?.name,
-          mobile: session.user?.mobile,
-          countryCode:
-            session.user?.countryCode,
-        },
-
-        astrologer: {
-          id: session.astrologer?.id,
-          name: session.astrologer?.name,
-          profilePic:
-            session.astrologer?.profilePic,
-          experience:
-            session.astrologer?.experience,
-          rating: session.astrologer?.rating,
-          skills: session.astrologer?.skills,
-          languages:
-            session.astrologer?.languages,
-        },
-
-        lastMessage: lastMessage
-          ? {
-              id: lastMessage.id,
-              msgId: lastMessage.msgId,
-              roomId: lastMessage.roomId,
-              senderId: lastMessage.senderId,
-              receiverId:
-                lastMessage.receiverId,
-              sender: lastMessage.sender,
-              message: lastMessage.message,
-              image: lastMessage.image,
-              replyTo: lastMessage.replyTo,
-
-              createdAt:
-                lastMessage.createdAt
-                  ? lastMessage.createdAt.toISOString()
-                  : null,
-            }
-          : null,
-      };
-    });
-
-    console.log(
-      "========== END =============",
-      data
-    );
-
-    return {
-      success: true,
-
-      summary: {
-        totalCoinsDeducted,
-        totalCoinsEarned,
-        totalCommission,
-        totalRecords: totalCount,
-      },
-
-      data,
-
-      totalCount,
-
-      currentPage: page,
-
-      totalPages: Math.ceil(totalCount / limit),
-    };
-  } catch (error) {
-    console.error(
-      "getUserChatHistory error:",
-      error
-    );
-
-    throw new Error(
-      error.message ||
-        "Failed to fetch chat history"
-    );
-  }
-},
-getUserCallHistory: async (_, { filter = {} }, context) => {
-  try {
-    if (!context.user) {
-      throw new Error("Unauthorized");
-    }
-
-    const {
-      page = 1,
-      limit = 10,
-      astrologerName,
-      status,
-      startDate,
-      endDate,
-    } = filter;
-
-    const userId = context.user.id;
-
-    const skip = (page - 1) * limit;
-
-    console.log("========== START CALL HISTORY =============");
-    console.log("USER ID:", userId);
-    console.log("FILTER:", filter);
-
-    /* =========================================
+        /* =========================================
        SESSION FILTER
     ========================================= */
-    const sessionWhere = {
-      userId,
+        const sessionWhere = {
+          userId,
 
-      // ONLY CALL SESSIONS
-      type: "CALL",
+          // ONLY CALL SESSIONS
+          type: "CALL",
 
-      ...(status && {
-        status,
-      }),
+          ...(status && {
+            status,
+          }),
 
-      ...(startDate || endDate
-        ? {
-            createdAt: {
-              ...(startDate && {
-                gte: new Date(startDate),
-              }),
+          ...(startDate || endDate
+            ? {
+                createdAt: {
+                  ...(startDate && {
+                    gte: new Date(startDate),
+                  }),
 
-              ...(endDate && {
-                lte: new Date(endDate),
-              }),
+                  ...(endDate && {
+                    lte: new Date(endDate),
+                  }),
+                },
+              }
+            : {}),
+
+          ...(astrologerName && {
+            astrologer: {
+              name: {
+                contains: astrologerName,
+                mode: "insensitive",
+              },
             },
-          }
-        : {}),
+          }),
+        };
 
-      ...(astrologerName && {
-        astrologer: {
-          name: {
-            contains: astrologerName,
-            mode: "insensitive",
-          },
-        },
-      }),
-    };
+        console.log("SESSION WHERE:", sessionWhere);
 
-    console.log("SESSION WHERE:", sessionWhere);
-
-    /* =========================================
+        /* =========================================
        TOTAL COUNT
     ========================================= */
-    const totalCount = await prisma.session.count({
-      where: sessionWhere,
-    });
+        const totalCount = await prisma.session.count({
+          where: sessionWhere,
+        });
 
-    console.log("TOTAL COUNT:", totalCount);
+        console.log("TOTAL COUNT:", totalCount);
 
-    /* =========================================
+        /* =========================================
        FETCH SESSIONS
     ========================================= */
-    const sessions = await prisma.session.findMany({
-      where: sessionWhere,
+        const sessions = await prisma.session.findMany({
+          where: sessionWhere,
 
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            mobile: true,
-            countryCode: true,
-          },
-        },
-
-        astrologer: {
-          select: {
-            id: true,
-            name: true,
-            profilePic: true,
-            experience: true,
-            rating: true,
-            skills: true,
-            languages: true,
-
-            pricing: {
-              where: {
-                isActive: true,
-              },
-
+          include: {
+            user: {
               select: {
-                type: true,
-                price: true,
-                offerPrice: true,
-                commissionPercent: true,
-                isActive: true,
+                id: true,
+                name: true,
+                mobile: true,
+                countryCode: true,
+              },
+            },
+
+            astrologer: {
+              select: {
+                id: true,
+                name: true,
+                profilePic: true,
+                experience: true,
+                rating: true,
+                skills: true,
+                languages: true,
+
+                pricing: {
+                  where: {
+                    isActive: true,
+                  },
+
+                  select: {
+                    type: true,
+                    price: true,
+                    offerPrice: true,
+                    commissionPercent: true,
+                    isActive: true,
+                  },
+                },
               },
             },
           },
-        },
-      },
 
-      orderBy: {
-        createdAt: "desc",
-      },
+          orderBy: {
+            createdAt: "desc",
+          },
 
-      skip,
-      take: limit,
-    });
+          skip,
+          take: limit,
+        });
 
-    console.log("FINAL CALL SESSIONS:", sessions.length);
+        console.log("FINAL CALL SESSIONS:", sessions.length);
 
-    /* =========================================
+        /* =========================================
        SUMMARY
     ========================================= */
-    let totalCoinsDeducted = 0;
-    let totalCoinsEarned = 0;
-    let totalCommission = 0;
+        let totalCoinsDeducted = 0;
+        let totalCoinsEarned = 0;
+        let totalCommission = 0;
 
-    sessions.forEach((session) => {
-      totalCoinsDeducted += session.coinsDeducted || 0;
-      totalCoinsEarned += session.coinsEarned || 0;
-      totalCommission += session.commission || 0;
-    });
+        sessions.forEach((session) => {
+          totalCoinsDeducted += session.coinsDeducted || 0;
+          totalCoinsEarned += session.coinsEarned || 0;
+          totalCommission += session.commission || 0;
+        });
 
-    /* =========================================
+        /* =========================================
        RESPONSE DATA
     ========================================= */
-    const data = sessions.map((session, index) => {
-      // duration in minutes
-      let durationMinutes = 0;
+        const data = sessions.map((session, index) => {
+          // duration in minutes
+          let durationMinutes = 0;
 
-      if (session.durationSec) {
-        durationMinutes = Math.ceil(
-          session.durationSec / 60
-        );
+          if (session.durationSec) {
+            durationMinutes = Math.ceil(session.durationSec / 60);
+          }
+
+          // active pricing
+          const activePricing =
+            session.astrologer?.pricing?.find((p) => p.type === "CALL") ||
+            session.astrologer?.pricing?.[0];
+
+          return {
+            srNo: skip + index + 1,
+
+            sessionId: session.id,
+
+            startedAt: session.startedAt
+              ? session.startedAt.toISOString()
+              : null,
+
+            endedAt: session.endedAt ? session.endedAt.toISOString() : null,
+
+            createdAt: session.createdAt
+              ? session.createdAt.toISOString()
+              : null,
+
+            status: session.status,
+
+            durationSec: session.durationSec || 0,
+
+            durationMinutes,
+
+            ratePerMin:
+              session.ratePerMin ||
+              activePricing?.offerPrice ||
+              activePricing?.price ||
+              0,
+
+            coinsDeducted: session.coinsDeducted || 0,
+
+            coinsEarned: session.coinsEarned || 0,
+
+            commission: session.commission || 0,
+
+            user: {
+              id: session.user?.id,
+              name: session.user?.name,
+              mobile: session.user?.mobile,
+              countryCode: session.user?.countryCode,
+            },
+
+            astrologer: {
+              id: session.astrologer?.id,
+              name: session.astrologer?.name,
+              profilePic: session.astrologer?.profilePic,
+              experience: session.astrologer?.experience,
+              rating: session.astrologer?.rating,
+              skills: session.astrologer?.skills,
+              languages: session.astrologer?.languages,
+            },
+          };
+        });
+
+        console.log("========== END CALL HISTORY =============", data);
+
+        return {
+          success: true,
+
+          summary: {
+            totalCoinsDeducted,
+            totalCoinsEarned,
+            totalCommission,
+            totalRecords: totalCount,
+          },
+
+          data,
+
+          totalCount,
+
+          currentPage: page,
+
+          totalPages: Math.ceil(totalCount / limit),
+        };
+      } catch (error) {
+        console.error("getUserCallHistory error:", error);
+
+        throw new Error(error.message || "Failed to fetch call history");
       }
-
-      // active pricing
-      const activePricing =
-        session.astrologer?.pricing?.find(
-          (p) => p.type === "CALL"
-        ) || session.astrologer?.pricing?.[0];
-
-      return {
-        srNo: skip + index + 1,
-
-        sessionId: session.id,
-
-        startedAt: session.startedAt
-          ? session.startedAt.toISOString()
-          : null,
-
-        endedAt: session.endedAt
-          ? session.endedAt.toISOString()
-          : null,
-
-        createdAt: session.createdAt
-          ? session.createdAt.toISOString()
-          : null,
-
-        status: session.status,
-
-        durationSec: session.durationSec || 0,
-
-        durationMinutes,
-
-        ratePerMin:
-          session.ratePerMin ||
-          activePricing?.offerPrice ||
-          activePricing?.price ||
-          0,
-
-        coinsDeducted:
-          session.coinsDeducted || 0,
-
-        coinsEarned:
-          session.coinsEarned || 0,
-
-        commission:
-          session.commission || 0,
-
-        user: {
-          id: session.user?.id,
-          name: session.user?.name,
-          mobile: session.user?.mobile,
-          countryCode:
-            session.user?.countryCode,
-        },
-
-        astrologer: {
-          id: session.astrologer?.id,
-          name: session.astrologer?.name,
-          profilePic:
-            session.astrologer?.profilePic,
-          experience:
-            session.astrologer?.experience,
-          rating: session.astrologer?.rating,
-          skills: session.astrologer?.skills,
-          languages:
-            session.astrologer?.languages,
-        },
-      };
-    });
-
-    console.log(
-      "========== END CALL HISTORY =============",
-      data
-    );
-
-    return {
-      success: true,
-
-      summary: {
-        totalCoinsDeducted,
-        totalCoinsEarned,
-        totalCommission,
-        totalRecords: totalCount,
-      },
-
-      data,
-
-      totalCount,
-
-      currentPage: page,
-
-      totalPages: Math.ceil(totalCount / limit),
-    };
-  } catch (error) {
-    console.error(
-      "getUserCallHistory error:",
-      error
-    );
-
-    throw new Error(
-      error.message ||
-        "Failed to fetch call history"
-    );
-  }
-},
-
-getGifts: async (_, __, context) => {
-  try {
-    // ==============================
-    // AUTH CHECK
-    // ==============================
-    if (!context.user) {
-      throw new Error("Unauthorized");
-    }
-
-    console.log("USER:", context.user);
-
-    // ==============================
-    // FETCH GIFTS
-    // ==============================
-    const gifts = await prisma.gift.findMany({
-      where: {
-        status: "active",
-      },
-
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
-    return {
-      data: gifts,
-      totalCount: gifts.length,
-    };
-  } catch (error) {
-    console.error("getGifts error:", error);
-
-    throw new Error(
-      error.message || "Failed to fetch gifts"
-    );
-  }
-},
-
-getBanners: async (_, { language }) => {
-  try {
-    const whereCondition = {
-      status: true,
-
-      ...(language && {
-        language,
-      }),
-    };
-
-    const banners = await prisma.banner.findMany({
-      where: whereCondition,
-
-      orderBy: {
-        sortorder: "asc",
-      },
-    });
-
-    return {
-      data: banners,
-      totalCount: banners.length,
-    };
-  } catch (error) {
-    console.error("getBanners error:", error);
-
-    throw new Error(
-      error.message || "Failed to fetch banners"
-    );
-  }
-},
-getFaqs: async () => {
-  try {
-    const faqs = await prisma.faq.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
-    return {
-      data: faqs,
-      totalCount: faqs.length,
-    };
-  } catch (error) {
-    console.error("getFaqs error:", error);
-
-    throw new Error(
-      error.message || "Failed to fetch FAQs"
-    );
-  }
-},
-
-getTestimonials: async () => {
-  try {
-    const testimonials = await prisma.testimonial.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
-    return {
-      data: testimonials,
-      totalCount: testimonials.length,
-    };
-  } catch (error) {
-    console.error("getTestimonials error:", error);
-
-    throw new Error(
-      error.message || "Failed to fetch testimonials"
-    );
-  }
-},
-
-getRemedies: async () => {
-  try {
-    const remedies = await prisma.remedy.findMany({
-      where: {
-        isActive: true,
-      },
-
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
-    return {
-      data: remedies.map((item) => ({
-        id: item.id,
-        title: item.title,
-        description: item.description,
-        isActive: item.isActive,
-        createdAt: item.createdAt.toISOString(),
-        updatedAt: item.updatedAt.toISOString(),
-      })),
-
-      totalCount: remedies.length,
-    };
-  } catch (error) {
-    console.error("getRemedies error:", error);
-
-    throw new Error("Failed to fetch remedies");
-  }
-},
-getAboutPage: async () => {
-  try {
-    const aboutPage = await prisma.aboutPage.findFirst({
-      where: {
-        status: "PUBLISHED",
-      },
-    });
-
-    if (!aboutPage) {
-      throw new Error("About page not found");
-    }
-
-    return {
-      id: aboutPage.id,
-      pageType: aboutPage.pageType,
-      heroTitle: aboutPage.heroTitle,
-      heroDescription: aboutPage.heroDescription,
-
-      mentors: aboutPage.mentors || [],
-
-      founders: aboutPage.founders || [],
-
-      metaTitle: aboutPage.metaTitle,
-      metaDescription: aboutPage.metaDescription,
-      keywords: aboutPage.keywords || [],
-
-      status: aboutPage.status,
-
-      createdAt: aboutPage.createdAt.toISOString(),
-      updatedAt: aboutPage.updatedAt.toISOString(),
-    };
-  } catch (error) {
-    console.error("getAboutPage error:", error);
-
-    throw new Error("Failed to fetch about page");
-  }
-},
-
-getAppVersion: async (_, { platform }) => {
-  try {
-    const appVersion = await prisma.appVersion.findFirst({
-      where: {
-        platform,
-      },
-
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
-    if (!appVersion) {
-      throw new Error("App version not found");
-    }
-
-    return {
-      id: appVersion.id,
-
-      platform: appVersion.platform,
-
-      latestVersion: appVersion.latestVersion,
-
-      minimumVersion: appVersion.minimumVersion,
-
-      forceUpdate: appVersion.forceUpdate,
-
-      maintenanceMode:
-        appVersion.maintenanceMode,
-
-      maintenanceMessage:
-        appVersion.maintenanceMessage,
-
-      playStoreUrl: appVersion.playStoreUrl,
-
-      appStoreUrl: appVersion.appStoreUrl,
-
-      releaseNotes: appVersion.releaseNotes,
-
-      createdAt:
-        appVersion.createdAt.toISOString(),
-
-      updatedAt:
-        appVersion.updatedAt.toISOString(),
-    };
-  } catch (error) {
-    console.error(
-      "getAppVersion error:",
-      error
-    );
-
-    throw new Error(
-      error.message ||
-        "Failed to fetch app version"
-    );
-  }
-},
-getChatMessagesBySessionId: async (
-  _,
-  { sessionId },
-  context
-) => {
-  try {
-    if (!context.user) {
-      throw new Error("Unauthorized");
-    }
-
-    if (!sessionId) {
-      throw new Error("Session ID is required");
-    }
-
-    const messages = await prisma.message.findMany({
-      where: {
-        sessionId,
-      },
-
-      orderBy: {
-        createdAt: "asc",
-      },
-    });
-
-    return messages.map((msg) => ({
-      id: msg.id,
-      msgId: msg.msgId,
-      roomId: msg.roomId,
-
-      senderId: msg.senderId,
-      receiverId: msg.receiverId,
-
-      message: msg.message,
-      image: msg.image,
-
-      sender: msg.sender,
-
-      replyTo: msg.replyTo,
-
-      createdAt: msg.createdAt
-        ? msg.createdAt.toISOString()
-        : null,
-    }));
-  } catch (error) {
-    console.error(
-      "getChatMessagesBySessionId error:",
-      error
-    );
-
-    throw new Error(
-      error.message ||
-        "Failed to fetch session messages"
-    );
-  }
-},
+    },
+
+    getGifts: async (_, __, context) => {
+      try {
+        // ==============================
+        // AUTH CHECK
+        // ==============================
+        if (!context.user) {
+          throw new Error("Unauthorized");
+        }
+
+        console.log("USER:", context.user);
+
+        // ==============================
+        // FETCH GIFTS
+        // ==============================
+        const gifts = await prisma.gift.findMany({
+          where: {
+            status: "active",
+          },
+
+          orderBy: {
+            createdAt: "desc",
+          },
+        });
+
+        return {
+          data: gifts,
+          totalCount: gifts.length,
+        };
+      } catch (error) {
+        console.error("getGifts error:", error);
+
+        throw new Error(error.message || "Failed to fetch gifts");
+      }
+    },
+
+    getBanners: async (_, { language }) => {
+      try {
+        const whereCondition = {
+          status: true,
+
+          ...(language && {
+            language,
+          }),
+        };
+
+        const banners = await prisma.banner.findMany({
+          where: whereCondition,
+
+          orderBy: {
+            sortorder: "asc",
+          },
+        });
+
+        return {
+          data: banners,
+          totalCount: banners.length,
+        };
+      } catch (error) {
+        console.error("getBanners error:", error);
+
+        throw new Error(error.message || "Failed to fetch banners");
+      }
+    },
+    getFaqs: async () => {
+      try {
+        const faqs = await prisma.faq.findMany({
+          orderBy: {
+            createdAt: "desc",
+          },
+        });
+
+        return {
+          data: faqs,
+          totalCount: faqs.length,
+        };
+      } catch (error) {
+        console.error("getFaqs error:", error);
+
+        throw new Error(error.message || "Failed to fetch FAQs");
+      }
+    },
+
+    getTestimonials: async () => {
+      try {
+        const testimonials = await prisma.testimonial.findMany({
+          orderBy: {
+            createdAt: "desc",
+          },
+        });
+
+        return {
+          data: testimonials,
+          totalCount: testimonials.length,
+        };
+      } catch (error) {
+        console.error("getTestimonials error:", error);
+
+        throw new Error(error.message || "Failed to fetch testimonials");
+      }
+    },
+
+    getRemedies: async () => {
+      try {
+        const remedies = await prisma.remedy.findMany({
+          where: {
+            isActive: true,
+          },
+
+          orderBy: {
+            createdAt: "desc",
+          },
+        });
+
+        return {
+          data: remedies.map((item) => ({
+            id: item.id,
+            title: item.title,
+            description: item.description,
+            isActive: item.isActive,
+            createdAt: item.createdAt.toISOString(),
+            updatedAt: item.updatedAt.toISOString(),
+          })),
+
+          totalCount: remedies.length,
+        };
+      } catch (error) {
+        console.error("getRemedies error:", error);
+
+        throw new Error("Failed to fetch remedies");
+      }
+    },
+    getAboutPage: async () => {
+      try {
+        const aboutPage = await prisma.aboutPage.findFirst({
+          where: {
+            status: "PUBLISHED",
+          },
+        });
+
+        if (!aboutPage) {
+          throw new Error("About page not found");
+        }
+
+        return {
+          id: aboutPage.id,
+          pageType: aboutPage.pageType,
+          heroTitle: aboutPage.heroTitle,
+          heroDescription: aboutPage.heroDescription,
+
+          mentors: aboutPage.mentors || [],
+
+          founders: aboutPage.founders || [],
+
+          metaTitle: aboutPage.metaTitle,
+          metaDescription: aboutPage.metaDescription,
+          keywords: aboutPage.keywords || [],
+
+          status: aboutPage.status,
+
+          createdAt: aboutPage.createdAt.toISOString(),
+          updatedAt: aboutPage.updatedAt.toISOString(),
+        };
+      } catch (error) {
+        console.error("getAboutPage error:", error);
+
+        throw new Error("Failed to fetch about page");
+      }
+    },
+
+    getAppVersion: async (_, { platform }) => {
+      try {
+        const appVersion = await prisma.appVersion.findFirst({
+          where: {
+            platform,
+          },
+
+          orderBy: {
+            createdAt: "desc",
+          },
+        });
+
+        if (!appVersion) {
+          throw new Error("App version not found");
+        }
+
+        return {
+          id: appVersion.id,
+
+          platform: appVersion.platform,
+
+          latestVersion: appVersion.latestVersion,
+
+          minimumVersion: appVersion.minimumVersion,
+
+          forceUpdate: appVersion.forceUpdate,
+
+          maintenanceMode: appVersion.maintenanceMode,
+
+          maintenanceMessage: appVersion.maintenanceMessage,
+
+          playStoreUrl: appVersion.playStoreUrl,
+
+          appStoreUrl: appVersion.appStoreUrl,
+
+          releaseNotes: appVersion.releaseNotes,
+
+          createdAt: appVersion.createdAt.toISOString(),
+
+          updatedAt: appVersion.updatedAt.toISOString(),
+        };
+      } catch (error) {
+        console.error("getAppVersion error:", error);
+
+        throw new Error(error.message || "Failed to fetch app version");
+      }
+    },
+    getChatMessagesBySessionId: async (_, { sessionId }, context) => {
+      try {
+        if (!context.user) {
+          throw new Error("Unauthorized");
+        }
+
+        if (!sessionId) {
+          throw new Error("Session ID is required");
+        }
+
+        const messages = await prisma.message.findMany({
+          where: {
+            sessionId,
+          },
+
+          orderBy: {
+            createdAt: "asc",
+          },
+        });
+
+        return messages.map((msg) => ({
+          id: msg.id,
+          msgId: msg.msgId,
+          roomId: msg.roomId,
+
+          senderId: msg.senderId,
+          receiverId: msg.receiverId,
+
+          message: msg.message,
+          image: msg.image,
+
+          sender: msg.sender,
+
+          replyTo: msg.replyTo,
+
+          createdAt: msg.createdAt ? msg.createdAt.toISOString() : null,
+        }));
+      } catch (error) {
+        console.error("getChatMessagesBySessionId error:", error);
+
+        throw new Error(error.message || "Failed to fetch session messages");
+      }
+    },
     getUserSessions: async (_, { filter }, context) => {
       try {
         if (!context.user) throw new Error("Unauthorized");
@@ -1379,76 +1305,72 @@ getChatMessagesBySessionId: async (
         throw new Error(error.message);
       }
     },
-  getFreeServices: async () => {
-  try {
-    const services = await prisma.freeService.findMany({
-      where: {
-        isActive: true,
-      },
-      orderBy: [
-        {
-          order: "asc",
-        },
-        {
-          createdAt: "desc",
-        },
-      ],
-    });
+    getFreeServices: async () => {
+      try {
+        const services = await prisma.freeService.findMany({
+          where: {
+            isActive: true,
+          },
+          orderBy: [
+            {
+              order: "asc",
+            },
+            {
+              createdAt: "desc",
+            },
+          ],
+        });
 
-    return {
-      data: services.map((item) => ({
-        id: item.id,
-        title: item.title,
-        slug: item.slug,
-        href: item.href,
-        icon: item.icon,
-        isActive: item.isActive,
-        order: item.order,
-        createdAt: item.createdAt.toISOString(),
-        updatedAt: item.updatedAt.toISOString(),
-      })),
-      totalCount: services.length,
-    };
-  } catch (error) {
-    console.error("getFreeServices error:", error);
+        return {
+          data: services.map((item) => ({
+            id: item.id,
+            title: item.title,
+            slug: item.slug,
+            href: item.href,
+            icon: item.icon,
+            isActive: item.isActive,
+            order: item.order,
+            createdAt: item.createdAt.toISOString(),
+            updatedAt: item.updatedAt.toISOString(),
+          })),
+          totalCount: services.length,
+        };
+      } catch (error) {
+        console.error("getFreeServices error:", error);
 
-    throw new Error(
-      error.message || "Failed to fetch free services"
-    );
-  }
-},
+        throw new Error(error.message || "Failed to fetch free services");
+      }
+    },
 
-getFreeServiceById: async (_, { id }) => {
-  try {
-    const service = await prisma.freeService.findUnique({
-      where: {
-        id,
-      },
-    });
+    getFreeServiceById: async (_, { id }) => {
+      try {
+        const service = await prisma.freeService.findUnique({
+          where: {
+            id,
+          },
+        });
 
-    if (!service) {
-      throw new Error("Free service not found");
-    }
+        if (!service) {
+          throw new Error("Free service not found");
+        }
 
-    return {
-      id: service.id,
-      title: service.title,
-      slug: service.slug,
-      href: service.href,
-      icon: service.icon,
-      isActive: service.isActive,
-      order: service.order,
-      createdAt: service.createdAt.toISOString(),
-      updatedAt: service.updatedAt.toISOString(),
-    };
-  } catch (error) {
-    console.error("getFreeServiceById error:", error);
+        return {
+          id: service.id,
+          title: service.title,
+          slug: service.slug,
+          href: service.href,
+          icon: service.icon,
+          isActive: service.isActive,
+          order: service.order,
+          createdAt: service.createdAt.toISOString(),
+          updatedAt: service.updatedAt.toISOString(),
+        };
+      } catch (error) {
+        console.error("getFreeServiceById error:", error);
 
-    throw new Error(
-      error.message || "Failed to fetch free service"
-    );
-  }
-},
+        throw new Error(error.message || "Failed to fetch free service");
+      }
+    },
   },
 
   Mutation: {
@@ -1620,12 +1542,41 @@ getFreeServiceById: async (_, { id }) => {
       }
 
       // Use offer price if available otherwise normal price
-      const pricePerMin =
-        pricing.offerPrice && pricing.offerPrice > 0
-          ? pricing.offerPrice
-          : pricing.price;
+      // const pricePerMin =
+      //   pricing.offerPrice && pricing.offerPrice > 0
+      //     ? pricing.offerPrice
+      //     : pricing.price;
 
-      if (!pricePerMin || pricePerMin <= 0) {
+      // Check active global offer
+      const activeOffer = await prisma.astrologerOffer.findFirst({
+        where: {
+          astrologerId: input.astrologerId,
+          isActive: true,
+        },
+        include: {
+          offer: true,
+        },
+        orderBy: {
+          updatedAt: "desc",
+        },
+      });
+
+      let pricePerMin = pricing.price;
+
+      // Highest priority → astrologer active offer
+      if (
+        activeOffer?.offer &&
+        activeOffer.offer.isActive &&
+        Number(activeOffer.offer.price) > 0
+      ) {
+        pricePerMin = Number(activeOffer.offer.price);
+      }
+      // Second priority → pricing offer price
+      else if (Number(pricing.offerPrice) > 0) {
+        pricePerMin = Number(pricing.offerPrice);
+      }
+
+      if (pricePerMin <= 0) {
         throw new Error("Invalid astrologer pricing");
       }
 
@@ -1743,116 +1694,112 @@ getFreeServiceById: async (_, { id }) => {
     },
 
     createReview: async (_, { input }, context) => {
-  try {
-    console.log("createReview input:", input);
+      try {
+        console.log("createReview input:", input);
 
-    if (!context.user) {
-      throw new Error("Unauthorized");
-    }
+        if (!context.user) {
+          throw new Error("Unauthorized");
+        }
 
-    const userId = context.user.id;
+        const userId = context.user.id;
 
-    const { astro_id, star, comment } = input;
+        const { astro_id, star, comment } = input;
 
-    // Validate rating
-    if (star < 1 || star > 5) {
-      throw new Error("Rating must be between 1 and 5");
-    }
+        // Validate rating
+        if (star < 1 || star > 5) {
+          throw new Error("Rating must be between 1 and 5");
+        }
 
-    // Find latest completed session
-    const session = await prisma.session.findFirst({
-      where: {
-        userId,
-        astrologerId: astro_id,
-        status: "COMPLETED",
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+        // Find latest completed session
+        const session = await prisma.session.findFirst({
+          where: {
+            userId,
+            astrologerId: astro_id,
+            status: "COMPLETED",
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        });
 
-    if (!session) {
-      throw new Error(
-        "No completed session found with this astrologer"
-      );
-    }
+        if (!session) {
+          throw new Error("No completed session found with this astrologer");
+        }
 
-    // Prevent duplicate review for same session
-    const existingReview = await prisma.review.findFirst({
-      where: {
-        userId,
-        astrologerId: astro_id,
-        sessionId: session.id,
-      },
-    });
+        // Prevent duplicate review for same session
+        const existingReview = await prisma.review.findFirst({
+          where: {
+            userId,
+            astrologerId: astro_id,
+            sessionId: session.id,
+          },
+        });
 
-    if (existingReview) {
-      throw new Error("Review already submitted");
-    }
+        if (existingReview) {
+          throw new Error("Review already submitted");
+        }
 
-    // Fetch user + astrologer names
-    const [user, astrologer] = await Promise.all([
-      prisma.user.findUnique({
-        where: { id: userId },
-        select: { name: true },
-      }),
+        // Fetch user + astrologer names
+        const [user, astrologer] = await Promise.all([
+          prisma.user.findUnique({
+            where: { id: userId },
+            select: { name: true },
+          }),
 
-      prisma.astrologer.findUnique({
-        where: { id: astro_id },
-        select: { name: true },
-      }),
-    ]);
+          prisma.astrologer.findUnique({
+            where: { id: astro_id },
+            select: { name: true },
+          }),
+        ]);
 
-    // Create review
-    const review = await prisma.review.create({
-      data: {
-        userId,
-        astrologerId: astro_id,
-        sessionId: session.id,
+        // Create review
+        const review = await prisma.review.create({
+          data: {
+            userId,
+            astrologerId: astro_id,
+            sessionId: session.id,
 
-        rating: star,
-        comment: comment || null,
+            rating: star,
+            comment: comment || null,
 
-        userName: user?.name || null,
-        astroName: astrologer?.name || null,
+            userName: user?.name || null,
+            astroName: astrologer?.name || null,
 
-        isFlagged: false,
-      },
-    });
+            isFlagged: false,
+          },
+        });
 
-    // Calculate average rating
-    const avgRating = await prisma.review.aggregate({
-      where: {
-        astrologerId: astro_id,
-      },
-      _avg: {
-        rating: true,
-      },
-    });
+        // Calculate average rating
+        const avgRating = await prisma.review.aggregate({
+          where: {
+            astrologerId: astro_id,
+          },
+          _avg: {
+            rating: true,
+          },
+        });
 
-    // Update astrologer rating
-    await prisma.astrologer.update({
-      where: {
-        id: astro_id,
-      },
-      data: {
-        rating: avgRating._avg.rating || 0,
-      },
-    });
+        // Update astrologer rating
+        await prisma.astrologer.update({
+          where: {
+            id: astro_id,
+          },
+          data: {
+            rating: avgRating._avg.rating || 0,
+          },
+        });
 
-    return {
-      success: true,
-      message: "Review submitted successfully",
-      review,
-    };
-  } catch (error) {
-    console.error("createReview error:", error);
+        return {
+          success: true,
+          message: "Review submitted successfully",
+          review,
+        };
+      } catch (error) {
+        console.error("createReview error:", error);
 
-    throw new Error(
-      error.message || "Failed to submit review"
-    );
-  }
-},
+        throw new Error(error.message || "Failed to submit review");
+      }
+    },
     uploadImage: async (_, { file }, context) => {
       console.log("uploadImage called with file:", file);
       try {
