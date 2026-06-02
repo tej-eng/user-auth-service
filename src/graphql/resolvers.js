@@ -1579,7 +1579,7 @@ module.exports = {
       if (pricePerMin <= 0) {
         throw new Error("Invalid astrologer pricing");
       }
-
+    console.log("Price per minute:", pricePerMin);
       // Calculate Chat/Call Time
       const chatTime = Math.floor(walletBalance / pricePerMin);
 
