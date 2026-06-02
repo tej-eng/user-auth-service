@@ -65,7 +65,12 @@ type AstrologerPricing {
   commissionPercent: Float
   isActive: Boolean
 }
-
+type ActiveOffer {
+  id: ID!
+  offerName: String!
+  price: Float!
+  description: String
+}
 type Astrologer {
   id: ID
   profilePic: String
@@ -77,7 +82,7 @@ type Astrologer {
   about: String
   tags : String
   vtags :String
-  
+  activeOffer: ActiveOffer
   pricing: [AstrologerPricing]
 }
 

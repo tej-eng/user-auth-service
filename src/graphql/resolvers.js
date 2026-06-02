@@ -301,9 +301,6 @@ module.exports = {
                 in: astrologerIds,
               },
               isActive: true,
-              offer: {
-                isActive: true,
-              },
             },
             include: {
               offer: true,
