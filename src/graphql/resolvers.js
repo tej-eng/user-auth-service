@@ -314,11 +314,13 @@ module.exports = {
         const offerMap = {};
 
         activeOffers.forEach((item) => {
+          console.log(`Active offer for astrologerId ${item.astrologerId}:`, item.offer);
           offerMap[item.astrologerId] = item.offer;
         });
 
         const formattedData = astrologers.map((astro) => {
           const activeOffer = offerMap[astro.id];
+          console.log(`Astrologer: ${astro.name}, Active Offer: ${activeOffer ? activeOffer.offerName : "None"}`);
 
           return {
             id: astro.id,
