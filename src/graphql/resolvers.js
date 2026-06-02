@@ -1548,6 +1548,7 @@ module.exports = {
       //     : pricing.price;
 
       // Check active global offer
+       console.log("Checking active offers for astrologer:", input.astrologerId);
       const activeOffer = await prisma.astrologerOffer.findFirst({
         where: {
           astrologerId: input.astrologerId,
@@ -1560,7 +1561,7 @@ module.exports = {
           updatedAt: "desc",
         },
       });
-
+     console.log("Active Offer:", activeOffer);
       let pricePerMin = pricing.price;
 
       // Highest priority → astrologer active offer
