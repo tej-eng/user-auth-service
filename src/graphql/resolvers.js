@@ -1566,14 +1566,14 @@ module.exports = {
 
       // Highest priority → astrologer active offer
       if (
-        activeOffer?.offer &&
-        activeOffer.offer.isActive &&
-        Number(activeOffer.offer.price) > 0
+        activeOffer?.offer && Number(activeOffer.offer.price) > 0
       ) {
+        console.log("Applying active offer price:", activeOffer.offer.price);
         pricePerMin = Number(activeOffer.offer.price);
       }
       // Second priority → pricing offer price
       else if (Number(pricing.offerPrice) > 0) {
+        console.log("Applying pricing offer price:", pricing.offerPrice);
         pricePerMin = Number(pricing.offerPrice);
       }
 
