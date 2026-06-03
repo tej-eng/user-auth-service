@@ -1592,6 +1592,24 @@ module.exports = {
         },
       });
 
+      // Get pricing config
+const pricingConfig = await prisma.pricingConfig.findFirst();
+
+// Get or create user offer usage
+let userOfferUsage = await prisma.userOfferUsage.findUnique({
+  where: {
+    userId,
+  },
+});
+
+if (!userOfferUsage) {
+  userOfferUsage = await prisma.userOfferUsage.create({
+    data: {
+      userId,
+    },
+  });
+}
+
       if (!astrologer) {
         throw new Error("Astrologer not found");
       }
