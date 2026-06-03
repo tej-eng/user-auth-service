@@ -203,6 +203,8 @@ input IntakeInput {
   occupation: String!
   birthPlace: String!
   requestType: String!
+  latitude: Float
+  longitude: Float
 }
 
 type Intake {
@@ -217,7 +219,8 @@ type Intake {
   birthPlace: String!
   requestType: String!
   chatId: String
-
+  latitude: Float
+  longitude: Float
   # OPTIONAL ADDITIONS
   pricePerMin: Float
   pricingType: PricingType
