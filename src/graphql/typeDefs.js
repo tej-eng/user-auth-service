@@ -58,19 +58,35 @@ module.exports = gql`
   # -----------------------------------------
 # -----------------------------------------
 # Astrologer Public Search Configuration
+
 # -----------------------------------------
 
-
-type Astrologer {
+type AstrologerPricing {
+  type: String
+  price: Float
+  offerPrice: Float
+  commissionPercent: Float
+  isActive: Boolean
+}
+type ActiveOffer {
   id: ID!
+  offerName: String!
+  price: Float!
+  description: String
+}
+type Astrologer {
+  id: ID
+  profilePic: String
   name: String
   experience: Int
-  price: Float
   rating: Float
   skills: [String]
   languages: [String]
-  profilePic: String
-  status: Boolean
+  about: String
+  tags : String
+  vtags :String
+  activeOffer: ActiveOffer
+  pricing: [AstrologerPricing]
 }
 
 input AstrologerSearchInput {
@@ -79,6 +95,7 @@ input AstrologerSearchInput {
   sortOrder: SortOrder # ASC or DESC
   limit: Int           # Items per page
   page: Int            # Page number
+  type: PricingType
 }
 
 enum SortField {
@@ -158,11 +175,26 @@ type RechargePackResponse {
 # -----------------------------------------
 # Intake Section
 # -----------------------------------------
+
+enum PricingType {
+  CHAT
+  CALL
+  VIDEO
+  AUDIO
+}
+
 type CreateIntakeResponse {
   roomId: String!
   chatTime: Int!
   intakeId: String!
+  message: String
+
+  # NEW
+  pricePerMin: Float
+  pricingType: PricingType
+  appliedOffer: String
 }
+
 input IntakeInput {
   astrologerId: String!
   name: String!
@@ -175,6 +207,7 @@ input IntakeInput {
   birthPlace: String!
   requestType: String!
 }
+
 type Intake {
   id: ID!
   name: String!
@@ -187,10 +220,16 @@ type Intake {
   birthPlace: String!
   requestType: String!
   chatId: String
+
+  # OPTIONAL ADDITIONS
+  pricePerMin: Float
+  pricingType: PricingType
+
   createdAt: String!
 }
+
 #------------------------------------------
-#end intake section
+# end intake section
 
 #-----------------------------------------
 # Get User by ID (for admin or internal use)
@@ -263,18 +302,42 @@ type UserWallet {
 }
 #---------End get user wallet----------------
 #-----------start review-------------------
+#----------- START REVIEW -------------------
+
+type Review {
+  id: ID!
+
+  userId: String!
+  astrologerId: String!
+
+  sessionId: String
+
+  rating: Int!
+  comment: String
+  reply: String
+
+  isFlagged: Boolean
+
+  userName: String
+  astroName: String
+
+  createdAt: String
+  updatedAt: String
+}
+
 input CreateReviewInput {
   astro_id: String!
-  review_id: String
   star: Int!
   comment: String
-  user_name: String
-  astro_name: String
 }
+
 type CreateReviewResponse {
   success: Boolean!
   message: String!
+  review: Review
 }
+
+#----------- END REVIEW -------------------
 #--------------end review-------------
 #--------------start chat history----------------
 scalar JSON
@@ -358,6 +421,400 @@ type ChatSessionResponse {
 
 
 #-----------------------ENd user sessions-----------------
+
+#--------------upload image response----------------
+scalar Upload
+
+type UploadResponse {
+  url: String
+  filename: String
+}
+#-------------------End upload image response---------
+
+#------------------start for get live chatmessages-----------------------
+type ChatMessage {
+  msg_id: String
+  sender_id: String
+  room_id: String
+  received_id: String
+  message: String
+  image: String
+  sender: String
+  replyTo: JSON
+  time: String
+}
+#-------------------end for get live chatmessages-----------------------
+
+#------------------start recent intake response-----------------------
+type RecentIntakeResponse {
+  success: Boolean
+  message: String
+  data: [Intake]
+}
+#-------------------end recent intake response-----------------------
+#------------------start code for razorpay order-----------------------
+
+input CreateOrderInput {
+  rechargePackId: String!
+}
+
+type CreateOrderResponse {
+  success: Boolean!
+  orderId: String!
+  amount: Int!
+  currency: String!
+}
+#--------------------end code for razorpay order-----------------------
+#------------------start code for astrologer application-----------------------
+enum ApplicationStatus {
+    PENDING
+    APPROVED
+    REJECTED
+  }
+  enum InterviewStatus {
+    PENDING
+    SCHEDULED
+    PASSED
+    REJECTED
+  }
+  enum DocumentStatus {
+    PENDING
+    VERIFIED
+    REJECTED
+  }
+    enum ApprovalStatus {
+    PENDING
+    APPROVED
+    REJECTED
+  }
+
+ input CreateApplicationInput {
+    name: String!
+    phoneNumber: String!
+    email: String
+    dob: String!
+    gender: String!
+    languages: [String!]!
+    problems: [String!]!
+
+    skills: [String!]!
+    experience: Int!
+    about: String
+    address: String
+    pincode: String
+  }
+  type AstrologerApplication {
+    id: ID!
+    name: String
+    phoneNumber: String
+    email: String
+    gender: String
+    skills: [String]
+    languages: [String]
+    problems: [String]
+
+    experience: Int
+    applicationStatus: String!
+    interviewStatus: String
+    interviewRemarks: String
+    documentStatus: DocumentStatus
+    approvalStatus: ApprovalStatus
+
+    interviewerId: String
+    interviewDate: String
+    interviewTime: String
+    round: Int
+
+    createdAt: String
+  }
+#-------------------start code for astrologer application-----------------------
+
+#------------------start code for chat history-----------------------
+
+input UserChatHistoryFilterInput {
+  page: Int
+  limit: Int
+
+  astrologerName: String
+  status: SessionStatus
+
+  startDate: String
+  endDate: String
+}
+
+type UserChatHistoryResponse {
+  success: Boolean!
+  summary: ChatHistorySummary!
+  data: [UserChatHistoryItem!]!
+  totalCount: Int!
+  currentPage: Int!
+  totalPages: Int!
+}
+
+type ChatHistorySummary {
+  totalCoinsDeducted: Int!
+  totalCoinsEarned: Int!
+  totalCommission: Int!
+  totalRecords: Int!
+}
+
+type UserChatHistoryItem {
+  srNo: Int
+
+  roomId: String
+  sessionId: String
+
+  startedAt: String
+  endedAt: String
+  createdAt: String
+
+  status: String
+
+  durationSec: Int
+  durationMinutes: Int
+
+  ratePerMin: Int
+
+  coinsDeducted: Int
+  coinsEarned: Int
+  commission: Int
+
+  user: ChatUser
+  astrologer: ChatAstrologer
+
+  lastMessage: ChatMessage
+}
+
+type ChatUser {
+  id: String
+  name: String
+  mobile: String
+  countryCode: String
+}
+
+type ChatAstrologer {
+  id: String
+  name: String
+  profilePic: String
+  experience: Int
+  rating: Float
+  skills: [String]
+  languages: [String]
+}
+
+#--------------------End code for chat history-----------------------
+
+#------------------start code for call history-----------------------
+
+input UserCallHistoryFilterInput {
+  page: Int
+  limit: Int
+
+  astrologerName: String
+  status: SessionStatus
+
+  startDate: String
+  endDate: String
+}
+
+type UserCallHistoryResponse {
+  success: Boolean!
+  summary: ChatHistorySummary!
+  data: [UserCallHistoryItem!]!
+  totalCount: Int!
+  currentPage: Int!
+  totalPages: Int!
+}
+
+type UserCallHistoryItem {
+  srNo: Int
+
+  sessionId: String
+
+  startedAt: String
+  endedAt: String
+  createdAt: String
+
+  status: String
+
+  durationSec: Int
+  durationMinutes: Int
+
+  ratePerMin: Int
+
+  coinsDeducted: Int
+  coinsEarned: Int
+  commission: Int
+
+  user: ChatUser
+  astrologer: ChatAstrologer
+}
+
+#--------------------End code for call history-----------------------
+
+#------------------ START GIFT SECTION ------------------
+
+type Gift {
+  id: ID!
+  name: String!
+  amount: Float!
+  image: String
+  status: String
+  createdAt: String
+  updatedAt: String
+}
+
+type GiftResponse {
+  data: [Gift!]!
+  totalCount: Int!
+}
+
+#------------------ END GIFT SECTION ------------------
+#------------------ START BANNER SECTION ------------------
+
+type Banner {
+  id: ID!
+  heading: String
+  subheading: String
+  slug: String
+  sortorder: Int
+  bannerlink: String
+  language: String
+  imageUrl: String
+  status: Boolean
+  createdAt: String
+  updatedAt: String
+}
+
+type BannerResponse {
+  data: [Banner!]!
+  totalCount: Int!
+}
+
+#------------------ END BANNER SECTION ------------------
+#------------------ START FAQ SECTION ------------------
+
+type Faq {
+  id: ID!
+  question: String!
+  answer: String!
+  createdAt: String
+  updatedAt: String
+}
+
+type FaqResponse {
+  data: [Faq!]!
+  totalCount: Int!
+}
+
+#------------------ END FAQ SECTION ------------------
+
+#------------------ START TESTIMONIAL SECTION ------------------
+
+type Testimonial {
+  id: ID!
+  name: String!
+  address: String
+  content: String!
+  image: String
+  rating: Int
+  createdAt: String
+  updatedAt: String
+}
+
+type TestimonialResponse {
+  data: [Testimonial!]!
+  totalCount: Int!
+}
+
+#------------------ END TESTIMONIAL SECTION ------------------
+#------------------ START ABOUT PAGE SECTION ------------------
+type MentorFounder {
+  name: String
+  image: String
+  description: String
+  designation: String
+}
+
+type AboutPage {
+  id: ID!
+  pageType: String
+  heroTitle: String
+  heroDescription: String
+
+  mentors: [MentorFounder]
+  founders: [MentorFounder]
+
+  metaTitle: String
+  metaDescription: String
+  keywords: [String]
+
+  status: String
+
+  createdAt: String
+  updatedAt: String
+}
+#------------------ END ABOUT PAGE SECTION ------------------
+#------------------ START REMEDY SECTION ------------------
+type Remedy {
+  id: ID!
+  title: String!
+  description: String!
+  isActive: Boolean!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type RemedyResponse {
+  data: [Remedy!]!
+  totalCount: Int!
+}
+  #-----------------------------------------
+ #------------------START APP VERSION SECTION ------------------
+  enum PlatformType {
+  ANDROID
+  IOS
+}
+
+type AppVersion {
+  id: ID!
+  platform: PlatformType!
+  latestVersion: String
+  minimumVersion: String
+
+  forceUpdate: Boolean
+  maintenanceMode: Boolean
+  maintenanceMessage: String
+
+  playStoreUrl: String
+  appStoreUrl: String
+
+  releaseNotes: String
+
+  createdAt: String
+  updatedAt: String
+}
+ #--------END APP VERSION SECTION --------------------
+ #------------START free services section----------------
+
+ type FreeService {
+  id: ID!
+  title: String!
+  slug: String!
+  href: String!
+  icon: String!
+  isActive: Boolean!
+  order: Int!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type FreeServiceResponse {
+  data: [FreeService!]!
+  totalCount: Int!
+}
+
+ #------------END free services section----------------
   type Query {
   me: User
   getUsersDetails(page: Int, limit: Int, search: String): UserPagination!
@@ -373,8 +830,40 @@ type ChatSessionResponse {
   getUserProfile: User
   getUserWalletTransactions(filter: WalletTransactionFilter): WalletTransactionResponse
   
-  getUserChatHistory(page: Int, limit: Int): [ChatHistory]
+ getUserChatHistory(
+  filter: UserChatHistoryFilterInput
+): UserChatHistoryResponse
+
   getUserSessions(filter: SessionFilterInput): ChatSessionResponse
+  getChatMessages(roomId: String!): [ChatMessage]
+  recentIntakes: RecentIntakeResponse
+   getChatMessagesBySessionId(
+    sessionId: String!
+  ): [ChatMessage]
+
+  getUserCallHistory(
+  filter: UserCallHistoryFilterInput
+): UserCallHistoryResponse
+
+
+  getGifts: GiftResponse!
+
+  getBanners(language: String): BannerResponse!
+
+  getFaqs: FaqResponse!
+
+  getTestimonials: TestimonialResponse!
+
+  getRemedies: RemedyResponse!
+
+  getAboutPage: AboutPage
+
+  getAppVersion(platform: PlatformType!): AppVersion
+
+  getFreeServices: FreeServiceResponse!
+
+  getFreeServiceById(id: ID!): FreeService
+
   
   }
 
@@ -387,5 +876,12 @@ type ChatSessionResponse {
     updateUserProfile(input: UpdateUserInput!): User!
     createIntake(input: IntakeInput!): CreateIntakeResponse!
     createReview(input: CreateReviewInput!): CreateReviewResponse!
+    uploadImage(file: Upload!): UploadResponse
+    createOrder(input: CreateOrderInput!): CreateOrderResponse!
+      createAstrologerApplication(
+      input: CreateApplicationInput!
+    ): AstrologerApplication!
+
+   
 }
 `;

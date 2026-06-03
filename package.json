@@ -24,11 +24,13 @@
     "graphql": "^16.12.0",
     "graphql-tag": "^2.12.6",
     "graphql-type-json": "^0.3.2",
+    "graphql-upload": "^13.0.0",
     "helmet": "^8.1.0",
     "ioredis": "^5.9.3",
     "jsonwebtoken": "^9.0.3",
     "mongodb": "^7.1.0",
     "prisma": "^5.22.0",
+    "razorpay": "^2.9.6",
     "redis": "^5.11.0"
   },
   "devDependencies": {
