@@ -1757,6 +1757,8 @@ console.log("Applied Offer:", appliedOffer);
           chatId: roomId,
           appliedOffer,
           pricePerMin,
+          latitude: input.latitude,
+          longitude: input.longitude,
         },
       });
 
