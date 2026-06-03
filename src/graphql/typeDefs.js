@@ -189,6 +189,7 @@ type CreateIntakeResponse {
   # NEW
   pricePerMin: Float
   pricingType: PricingType
+  appliedOffer: String
 }
 
 input IntakeInput {

@@ -1604,14 +1604,6 @@ module.exports = {
           `${input.requestType} pricing not configured for astrologer`,
         );
       }
-
-      // Use offer price if available otherwise normal price
-      // const pricePerMin =
-      //   pricing.offerPrice && pricing.offerPrice > 0
-      //     ? pricing.offerPrice
-      //     : pricing.price;
-
-      // Check active global offer
       console.log("Checking active offers for astrologer:", input.astrologerId);
       const activeOffer = await prisma.astrologerOffer.findFirst({
         where: {
@@ -1626,20 +1618,99 @@ module.exports = {
         },
       });
       console.log("Active Offer:", activeOffer);
-      let pricePerMin = pricing.price;
 
-      // Highest priority → astrologer active offer
-      if (
-        activeOffer?.offer && Number(activeOffer.offer.price) > 0
-      ) {
-        console.log("Applying active offer price:", activeOffer.offer.price);
-        pricePerMin = Number(activeOffer.offer.price);
-      }
-      // Second priority → pricing offer price
-      else if (Number(pricing.offerPrice) > 0) {
-        console.log("Applying pricing offer price:", pricing.offerPrice);
-        pricePerMin = Number(pricing.offerPrice);
-      }
+//---------------
+let pricePerMin = Number(pricing.price);
+let appliedOffer = "NORMAL";
+
+const requestType =
+  input.requestType.toUpperCase() === "CALL"
+    ? "CALL"
+    : "CHAT";
+
+/**
+ * FIRST TIME OFFER
+ */
+if (
+  pricingConfig?.isFirstOfferEnabled &&
+  !userOfferUsage.firstOfferUsedAt
+) {
+  pricePerMin =
+    requestType === "CALL"
+      ? Number(pricingConfig.firstCallPrice)
+      : Number(pricingConfig.firstChatPrice);
+
+  appliedOffer = "FIRST_TIME_OFFER";
+
+  console.log(
+    "Applying FIRST_TIME_OFFER price:",
+    pricePerMin,
+  );
+}
+
+/**
+ * SECOND TIME OFFER
+ */
+else if (
+  pricingConfig?.isSecondOfferEnabled &&
+  !userOfferUsage.secondOfferUsedAt
+) {
+  pricePerMin =
+    requestType === "CALL"
+      ? Number(pricingConfig.secondCallPrice)
+      : Number(pricingConfig.secondChatPrice);
+
+  appliedOffer = "SECOND_TIME_OFFER";
+
+  console.log(
+    "Applying SECOND_TIME_OFFER price:",
+    pricePerMin,
+  );
+}
+
+/**
+ * ASTROLOGER SPECIAL OFFER
+ * (Birthday Offer / Diwali Offer etc)
+ */
+else if (
+  activeOffer?.offer &&
+  Number(activeOffer.offer.price) > 0
+) {
+  pricePerMin = Number(activeOffer.offer.price);
+
+  appliedOffer = "ASTROLOGER_SPECIAL_OFFER";
+
+  console.log(
+    "Applying ASTROLOGER_SPECIAL_OFFER:",
+    pricePerMin,
+  );
+}
+
+/**
+ * ASTROLOGER OFFER PRICE
+ */
+// else if (
+//   pricing.offerPrice &&
+//   Number(pricing.offerPrice) > 0
+// ) {
+//   pricePerMin = Number(pricing.offerPrice);
+
+//   appliedOffer = "ASTROLOGER_OFFER_PRICE";
+
+//   console.log(
+//     "Applying ASTROLOGER_OFFER_PRICE:",
+//     pricePerMin,
+//   );
+// }
+
+if (pricePerMin <= 0) {
+  throw new Error("Invalid astrologer pricing");
+}
+
+console.log("Final Price Per Minute:", pricePerMin);
+console.log("Applied Offer:", appliedOffer);
+//------------------
+      
 
       if (pricePerMin <= 0) {
         throw new Error("Invalid astrologer pricing");
@@ -1666,6 +1737,8 @@ module.exports = {
           birthPlace: input.birthPlace,
           requestType: input.requestType,
           chatId: roomId,
+          appliedOffer,
+          pricePerMin,
         },
       });
 
