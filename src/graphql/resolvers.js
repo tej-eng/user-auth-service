@@ -1850,6 +1850,10 @@ if (!userOfferUsage) {
       console.log("Active Offer:", activeOffer);
 
 //---------------
+// ----------------------------------------------------
+// DEFAULT PRICE
+// ----------------------------------------------------
+
 let pricePerMin = Number(pricing.price);
 let appliedOffer = "NORMAL";
 
@@ -1858,9 +1862,10 @@ const requestType =
     ? "CALL"
     : "CHAT";
 
-/**
- * FIRST TIME OFFER
- */
+// ----------------------------------------------------
+// FIRST TIME OFFER
+// ----------------------------------------------------
+
 if (
   pricingConfig?.isFirstOfferEnabled &&
   !userOfferUsage.firstOfferUsedAt
@@ -1873,14 +1878,15 @@ if (
   appliedOffer = "FIRST_TIME_OFFER";
 
   console.log(
-    "Applying FIRST_TIME_OFFER price:",
-    pricePerMin,
+    "Applied FIRST_TIME_OFFER:",
+    pricePerMin
   );
 }
 
-/**
- * SECOND TIME OFFER
- */
+// ----------------------------------------------------
+// SECOND TIME OFFER
+// ----------------------------------------------------
+
 else if (
   pricingConfig?.isSecondOfferEnabled &&
   !userOfferUsage.secondOfferUsedAt
@@ -1893,51 +1899,103 @@ else if (
   appliedOffer = "SECOND_TIME_OFFER";
 
   console.log(
-    "Applying SECOND_TIME_OFFER price:",
-    pricePerMin,
+    "Applied SECOND_TIME_OFFER:",
+    pricePerMin
   );
 }
 
-/**
- * ASTROLOGER SPECIAL OFFER
- * (Birthday Offer / Diwali Offer etc)
- */
-else if (
-  activeOffer?.offer &&
-  Number(activeOffer.offer.price) > 0
-) {
-  pricePerMin = Number(activeOffer.offer.price);
+// ----------------------------------------------------
+// GLOBAL OFFER
+// ----------------------------------------------------
 
-  appliedOffer = "ASTROLOGER_SPECIAL_OFFER";
+else if (
+  pricingConfig?.isGlobalOfferEnabled
+) {
+  pricePerMin =
+    requestType === "CALL"
+      ? Number(pricingConfig.globalCallPrice)
+      : Number(pricingConfig.globalChatPrice);
+
+  appliedOffer = "GLOBAL_OFFER";
 
   console.log(
-    "Applying ASTROLOGER_SPECIAL_OFFER:",
-    pricePerMin,
+    "Applied GLOBAL_OFFER:",
+    pricePerMin
   );
 }
 
-/**
- * ASTROLOGER OFFER PRICE
- */
-// else if (
-//   pricing.offerPrice &&
-//   Number(pricing.offerPrice) > 0
-// ) {
-//   pricePerMin = Number(pricing.offerPrice);
+// ----------------------------------------------------
+// BIRTHDAY / DIWALI / SPECIAL OFFER
+// ----------------------------------------------------
 
-//   appliedOffer = "ASTROLOGER_OFFER_PRICE";
+else if (
+  activeOffer?.offer &&
+  activeOffer.offer.isActive &&
+  Number(activeOffer.offer.price) > 0
+) {
+  pricePerMin = Number(
+    activeOffer.offer.price
+  );
 
-//   console.log(
-//     "Applying ASTROLOGER_OFFER_PRICE:",
-//     pricePerMin,
-//   );
-// }
+  appliedOffer =
+    activeOffer.offer.offerName ||
+    "ASTROLOGER_SPECIAL_OFFER";
 
-if (pricePerMin <= 0) {
-  throw new Error("Invalid astrologer pricing");
+  console.log(
+    "Applied ASTROLOGER_SPECIAL_OFFER:",
+    pricePerMin
+  );
 }
 
-console.log("Final Price Per Minute:", pricePerMin);
+// ----------------------------------------------------
+// ASTROLOGER OFFER PRICE
+// ----------------------------------------------------
+
+else if (
+  pricing.offerPrice &&
+  Number(pricing.offerPrice) > 0
+) {
+  pricePerMin = Number(
+    pricing.offerPrice
+  );
+
+  appliedOffer = "ASTROLOGER_OFFER_PRICE";
+
+  console.log(
+    "Applied ASTROLOGER_OFFER_PRICE:",
+    pricePerMin
+  );
+}
+
+// ----------------------------------------------------
+// NORMAL PRICE
+// ----------------------------------------------------
+
+else {
+  pricePerMin = Number(pricing.price);
+
+  appliedOffer = "NORMAL";
+
+  console.log(
+    "Applied NORMAL PRICE:",
+    pricePerMin
+  );
+}
+
+// ----------------------------------------------------
+// VALIDATION
+// ----------------------------------------------------
+
+if (
+  !pricePerMin ||
+  Number(pricePerMin) <= 0
+) {
+  throw new Error(
+    "Invalid astrologer pricing"
+  );
+}
+
+console.log("Final Price:", pricePerMin);
 console.log("Applied Offer:", appliedOffer);
 //------------------
       
