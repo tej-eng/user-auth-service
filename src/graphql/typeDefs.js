@@ -57,17 +57,16 @@ module.exports = gql`
   # Astrologer Public Search Configuration
 
   # -----------------------------------------
-  
 
   type AstrologerPricing {
-  type: String
-  price: Float
-  originalPrice: Float
-  offerPrice: Float
-  appliedOffer: String
-  commissionPercent: Float
-  isActive: Boolean
-}
+    type: String
+    price: Float
+    originalPrice: Float
+    offerPrice: Float
+    appliedOffer: String
+    commissionPercent: Float
+    isActive: Boolean
+  }
   type ActiveOffer {
     id: ID!
     offerName: String!
@@ -821,8 +820,8 @@ module.exports = gql`
       searchInput: AstrologerSearchInput
     ): AstrologerPagination!
     getAstrologerListForUser(
-    searchInput: AstrologerSearchInput
-  ): AstrologerPagination!
+      searchInput: AstrologerSearchInput
+    ): AstrologerPagination!
     getRechargePacks: RechargePackResponse!
     getRechargePackById(id: ID!): RechargePack
     me: User

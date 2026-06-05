@@ -49,11 +49,11 @@ module.exports = {
 
         const whereCondition = search
           ? {
-            OR: [
-              { mobile: { contains: search, mode: "insensitive" } },
-              { countryCode: { contains: search, mode: "insensitive" } },
-            ],
-          }
+              OR: [
+                { mobile: { contains: search, mode: "insensitive" } },
+                { countryCode: { contains: search, mode: "insensitive" } },
+              ],
+            }
           : {};
 
         const [users, totalCount] = await Promise.all([
@@ -148,19 +148,19 @@ module.exports = {
           // HANDLE MULTIPLE TYPES
           ...(type && type.length > 0
             ? {
-              type: {
-                in: type, // ["DEBIT", "CREDIT"]
-              },
-            }
+                type: {
+                  in: type, // ["DEBIT", "CREDIT"]
+                },
+              }
             : {}),
 
           ...(fromDate || toDate
             ? {
-              createdAt: {
-                ...(fromDate && { gte: new Date(fromDate) }),
-                ...(toDate && { lte: new Date(toDate) }),
-              },
-            }
+                createdAt: {
+                  ...(fromDate && { gte: new Date(fromDate) }),
+                  ...(toDate && { lte: new Date(toDate) }),
+                },
+              }
             : {}),
         };
 
@@ -215,379 +215,348 @@ module.exports = {
     },
     //---this api call without authentication as it is used in public search page
     getAstrologerListBySearch: async (_, { searchInput }) => {
-  try {
-    const {
-      query,
-      sortField,
-      sortOrder,
-      limit = 10,
-      page = 1,
-      type,
-    } = searchInput || {};
+      try {
+        const {
+          query,
+          sortField,
+          sortOrder,
+          limit = 10,
+          page = 1,
+          type,
+        } = searchInput || {};
 
-    const skip = (page - 1) * limit;
+        const skip = (page - 1) * limit;
 
-    let orderBy = { createdAt: "desc" };
+        let orderBy = { createdAt: "desc" };
 
-    if (sortField) {
-      const sortMap = {
-        EXPERIENCE: "experience",
-        RATING: "rating",
-      };
+        if (sortField) {
+          const sortMap = {
+            EXPERIENCE: "experience",
+            RATING: "rating",
+          };
 
-      if (sortMap[sortField]) {
-        orderBy = {
-          [sortMap[sortField]]:
-            sortOrder === "ASC" ? "asc" : "desc",
+          if (sortMap[sortField]) {
+            orderBy = {
+              [sortMap[sortField]]: sortOrder === "ASC" ? "asc" : "desc",
+            };
+          }
+        }
+
+        const where = {
+          ...(query && {
+            OR: [
+              {
+                name: {
+                  contains: query,
+                  mode: "insensitive",
+                },
+              },
+              {
+                skills: {
+                  has: query,
+                },
+              },
+              {
+                languages: {
+                  has: query,
+                },
+              },
+            ],
+          }),
         };
-      }
-    }
 
-    const where = {
-      ...(query && {
-        OR: [
-          {
-            name: {
-              contains: query,
-              mode: "insensitive",
+        const [astrologers, totalCount] = await Promise.all([
+          prisma.astrologer.findMany({
+            where,
+            orderBy,
+            skip,
+            take: limit,
+            include: {
+              pricing: {
+                where: {
+                  isActive: true,
+                  ...(type && { type }),
+                },
+              },
             },
-          },
-          {
-            skills: {
-              has: query,
+          }),
+
+          prisma.astrologer.count({ where }),
+        ]);
+
+        const astrologerIds = astrologers.map((a) => a.id);
+
+        const activeOffers = await prisma.astrologerOffer.findMany({
+          where: {
+            astrologerId: {
+              in: astrologerIds,
             },
+            isActive: true,
           },
-          {
-            languages: {
-              has: query,
-            },
+          include: {
+            offer: true,
           },
-        ],
-      }),
-    };
+        });
 
-    const [astrologers, totalCount] = await Promise.all([
-      prisma.astrologer.findMany({
-        where,
-        orderBy,
-        skip,
-        take: limit,
-        include: {
-          pricing: {
-            where: {
-              isActive: true,
-              ...(type && { type }),
-            },
-          },
-        },
-      }),
+        const offerMap = {};
 
-      prisma.astrologer.count({ where }),
-    ]);
+        activeOffers.forEach((item) => {
+          offerMap[item.astrologerId] = item.offer;
+        });
 
-    const astrologerIds = astrologers.map((a) => a.id);
-
-    const activeOffers = await prisma.astrologerOffer.findMany({
-      where: {
-        astrologerId: {
-          in: astrologerIds,
-        },
-        isActive: true,
-      },
-      include: {
-        offer: true,
-      },
-    });
-
-    const offerMap = {};
-
-    activeOffers.forEach((item) => {
-      offerMap[item.astrologerId] = item.offer;
-    });
-
-    const data = astrologers.map((astro) => {
-      const specialOffer = offerMap[astro.id];
-
-      return {
-        id: astro.id,
-        profilePic: astro.profilePic,
-        name: astro.name,
-        experience: astro.experience,
-        rating: astro.rating,
-        skills: astro.skills,
-        languages: astro.languages,
-
-        activeOffer: specialOffer
-          ? {
-              id: specialOffer.id,
-              offerName: specialOffer.offerName,
-              price: specialOffer.price,
-              description: specialOffer.description,
-            }
-          : null,
-
-        pricing: astro.pricing.map((p) => ({
-          type: p.type,
-
-          price: specialOffer
-            ? specialOffer.price
-            : p.price,
-
-          originalPrice: p.price,
-
-          commissionPercent:
-            p.commissionPercent,
-
-          isActive: p.isActive,
-        })),
-      };
-    });
-
-    return {
-      data,
-      totalCount,
-      currentPage: page,
-      totalPages: Math.ceil(totalCount / limit),
-    };
-  } catch (error) {
-    console.error(error);
-    throw new Error(error.message);
-  }
-},
-
-    //-----this api call for with auth--
-    getAstrologerListForUser: async (
-  _,
-  { searchInput },
-  context
-) => {
-  try {
-    if (!context.user) {
-      throw new Error("Unauthorized");
-    }
-
-    const userId = context.user.id;
-
-    const {
-      query,
-      sortField,
-      sortOrder,
-      limit = 10,
-      page = 1,
-      type,
-    } = searchInput || {};
-
-    const skip = (page - 1) * limit;
-
-    let orderBy = { createdAt: "desc" };
-
-    if (sortField) {
-      const sortMap = {
-        EXPERIENCE: "experience",
-        RATING: "rating",
-      };
-
-      if (sortMap[sortField]) {
-        orderBy = {
-          [sortMap[sortField]]:
-            sortOrder === "ASC"
-              ? "asc"
-              : "desc",
-        };
-      }
-    }
-
-    const where = {
-      ...(query && {
-        OR: [
-          {
-            name: {
-              contains: query,
-              mode: "insensitive",
-            },
-          },
-          {
-            skills: {
-              has: query,
-            },
-          },
-          {
-            languages: {
-              has: query,
-            },
-          },
-        ],
-      }),
-    };
-
-    const [
-      astrologers,
-      totalCount,
-      pricingConfig,
-      usage,
-    ] = await Promise.all([
-      prisma.astrologer.findMany({
-        where,
-        orderBy,
-        skip,
-        take: limit,
-        include: {
-          pricing: {
-            where: {
-              isActive: true,
-              ...(type && { type }),
-            },
-          },
-        },
-      }),
-
-      prisma.astrologer.count({
-        where,
-      }),
-
-      prisma.pricingConfig.findFirst(),
-
-      prisma.userOfferUsage.findUnique({
-        where: {
-          userId,
-        },
-      }),
-    ]);
-
-    const astrologerIds = astrologers.map(
-      (a) => a.id
-    );
-
-    const activeOffers =
-      await prisma.astrologerOffer.findMany({
-        where: {
-          astrologerId: {
-            in: astrologerIds,
-          },
-          isActive: true,
-        },
-        include: {
-          offer: true,
-        },
-      });
-
-    const offerMap = {};
-
-    activeOffers.forEach((item) => {
-      offerMap[item.astrologerId] = item.offer;
-    });
-
-    const data = astrologers.map((astro) => {
-      const specialOffer =
-        offerMap[astro.id];
-
-      return {
-        id: astro.id,
-        profilePic: astro.profilePic,
-        name: astro.name,
-        experience: astro.experience,
-        rating: astro.rating,
-        skills: astro.skills,
-        languages: astro.languages,
-
-        activeOffer: specialOffer
-          ? {
-              id: specialOffer.id,
-              offerName:
-                specialOffer.offerName,
-              price: specialOffer.price,
-              description:
-                specialOffer.description,
-            }
-          : null,
-
-        pricing: astro.pricing.map((p) => {
-          let finalPrice = p.price;
-          let appliedOffer = null;
-
-          // 1. Special Offer
-          if (specialOffer) {
-            finalPrice =
-              specialOffer.price;
-
-            appliedOffer =
-              specialOffer.offerName;
-          }
-
-          // 2. First Offer
-          else if (
-            pricingConfig?.isFirstOfferEnabled &&
-            !usage?.usedFirst
-          ) {
-            finalPrice =
-              p.type === "CHAT"
-                ? pricingConfig.firstChatPrice
-                : pricingConfig.firstCallPrice;
-
-            appliedOffer =
-              "FIRST_TIME_OFFER";
-          }
-
-          // 3. Second Offer
-          else if (
-            pricingConfig?.isSecondOfferEnabled &&
-            usage?.usedFirst &&
-            !usage?.usedSecond
-          ) {
-            finalPrice =
-              p.type === "CHAT"
-                ? pricingConfig.secondChatPrice
-                : pricingConfig.secondCallPrice;
-
-            appliedOffer =
-              "SECOND_TIME_OFFER";
-          }
-
-          // 4. Global Offer
-          else if (
-            pricingConfig?.isGlobalOfferEnabled
-          ) {
-            finalPrice =
-              p.type === "CHAT"
-                ? pricingConfig.globalChatPrice
-                : pricingConfig.globalCallPrice;
-
-            appliedOffer =
-              "GLOBAL_OFFER";
-          }
+        const data = astrologers.map((astro) => {
+          const specialOffer = offerMap[astro.id];
 
           return {
-            type: p.type,
+            id: astro.id,
+            profilePic: astro.profilePic,
+            name: astro.name,
+            experience: astro.experience,
+            rating: astro.rating,
+            skills: astro.skills,
+            languages: astro.languages,
 
-            price: finalPrice,
+            activeOffer: specialOffer
+              ? {
+                  id: specialOffer.id,
+                  offerName: specialOffer.offerName,
+                  price: specialOffer.price,
+                  description: specialOffer.description,
+                }
+              : null,
 
-            originalPrice: p.price,
+            pricing: astro.pricing.map((p) => ({
+              type: p.type,
 
-            appliedOffer,
+              price: specialOffer ? specialOffer.price : p.price,
 
-            commissionPercent:
-              p.commissionPercent,
+              originalPrice: p.price,
 
-            isActive: p.isActive,
+              commissionPercent: p.commissionPercent,
+
+              isActive: p.isActive,
+            })),
           };
-        }),
-      };
-    });
+        });
 
-    return {
-      data,
-      totalCount,
-      currentPage: page,
-      totalPages: Math.ceil(
-        totalCount / limit
-      ),
-    };
-  } catch (error) {
-    console.error(error);
+        return {
+          data,
+          totalCount,
+          currentPage: page,
+          totalPages: Math.ceil(totalCount / limit),
+        };
+      } catch (error) {
+        console.error(error);
+        throw new Error(error.message);
+      }
+    },
 
-    throw new Error(error.message);
-  }
-},
+    //-----this api call for with auth--
+    getAstrologerListForUser: async (_, { searchInput }, context) => {
+      try {
+        if (!context.user) {
+          throw new Error("Unauthorized");
+        }
+
+        const userId = context.user.id;
+
+        const {
+          query,
+          sortField,
+          sortOrder,
+          limit = 10,
+          page = 1,
+          type,
+        } = searchInput || {};
+
+        const skip = (page - 1) * limit;
+
+        let orderBy = { createdAt: "desc" };
+
+        if (sortField) {
+          const sortMap = {
+            EXPERIENCE: "experience",
+            RATING: "rating",
+          };
+
+          if (sortMap[sortField]) {
+            orderBy = {
+              [sortMap[sortField]]: sortOrder === "ASC" ? "asc" : "desc",
+            };
+          }
+        }
+
+        const where = {
+          ...(query && {
+            OR: [
+              {
+                name: {
+                  contains: query,
+                  mode: "insensitive",
+                },
+              },
+              {
+                skills: {
+                  has: query,
+                },
+              },
+              {
+                languages: {
+                  has: query,
+                },
+              },
+            ],
+          }),
+        };
+
+        const [astrologers, totalCount, pricingConfig, usage] =
+          await Promise.all([
+            prisma.astrologer.findMany({
+              where,
+              orderBy,
+              skip,
+              take: limit,
+              include: {
+                pricing: {
+                  where: {
+                    isActive: true,
+                    ...(type && { type }),
+                  },
+                },
+              },
+            }),
+
+            prisma.astrologer.count({
+              where,
+            }),
+
+            prisma.pricingConfig.findFirst(),
+
+            prisma.userOfferUsage.findUnique({
+              where: {
+                userId,
+              },
+            }),
+          ]);
+
+        const astrologerIds = astrologers.map((a) => a.id);
+
+        const activeOffers = await prisma.astrologerOffer.findMany({
+          where: {
+            astrologerId: {
+              in: astrologerIds,
+            },
+            isActive: true,
+          },
+          include: {
+            offer: true,
+          },
+        });
+
+        const offerMap = {};
+
+        activeOffers.forEach((item) => {
+          offerMap[item.astrologerId] = item.offer;
+        });
+
+        const data = astrologers.map((astro) => {
+          const specialOffer = offerMap[astro.id];
+
+          return {
+            id: astro.id,
+            profilePic: astro.profilePic,
+            name: astro.name,
+            experience: astro.experience,
+            rating: astro.rating,
+            skills: astro.skills,
+            languages: astro.languages,
+
+            activeOffer: specialOffer
+              ? {
+                  id: specialOffer.id,
+                  offerName: specialOffer.offerName,
+                  price: specialOffer.price,
+                  description: specialOffer.description,
+                }
+              : null,
+
+            pricing: astro.pricing.map((p) => {
+              let finalPrice = p.price;
+              let appliedOffer = null;
+
+              // 1. Special Offer
+              if (specialOffer) {
+                finalPrice = specialOffer.price;
+
+                appliedOffer = specialOffer.offerName;
+              }
+
+              // 2. First Offer
+              else if (
+                pricingConfig?.isFirstOfferEnabled &&
+                !usage?.usedFirst
+              ) {
+                finalPrice =
+                  p.type === "CHAT"
+                    ? pricingConfig.firstChatPrice
+                    : pricingConfig.firstCallPrice;
+
+                appliedOffer = "FIRST_TIME_OFFER";
+              }
+
+              // 3. Second Offer
+              else if (
+                pricingConfig?.isSecondOfferEnabled &&
+                usage?.usedFirst &&
+                !usage?.usedSecond
+              ) {
+                finalPrice =
+                  p.type === "CHAT"
+                    ? pricingConfig.secondChatPrice
+                    : pricingConfig.secondCallPrice;
+
+                appliedOffer = "SECOND_TIME_OFFER";
+              }
+
+              // 4. Global Offer
+              else if (pricingConfig?.isGlobalOfferEnabled) {
+                finalPrice =
+                  p.type === "CHAT"
+                    ? pricingConfig.globalChatPrice
+                    : pricingConfig.globalCallPrice;
+
+                appliedOffer = "GLOBAL_OFFER";
+              }
+
+              return {
+                type: p.type,
+
+                price: finalPrice,
+
+                originalPrice: p.price,
+
+                appliedOffer,
+
+                commissionPercent: p.commissionPercent,
+
+                isActive: p.isActive,
+              };
+            }),
+          };
+        });
+
+        return {
+          data,
+          totalCount,
+          currentPage: page,
+          totalPages: Math.ceil(totalCount / limit),
+        };
+      } catch (error) {
+        console.error(error);
+
+        throw new Error(error.message);
+      }
+    },
     getRechargePacks: async (_, __, context) => {
       const packs = await prisma.rechargePack.findMany({
         where: { isActive: true },
@@ -680,16 +649,16 @@ module.exports = {
 
           ...(startDate || endDate
             ? {
-              createdAt: {
-                ...(startDate && {
-                  gte: new Date(startDate),
-                }),
+                createdAt: {
+                  ...(startDate && {
+                    gte: new Date(startDate),
+                  }),
 
-                ...(endDate && {
-                  lte: new Date(endDate),
-                }),
-              },
-            }
+                  ...(endDate && {
+                    lte: new Date(endDate),
+                  }),
+                },
+              }
             : {}),
 
           ...(astrologerName && {
@@ -872,20 +841,20 @@ module.exports = {
 
             lastMessage: lastMessage
               ? {
-                id: lastMessage.id,
-                msgId: lastMessage.msgId,
-                roomId: lastMessage.roomId,
-                senderId: lastMessage.senderId,
-                receiverId: lastMessage.receiverId,
-                sender: lastMessage.sender,
-                message: lastMessage.message,
-                image: lastMessage.image,
-                replyTo: lastMessage.replyTo,
+                  id: lastMessage.id,
+                  msgId: lastMessage.msgId,
+                  roomId: lastMessage.roomId,
+                  senderId: lastMessage.senderId,
+                  receiverId: lastMessage.receiverId,
+                  sender: lastMessage.sender,
+                  message: lastMessage.message,
+                  image: lastMessage.image,
+                  replyTo: lastMessage.replyTo,
 
-                createdAt: lastMessage.createdAt
-                  ? lastMessage.createdAt.toISOString()
-                  : null,
-              }
+                  createdAt: lastMessage.createdAt
+                    ? lastMessage.createdAt.toISOString()
+                    : null,
+                }
               : null,
           };
         });
@@ -954,16 +923,16 @@ module.exports = {
 
           ...(startDate || endDate
             ? {
-              createdAt: {
-                ...(startDate && {
-                  gte: new Date(startDate),
-                }),
+                createdAt: {
+                  ...(startDate && {
+                    gte: new Date(startDate),
+                  }),
 
-                ...(endDate && {
-                  lte: new Date(endDate),
-                }),
-              },
-            }
+                  ...(endDate && {
+                    lte: new Date(endDate),
+                  }),
+                },
+              }
             : {}),
 
           ...(astrologerName && {
@@ -1424,11 +1393,11 @@ module.exports = {
 
           ...(fromDate || toDate
             ? {
-              createdAt: {
-                ...(fromDate && { gte: new Date(fromDate) }),
-                ...(toDate && { lte: new Date(toDate) }),
-              },
-            }
+                createdAt: {
+                  ...(fromDate && { gte: new Date(fromDate) }),
+                  ...(toDate && { lte: new Date(toDate) }),
+                },
+              }
             : {}),
         };
 
@@ -1805,22 +1774,22 @@ module.exports = {
       });
 
       // Get pricing config
-const pricingConfig = await prisma.pricingConfig.findFirst();
+      const pricingConfig = await prisma.pricingConfig.findFirst();
 
-// Get or create user offer usage
-let userOfferUsage = await prisma.userOfferUsage.findUnique({
-  where: {
-    userId,
-  },
-});
+      // Get or create user offer usage
+      let userOfferUsage = await prisma.userOfferUsage.findUnique({
+        where: {
+          userId,
+        },
+      });
 
-if (!userOfferUsage) {
-  userOfferUsage = await prisma.userOfferUsage.create({
-    data: {
-      userId,
-    },
-  });
-}
+      if (!userOfferUsage) {
+        userOfferUsage = await prisma.userOfferUsage.create({
+          data: {
+            userId,
+          },
+        });
+      }
 
       if (!astrologer) {
         throw new Error("Astrologer not found");
@@ -1849,167 +1818,128 @@ if (!userOfferUsage) {
       });
       console.log("Active Offer:", activeOffer);
 
-//---------------
-// ----------------------------------------------------
-// DEFAULT PRICE
-// ----------------------------------------------------
+      // DEFAULT PRICE
 
-let pricePerMin = Number(pricing.price);
-let appliedOffer = "NORMAL";
+      let pricePerMin = Number(pricing.price);
+      let appliedOffer = "NORMAL";
 
-const requestType =
-  input.requestType.toUpperCase() === "CALL"
-    ? "CALL"
-    : "CHAT";
+      const requestType =
+        input.requestType.toUpperCase() === "CALL" ? "CALL" : "CHAT";
 
-// ----------------------------------------------------
-// FIRST TIME OFFER
-// ----------------------------------------------------
+      // ----------------------------------------------------
+      // FIRST TIME OFFER
+      // ----------------------------------------------------
 
-if (
-  pricingConfig?.isFirstOfferEnabled &&
-  !userOfferUsage.firstOfferUsedAt
-) {
-  pricePerMin =
-    requestType === "CALL"
-      ? Number(pricingConfig.firstCallPrice)
-      : Number(pricingConfig.firstChatPrice);
+      if (
+        pricingConfig?.isFirstOfferEnabled &&
+        !userOfferUsage.firstOfferUsedAt
+      ) {
+        pricePerMin =
+          requestType === "CALL"
+            ? Number(pricingConfig.firstCallPrice)
+            : Number(pricingConfig.firstChatPrice);
 
-  appliedOffer = "FIRST_TIME_OFFER";
+        appliedOffer = "FIRST_TIME_OFFER";
 
-  console.log(
-    "Applied FIRST_TIME_OFFER:",
-    pricePerMin
-  );
-}
-
-// ----------------------------------------------------
-// SECOND TIME OFFER
-// ----------------------------------------------------
-
-else if (
-  pricingConfig?.isSecondOfferEnabled &&
-  !userOfferUsage.secondOfferUsedAt
-) {
-  pricePerMin =
-    requestType === "CALL"
-      ? Number(pricingConfig.secondCallPrice)
-      : Number(pricingConfig.secondChatPrice);
-
-  appliedOffer = "SECOND_TIME_OFFER";
-
-  console.log(
-    "Applied SECOND_TIME_OFFER:",
-    pricePerMin
-  );
-}
-
-// ----------------------------------------------------
-// GLOBAL OFFER
-// ----------------------------------------------------
-
-else if (
-  pricingConfig?.isGlobalOfferEnabled
-) {
-  pricePerMin =
-    requestType === "CALL"
-      ? Number(pricingConfig.globalCallPrice)
-      : Number(pricingConfig.globalChatPrice);
-
-  appliedOffer = "GLOBAL_OFFER";
-
-  console.log(
-    "Applied GLOBAL_OFFER:",
-    pricePerMin
-  );
-}
-
-// ----------------------------------------------------
-// BIRTHDAY / DIWALI / SPECIAL OFFER
-// ----------------------------------------------------
-
-else if (
-  activeOffer?.offer &&
-  activeOffer.offer.isActive &&
-  Number(activeOffer.offer.price) > 0
-) {
-  pricePerMin = Number(
-    activeOffer.offer.price
-  );
-
-  appliedOffer =
-    activeOffer.offer.offerName ||
-    "ASTROLOGER_SPECIAL_OFFER";
-
-  console.log(
-    "Applied ASTROLOGER_SPECIAL_OFFER:",
-    pricePerMin
-  );
-}
-
-// ----------------------------------------------------
-// ASTROLOGER OFFER PRICE
-// ----------------------------------------------------
-
-else if (
-  pricing.offerPrice &&
-  Number(pricing.offerPrice) > 0
-) {
-  pricePerMin = Number(
-    pricing.offerPrice
-  );
-
-  appliedOffer = "ASTROLOGER_OFFER_PRICE";
-
-  console.log(
-    "Applied ASTROLOGER_OFFER_PRICE:",
-    pricePerMin
-  );
-}
-
-// ----------------------------------------------------
-// NORMAL PRICE
-// ----------------------------------------------------
-
-else {
-  pricePerMin = Number(pricing.price);
-
-  appliedOffer = "NORMAL";
-
-  console.log(
-    "Applied NORMAL PRICE:",
-    pricePerMin
-  );
-}
-
-// ----------------------------------------------------
-// VALIDATION
-// ----------------------------------------------------
-
-if (
-  !pricePerMin ||
-  Number(pricePerMin) <= 0
-) {
-  throw new Error(
-    "Invalid astrologer pricing"
-  );
-}
-
-console.log("Final Price:", pricePerMin);
-console.log("Applied Offer:", appliedOffer);
-//------------------
-      
-
-      if (pricePerMin <= 0) {
-        throw new Error("Invalid astrologer pricing");
+        console.log("Applied FIRST_TIME_OFFER:", pricePerMin);
       }
+
+      // ----------------------------------------------------
+      // SECOND TIME OFFER
+      // ----------------------------------------------------
+      else if (
+        pricingConfig?.isSecondOfferEnabled &&
+        !userOfferUsage.secondOfferUsedAt
+      ) {
+        pricePerMin =
+          requestType === "CALL"
+            ? Number(pricingConfig.secondCallPrice)
+            : Number(pricingConfig.secondChatPrice);
+
+        appliedOffer = "SECOND_TIME_OFFER";
+
+        console.log("Applied SECOND_TIME_OFFER:", pricePerMin);
+      }
+
+      // ----------------------------------------------------
+      // GLOBAL OFFER
+      // ----------------------------------------------------
+      else if (pricingConfig?.isGlobalOfferEnabled) {
+        pricePerMin =
+          requestType === "CALL"
+            ? Number(pricingConfig.globalCallPrice)
+            : Number(pricingConfig.globalChatPrice);
+
+        appliedOffer = "GLOBAL_OFFER";
+
+        console.log("Applied GLOBAL_OFFER:", pricePerMin);
+      }
+
+      // ----------------------------------------------------
+      // BIRTHDAY / DIWALI / SPECIAL OFFER
+      // ----------------------------------------------------
+      else if (
+        activeOffer?.offer &&
+        activeOffer.offer.isActive &&
+        Number(activeOffer.offer.price) >= 0
+      ) {
+        pricePerMin = Number(activeOffer.offer.price);
+
+        appliedOffer =
+          activeOffer.offer.offerName || "ASTROLOGER_SPECIAL_OFFER";
+
+        console.log("Applied ASTROLOGER_SPECIAL_OFFER:", pricePerMin);
+      }
+
+      // ----------------------------------------------------
+      // ASTROLOGER OFFER PRICE
+      // ----------------------------------------------------
+      else if (pricing.offerPrice && Number(pricing.offerPrice) >= 0) {
+        pricePerMin = Number(pricing.offerPrice);
+
+        appliedOffer = "ASTROLOGER_OFFER_PRICE";
+
+        console.log("Applied ASTROLOGER_OFFER_PRICE:", pricePerMin);
+      }
+
+      // ----------------------------------------------------
+      // NORMAL PRICE
+      // ----------------------------------------------------
+      else {
+        pricePerMin = Number(pricing.price);
+
+        appliedOffer = "NORMAL";
+
+        console.log("Applied NORMAL PRICE:", pricePerMin);
+      }
+
+      // ----------------------------------------------------
+      // VALIDATION
+      // ----------------------------------------------------
+
+      // if (!pricePerMin || Number(pricePerMin) <= 0) {
+      //   throw new Error("Invalid astrologer pricing");
+      // }
+
+      // console.log("Final Price:", pricePerMin);
+      // console.log("Applied Offer:", appliedOffer);
+
+      // if (pricePerMin <= 0) {
+      //   throw new Error("Invalid astrologer pricing");
+      // }
       console.log("Price per minute:", pricePerMin);
       // Calculate Chat/Call Time
-      const chatTime = Math.floor(walletBalance / pricePerMin);
-
-      if (chatTime <= 0) {
-        throw new Error("Insufficient balance");
+      let chatTime = 0;
+      if(pricePerMin == 0){
+       chatTime =5;
+      }else{
+      chatTime = Math.floor(walletBalance / pricePerMin);
       }
+      
+
+      // if (chatTime <= 0) {
+      //   throw new Error("Insufficient balance");
+      // }
 
       const intake = await prisma.intake.create({
         data: {
