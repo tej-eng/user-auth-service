@@ -78,7 +78,6 @@ module.exports = {
     },
     getUserWallet: async (_, __, context) => {
       try {
-        //console.log("getUserWallet context:", context);
         if (!context.user) {
           throw new Error("Unauthorized");
         }
@@ -90,10 +89,8 @@ module.exports = {
         });
 
         if (!wallet) {
-          console.log("Wallet not found for userId:", context.user.id);
           throw new Error("Wallet not found");
         }
-        console.log("Wallet found:", wallet);
         return wallet;
       } catch (error) {
         throw new Error(error.message || "Failed to fetch wallet");
@@ -633,10 +630,6 @@ module.exports = {
 
         const skip = (page - 1) * limit;
 
-        console.log("========== START =============");
-        console.log("USER ID:", userId);
-        console.log("FILTER:", filter);
-
         /* =========================================
        SESSION FILTER
     ========================================= */
@@ -671,16 +664,12 @@ module.exports = {
           }),
         };
 
-        console.log("SESSION WHERE:", sessionWhere);
-
         /* =========================================
        TOTAL COUNT
     ========================================= */
         const totalCount = await prisma.session.count({
           where: sessionWhere,
         });
-
-        console.log("TOTAL COUNT:", totalCount);
 
         /* =========================================
        FETCH SESSIONS
@@ -754,7 +743,6 @@ module.exports = {
           take: limit,
         });
 
-        console.log("FINAL SESSIONS:", sessions.length);
 
         /* =========================================
        SUMMARY
@@ -859,7 +847,6 @@ module.exports = {
           };
         });
 
-        console.log("========== END =============", data);
 
         return {
           success: true,
@@ -904,10 +891,6 @@ module.exports = {
 
         const skip = (page - 1) * limit;
 
-        console.log("========== START CALL HISTORY =============");
-        console.log("USER ID:", userId);
-        console.log("FILTER:", filter);
-
         /* =========================================
        SESSION FILTER
     ========================================= */
@@ -945,7 +928,6 @@ module.exports = {
           }),
         };
 
-        console.log("SESSION WHERE:", sessionWhere);
 
         /* =========================================
        TOTAL COUNT
@@ -953,8 +935,6 @@ module.exports = {
         const totalCount = await prisma.session.count({
           where: sessionWhere,
         });
-
-        console.log("TOTAL COUNT:", totalCount);
 
         /* =========================================
        FETCH SESSIONS
@@ -1007,7 +987,6 @@ module.exports = {
           take: limit,
         });
 
-        console.log("FINAL CALL SESSIONS:", sessions.length);
 
         /* =========================================
        SUMMARY
@@ -1090,7 +1069,6 @@ module.exports = {
           };
         });
 
-        console.log("========== END CALL HISTORY =============", data);
 
         return {
           success: true,
@@ -1126,7 +1104,6 @@ module.exports = {
           throw new Error("Unauthorized");
         }
 
-        console.log("USER:", context.user);
 
         // ==============================
         // FETCH GIFTS
@@ -1803,7 +1780,6 @@ module.exports = {
           `${input.requestType} pricing not configured for astrologer`,
         );
       }
-      console.log("Checking active offers for astrologer:", input.astrologerId);
       const activeOffer = await prisma.astrologerOffer.findFirst({
         where: {
           astrologerId: input.astrologerId,
@@ -1816,7 +1792,6 @@ module.exports = {
           updatedAt: "desc",
         },
       });
-      console.log("Active Offer:", activeOffer);
 
       // DEFAULT PRICE
 
@@ -1841,7 +1816,6 @@ module.exports = {
 
         appliedOffer = "FIRST_TIME_OFFER";
 
-        console.log("Applied FIRST_TIME_OFFER:", pricePerMin);
       }
 
       // ----------------------------------------------------
@@ -1858,7 +1832,6 @@ module.exports = {
 
         appliedOffer = "SECOND_TIME_OFFER";
 
-        console.log("Applied SECOND_TIME_OFFER:", pricePerMin);
       }
 
       // ----------------------------------------------------
@@ -1872,7 +1845,6 @@ module.exports = {
 
         appliedOffer = "GLOBAL_OFFER";
 
-        console.log("Applied GLOBAL_OFFER:", pricePerMin);
       }
 
       // ----------------------------------------------------
@@ -1888,7 +1860,6 @@ module.exports = {
         appliedOffer =
           activeOffer.offer.offerName || "ASTROLOGER_SPECIAL_OFFER";
 
-        console.log("Applied ASTROLOGER_SPECIAL_OFFER:", pricePerMin);
       }
 
       // ----------------------------------------------------
@@ -1899,7 +1870,6 @@ module.exports = {
 
         appliedOffer = "ASTROLOGER_OFFER_PRICE";
 
-        console.log("Applied ASTROLOGER_OFFER_PRICE:", pricePerMin);
       }
 
       // ----------------------------------------------------
@@ -1910,7 +1880,6 @@ module.exports = {
 
         appliedOffer = "NORMAL";
 
-        console.log("Applied NORMAL PRICE:", pricePerMin);
       }
 
       // ----------------------------------------------------
@@ -2053,7 +2022,6 @@ module.exports = {
 
     createReview: async (_, { input }, context) => {
       try {
-        console.log("createReview input:", input);
 
         if (!context.user) {
           throw new Error("Unauthorized");
@@ -2159,12 +2127,10 @@ module.exports = {
       }
     },
     uploadImage: async (_, { file }, context) => {
-      console.log("uploadImage called with file:", file);
       try {
         if (!context.user) {
           throw new Error("Unauthorized");
         }
-        console.log("Received file:", file);
         const { createReadStream, filename, mimetype } = await file;
 
         // Validate image
@@ -2276,13 +2242,10 @@ module.exports = {
     // new astrologer
     createAstrologerApplication: async (_, { input }) => {
       try {
-        console.log("createAstrologerApplication input:", input);
 
         if (!input.phoneNumber || !input.name) {
           throw new Error("Required fields missing");
         }
-
-        console.log("PRISMA MODEL:", prisma.astrologerApplication);
 
         const newApp = await prisma.astrologerApplication.create({
           data: {
@@ -2301,7 +2264,6 @@ module.exports = {
           },
         });
 
-        console.log("createAstrologerApplication result:", newApp);
 
         return newApp;
       } catch (error) {

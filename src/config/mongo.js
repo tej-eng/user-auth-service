@@ -1,4 +1,3 @@
-// src/config/mongo.js
 const { MongoClient } = require("mongodb");
 
 const uri = process.env.MONGO_URI;

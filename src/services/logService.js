@@ -1,4 +1,3 @@
-// src/services/logService.js
 const { getDb, connectMongo } = require("../config/mongo");
 
 async function logAuthEvent(eventType, details) {

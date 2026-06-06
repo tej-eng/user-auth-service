@@ -114,7 +114,7 @@ module.exports = gql`
     currentPage: Int!
     totalPages: Int!
   }
-  #------------START CODE FOR WALLET TRANSACTION----------------
+  #---START CODE FOR WALLET TRANSACTION-------------
   type WalletTransaction {
     id: ID!
     userWalletId: String
@@ -144,7 +144,7 @@ module.exports = gql`
     fromDate: String
     toDate: String
   }
-  #--------END CODE FOR WALLET TRANSACTION----------------
+  #----END CODE FOR WALLET TRANSACTION-------
   # -----------------------------------------
   # End Astrologer Search Section
   # -----------------------------------------
@@ -251,7 +251,7 @@ module.exports = gql`
     wallet: UserWallet
   }
 
-  #---------END--------------------------------
+  #---------END------------------------------
   #-----------------------------------------
   # start session section
   #-----------------------------------------
@@ -284,7 +284,7 @@ module.exports = gql`
 
   #-end session section ------------------
 
-  #-----------------start queue section------------------------
+  #------start queue section-------------------
   type ChatQueueItem {
     roomId: String!
     userId: String!
@@ -340,7 +340,7 @@ module.exports = gql`
 
   #----------- END REVIEW -------------------
   #--------------end review-------------
-  #--------------start chat history----------------
+  #--------------start chat history----------
   scalar JSON
 
   type Message {
@@ -371,7 +371,7 @@ module.exports = gql`
     lastMessage: Message
   }
   #------END chat history-----
-  #----------------------------start GetUser Sessions----------
+  #----start GetUser Sessions----------
   enum SessionStatus {
     REQUESTED
     ACCEPTED
@@ -419,7 +419,7 @@ module.exports = gql`
     totalPages: Int
   }
 
-  #-----------------------ENd user sessions-----------------
+  #-----------------------ENd user sessions------------
 
   #--------------upload image response----------------
   scalar Upload
@@ -430,7 +430,7 @@ module.exports = gql`
   }
   #-------------------End upload image response---------
 
-  #------------------start for get live chatmessages-----------------------
+  #------------------start for get live chatmessages----
   type ChatMessage {
     msg_id: String
     sender_id: String
@@ -451,7 +451,7 @@ module.exports = gql`
     data: [Intake]
   }
   #-------------------end recent intake response-----------------------
-  #------------------start code for razorpay order-----------------------
+  #------------------start code for razorpay order---------------------
 
   input CreateOrderInput {
     rechargePackId: String!
@@ -464,7 +464,7 @@ module.exports = gql`
     currency: String!
   }
   #--------------------end code for razorpay order-----------------------
-  #------------------start code for astrologer application-----------------------
+  #------------------start code for astrologer application---------------
   enum ApplicationStatus {
     PENDING
     APPROVED
@@ -526,7 +526,7 @@ module.exports = gql`
 
     createdAt: String
   }
-  #-------------------start code for astrologer application-----------------------
+  #-------------------start code for astrologer application------------
 
   #------------------start code for chat history-----------------------
 
@@ -649,7 +649,7 @@ module.exports = gql`
     astrologer: ChatAstrologer
   }
 
-  #--------------------End code for call history-----------------------
+  #--------------------End code for call history-----------
 
   #------------------ START GIFT SECTION ------------------
 
@@ -669,7 +669,7 @@ module.exports = gql`
   }
 
   #------------------ END GIFT SECTION ------------------
-  #------------------ START BANNER SECTION ------------------
+  #------------------ START BANNER SECTION --------------
 
   type Banner {
     id: ID!
@@ -690,7 +690,7 @@ module.exports = gql`
     totalCount: Int!
   }
 
-  #------------------ END BANNER SECTION ------------------
+  #------------------ END BANNER SECTION -----------------
   #------------------ START FAQ SECTION ------------------
 
   type Faq {
