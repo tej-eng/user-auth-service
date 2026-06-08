@@ -1,15 +1,12 @@
 require("dotenv").config();
-
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-
 const { ApolloServer } = require("@apollo/server");
 const { expressMiddleware } = require("@apollo/server/express4");
 const {
   ApolloServerPluginLandingPageLocalDefault,
 } = require("@apollo/server/plugin/landingPage/default");
-
 const typeDefs = require("./graphql/typeDefs");
 const resolvers = require("./graphql/resolvers");
 const rateLimiter = require("./middleware/rateLimiter");
@@ -21,7 +18,6 @@ const path = require("path");
 
 async function startServer() {
   const app = express();
-
   app.use(
     cors({
       origin: [

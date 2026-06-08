@@ -58,7 +58,6 @@ const sendOTPService = async (countryCode, mobile) => {
 
     // Generate OTP
     const otp = generateOtp();
-    console.log(`Generated OTP for ${phoneKey}: ${otp}`);
 
     // Store OTP
     await redis.set(`otp:${phoneKey}`, otp, "EX", OTP_EXPIRE);
@@ -123,7 +122,6 @@ const verifyOTPService = async (countryCode, mobile, otp) => {
     await redis.del(`otp:${phoneKey}`);
     await redis.del(`login_fail:${phoneKey}`);
 
-    //  FIND OR CREATE USER (COMPOSITE UNIQUE)
     let user = await prisma.user.findUnique({
       where: {
         countryCode_mobile: {
