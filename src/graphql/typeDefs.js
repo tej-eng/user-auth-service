@@ -20,7 +20,6 @@ module.exports = gql`
     occupation: String
     isActive: Boolean
     isDeleted: Boolean
-    user_status: Int
     createdAt: String
     updatedAt: String
     user_status: Int
