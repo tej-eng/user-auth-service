@@ -62,6 +62,7 @@ module.exports = gql`
   # -----------------------------------------
 
   type AstrologerPricing {
+  id: ID
     type: String
     price: Float
     originalPrice: Float
@@ -76,20 +77,28 @@ module.exports = gql`
     price: Float!
     description: String
   }
-  type Astrologer {
-    id: ID
-    profilePic: String
-    name: String
-    experience: Int
-    rating: Float
-    skills: [String]
-    languages: [String]
-    about: String
-    tags: String
-    vtags: String
-    activeOffer: ActiveOffer
-    pricing: [AstrologerPricing]
-  }
+type Astrologer {
+  id: ID
+  profilePic: String
+  name: String
+  displayName: String
+
+  experience: Int
+  rating: Float
+
+  skills: [String]
+  languages: [String]
+  problems: [String]
+
+  about: String
+
+  tags: String
+  vtags: String
+
+  pricing: [AstrologerPricing]
+
+  reviews: [Review]
+}
 
   input AstrologerSearchInput {
     query: String # Search by name / skills / language
