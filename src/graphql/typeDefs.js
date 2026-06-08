@@ -61,7 +61,7 @@ module.exports = gql`
   # -----------------------------------------
 
   type AstrologerPricing {
-  id: ID
+    id: ID
     type: String
     price: Float
     originalPrice: Float
@@ -88,7 +88,7 @@ type Astrologer {
   skills: [String]
   languages: [String]
   problems: [String]
-
+  activeOffer: ActiveOffer
   about: String
 
   tags: String
