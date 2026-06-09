@@ -2306,7 +2306,7 @@ module.exports = {
     if (!context.user) {
       throw new Error("Unauthorized");
     }
-
+  
     const {
       astro_id,
       gift_id,
@@ -2318,12 +2318,13 @@ module.exports = {
     // -----------------------------
     // Fetch wallets
     // -----------------------------
+    console.log("Fetching wallets for user_id:", user_id, "and astro_id:", astro_id);
     const userWallet = await prisma.userWallet.findUnique({
       where: {
         userId: user_id,
       },
     });
-
+   console.log("User Wallet:", userWallet);
     if (!userWallet) {
       throw new Error("User wallet not found");
     }
@@ -2337,6 +2338,7 @@ module.exports = {
         astrologerId: astro_id,
       },
     });
+   console.log("Astrologer Wallet:", astrologerWallet);
 
     if (!astrologerWallet) {
       throw new Error("Astrologer wallet not found");
