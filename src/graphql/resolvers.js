@@ -77,6 +77,7 @@ module.exports = {
       }
     },
     getUserWallet: async (_, __, context) => {
+      console.log("Fetching wallet for user_id:", context.user.id);
       try {
         if (!context.user) {
           throw new Error("Unauthorized");
