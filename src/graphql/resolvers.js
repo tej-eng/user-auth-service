@@ -1601,6 +1601,47 @@ module.exports = {
         },
       });
     },
+    getGiftHistory: async (_, args, context) => {
+  try {
+    const giftHistory = await prisma.giftHistory.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            mobile: true,
+          },
+        },
+        astrologer: {
+          select: {
+            id: true,
+            name: true,
+            profilePic: true,
+          },
+        },
+      },
+    });
+
+    return giftHistory.map((item) => ({
+      id: item.id,
+      userId: item.userId,
+      astrologerId: item.astrologerId,
+      giftId: item.giftId,
+      giftName: item.giftName,
+      giftPrice: item.giftPrice,
+      createdAt: item.createdAt.toISOString(),
+
+      user: item.user,
+      astrologer: item.astrologer,
+    }));
+  } catch (error) {
+    console.error("getGiftHistory error:", error);
+    throw new Error(error.message);
+  }
+},
   },
 
   Mutation: {
@@ -2302,7 +2343,7 @@ module.exports = {
         throw new Error(error.message || "Failed to logout");
       }
     },
-    sendGift: async (_, { input }, context) => {
+sendGift: async (_, { input }, context) => {
   try {
     if (!context.user) {
       throw new Error("Unauthorized");
@@ -2319,13 +2360,11 @@ module.exports = {
     // -----------------------------
     // Fetch wallets
     // -----------------------------
-    console.log("Fetching wallets for user_id:", user_id, "and astro_id:", astro_id);
     const userWallet = await prisma.userWallet.findUnique({
       where: {
         userId: user_id,
       },
     });
-   console.log("User Wallet:", userWallet);
     if (!userWallet) {
       throw new Error("User wallet not found");
     }

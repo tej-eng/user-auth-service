@@ -861,7 +861,32 @@ type SendGiftResponse {
   astrologerBalance: Float
 }
 
-  #-----END CODE FOR SEND GIFT TO ASTROLOGER---------------
+ #-----END CODE FOR SEND GIFT TO ASTROLOGER---------------
+ #----START code forsendgift history ----
+ type GiftHistory {
+  id: ID!
+  userId: String!
+  astrologerId: String!
+  giftId: String!
+  giftName: String!
+  giftPrice: Float!
+  createdAt: String!
+
+  user: GiftUser
+  astrologer: GiftAstrologer
+}
+
+type GiftUser {
+  id: String!
+  name: String
+  mobile: String
+}
+type GiftAstrologer {
+  id: String!
+  name: String
+  profilePic: String
+}
+ #----END code for sendgift history----------------
   type Query {
     getServices: [Service!]!
     getUsersDetails(page: Int, limit: Int, search: String): UserPagination!
@@ -914,6 +939,7 @@ type SendGiftResponse {
     getFreeServices: FreeServiceResponse!
 
     getFreeServiceById(id: ID!): FreeService
+    getGiftHistory: [GiftHistory!]!
   }
 
   type Mutation {
