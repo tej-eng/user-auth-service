@@ -2301,5 +2301,134 @@ module.exports = {
         throw new Error(error.message || "Failed to logout");
       }
     },
+    sendGift: async (_, { input }, context) => {
+  try {
+    if (!context.user) {
+      throw new Error("Unauthorized");
+    }
+
+    const {
+      astro_id,
+      gift_id,
+      giftname,
+      giftprice,
+      user_id,
+    } = input;
+
+    // -----------------------------
+    // Fetch wallets
+    // -----------------------------
+    const userWallet = await prisma.userWallet.findUnique({
+      where: {
+        userId: user_id,
+      },
+    });
+
+    if (!userWallet) {
+      throw new Error("User wallet not found");
+    }
+
+    if (Number(userWallet.balanceCoins) < Number(giftprice)) {
+      throw new Error("Insufficient wallet balance");
+    }
+
+    const astrologerWallet = await prisma.astrologerWallet.findUnique({
+      where: {
+        astrologerId: astro_id,
+      },
+    });
+
+    if (!astrologerWallet) {
+      throw new Error("Astrologer wallet not found");
+    }
+
+    // -----------------------------
+    // Transaction
+    // -----------------------------
+    const result = await prisma.$transaction(async (tx) => {
+      // Debit User Wallet
+      const updatedUserWallet = await tx.userWallet.update({
+        where: {
+          id: userWallet.id,
+        },
+        data: {
+          balanceCoins: {
+            decrement: Number(giftprice),
+          },
+        },
+      });
+
+      // Credit Astrologer Wallet
+      const updatedAstroWallet = await tx.astrologerWallet.update({
+        where: {
+          id: astrologerWallet.id,
+        },
+        data: {
+          balanceCoins: {
+            increment: Number(giftprice),
+          },
+        },
+      });
+
+      // Save Gift History
+      await tx.giftHistory.create({
+        data: {
+          userId: user_id,
+          astrologerId: astro_id,
+          giftId: gift_id,
+          giftName: giftname,
+          giftPrice: Number(giftprice),
+        },
+      });
+
+      // User Wallet Transaction
+      await tx.walletTransaction.create({
+        data: {
+          userWalletId: userWallet.id,
+
+          type: "DEBIT",
+
+          coins: Number(giftprice),
+          amount: Number(giftprice),
+
+          description: `Gift Sent - ${giftname}`,
+        },
+      });
+
+      // Astrologer Wallet Transaction
+      await tx.walletTransaction.create({
+        data: {
+          astrologerWalletId: astrologerWallet.id,
+
+          type: "CREDIT",
+
+          coins: Number(giftprice),
+          amount: Number(giftprice),
+
+          description: `Gift Received - ${giftname}`,
+        },
+      });
+
+      return {
+        updatedUserWallet,
+        updatedAstroWallet,
+      };
+    });
+
+    return {
+      success: true,
+      message: "Gift sent successfully",
+
+      userBalance: result.updatedUserWallet.balanceCoins,
+
+      astrologerBalance:
+        result.updatedAstroWallet.balanceCoins,
+    };
+  } catch (error) {
+    console.error("sendGift error:", error);
+
+    throw new Error(error.message);
+  }
+},
   },
 };

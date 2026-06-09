@@ -843,6 +843,25 @@ module.exports = gql`
   }
 
   #------------END free services section----------------
+  #-----START CODE FOR SEND GIFT TO ASTROLOGER-------------
+  input SendGiftInput {
+  astro_id: String!
+  gift_id: String!
+  giftname: String!
+  giftprice: Float!
+  user_name: String
+  astro_name: String
+  user_id: String!
+}
+
+type SendGiftResponse {
+  success: Boolean!
+  message: String!
+  userBalance: Float
+  astrologerBalance: Float
+}
+
+  #-----END CODE FOR SEND GIFT TO ASTROLOGER---------------
   type Query {
     getServices: [Service!]!
     getUsersDetails(page: Int, limit: Int, search: String): UserPagination!
@@ -915,5 +934,6 @@ module.exports = gql`
     createAstrologerApplication(
       input: CreateApplicationInput!
     ): AstrologerApplication!
+    sendGift(input: SendGiftInput!): SendGiftResponse!
   }
 `;
