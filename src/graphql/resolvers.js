@@ -56,15 +56,15 @@ module.exports = {
             }
           : {};
 
-    const [users, totalCount] = await Promise.all([
-      prisma.user.findMany({
-        where: whereCondition,
-        skip,
-        take: limit,
-        orderBy: { createdAt: "desc" },
-      }),
-      prisma.user.count({ where: whereCondition }),
-    ]);
+        const [users, totalCount] = await Promise.all([
+          prisma.user.findMany({
+            where: whereCondition,
+            skip,
+            take: limit,
+            orderBy: { createdAt: "desc" },
+          }),
+          prisma.user.count({ where: whereCondition }),
+        ]);
 
         return {
           data: users,
@@ -743,7 +743,6 @@ module.exports = {
           take: limit,
         });
 
-
         /* =========================================
        SUMMARY
     ========================================= */
@@ -847,7 +846,6 @@ module.exports = {
           };
         });
 
-
         return {
           success: true,
 
@@ -928,7 +926,6 @@ module.exports = {
           }),
         };
 
-
         /* =========================================
        TOTAL COUNT
     ========================================= */
@@ -986,7 +983,6 @@ module.exports = {
           skip,
           take: limit,
         });
-
 
         /* =========================================
        SUMMARY
@@ -1069,7 +1065,6 @@ module.exports = {
           };
         });
 
-
         return {
           success: true,
 
@@ -1103,7 +1098,6 @@ module.exports = {
         if (!context.user) {
           throw new Error("Unauthorized");
         }
-
 
         // ==============================
         // FETCH GIFTS
@@ -1593,6 +1587,19 @@ module.exports = {
         throw new Error(error.message || "Failed to fetch free service");
       }
     },
+
+    getServices: async (_, __, context) => {
+      const { prisma } = context;
+
+      return prisma.service.findMany({
+        include: {
+          category: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+    },
   },
 
   Mutation: {
@@ -1609,11 +1616,11 @@ module.exports = {
           details: { countryCode, mobile },
         });
 
-    return result;
-  } catch (error) {
-    throw new Error(error.message || "Failed to request OTP");
-  }
-},
+        return result;
+      } catch (error) {
+        throw new Error(error.message || "Failed to request OTP");
+      }
+    },
 
     authWithOtp: async (_, { countryCode, mobile, otp }, { res }) => {
       try {
@@ -1815,7 +1822,6 @@ module.exports = {
             : Number(pricingConfig.firstChatPrice);
 
         appliedOffer = "FIRST_TIME_OFFER";
-
       }
 
       // ----------------------------------------------------
@@ -1831,7 +1837,6 @@ module.exports = {
             : Number(pricingConfig.secondChatPrice);
 
         appliedOffer = "SECOND_TIME_OFFER";
-
       }
 
       // ----------------------------------------------------
@@ -1844,7 +1849,6 @@ module.exports = {
             : Number(pricingConfig.globalChatPrice);
 
         appliedOffer = "GLOBAL_OFFER";
-
       }
 
       // ----------------------------------------------------
@@ -1859,7 +1863,6 @@ module.exports = {
 
         appliedOffer =
           activeOffer.offer.offerName || "ASTROLOGER_SPECIAL_OFFER";
-
       }
 
       // ----------------------------------------------------
@@ -1869,7 +1872,6 @@ module.exports = {
         pricePerMin = Number(pricing.offerPrice);
 
         appliedOffer = "ASTROLOGER_OFFER_PRICE";
-
       }
 
       // ----------------------------------------------------
@@ -1879,7 +1881,6 @@ module.exports = {
         pricePerMin = Number(pricing.price);
 
         appliedOffer = "NORMAL";
-
       }
 
       // ----------------------------------------------------
@@ -1899,12 +1900,11 @@ module.exports = {
       console.log("Price per minute:", pricePerMin);
       // Calculate Chat/Call Time
       let chatTime = 0;
-      if(pricePerMin == 0){
-       chatTime =5;
-      }else{
-      chatTime = Math.floor(walletBalance / pricePerMin);
+      if (pricePerMin == 0) {
+        chatTime = 5;
+      } else {
+        chatTime = Math.floor(walletBalance / pricePerMin);
       }
-      
 
       // if (chatTime <= 0) {
       //   throw new Error("Insufficient balance");
@@ -2022,7 +2022,6 @@ module.exports = {
 
     createReview: async (_, { input }, context) => {
       try {
-
         if (!context.user) {
           throw new Error("Unauthorized");
         }
@@ -2242,7 +2241,6 @@ module.exports = {
     // new astrologer
     createAstrologerApplication: async (_, { input }) => {
       try {
-
         if (!input.phoneNumber || !input.name) {
           throw new Error("Required fields missing");
         }
@@ -2263,7 +2261,6 @@ module.exports = {
             pincode: input.pincode || "",
           },
         });
-
 
         return newApp;
       } catch (error) {
@@ -2304,7 +2301,5 @@ module.exports = {
         throw new Error(error.message || "Failed to logout");
       }
     },
-
-
   },
 };

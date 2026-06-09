@@ -1,8 +1,6 @@
 const { gql } = require("graphql-tag");
 
 module.exports = gql`
-
-
   enum Gender {
     MALE
     FEMALE
@@ -76,28 +74,28 @@ module.exports = gql`
     price: Float!
     description: String
   }
-type Astrologer {
-  id: ID
-  profilePic: String
-  name: String
-  displayName: String
+  type Astrologer {
+    id: ID
+    profilePic: String
+    name: String
+    displayName: String
 
-  experience: Int
-  rating: Float
+    experience: Int
+    rating: Float
 
-  skills: [String]
-  languages: [String]
-  problems: [String]
-  activeOffer: ActiveOffer
-  about: String
+    skills: [String]
+    languages: [String]
+    problems: [String]
+    activeOffer: ActiveOffer
+    about: String
 
-  tags: String
-  vtags: String
+    tags: String
+    vtags: String
 
-  pricing: [AstrologerPricing]
+    pricing: [AstrologerPricing]
 
-  reviews: [Review]
-}
+    reviews: [Review]
+  }
 
   input AstrologerSearchInput {
     query: String # Search by name / skills / language
@@ -805,6 +803,26 @@ type Astrologer {
     updatedAt: String
   }
   #--------END APP VERSION SECTION --------------------
+
+  #------ Healing --------#
+  type Category {
+    id: ID!
+    name: String!
+    slug: String!
+  }
+
+  type Service {
+    id: ID!
+    name: String!
+    slug: String!
+    type: String!
+    image: String
+    description: String
+    price: Float
+
+    category: Category
+  }
+
   #------------START free services section----------------
 
   type FreeService {
@@ -826,6 +844,7 @@ type Astrologer {
 
   #------------END free services section----------------
   type Query {
+    getServices: [Service!]!
     getUsersDetails(page: Int, limit: Int, search: String): UserPagination!
     getAstrologerListBySearch(
       searchInput: AstrologerSearchInput
