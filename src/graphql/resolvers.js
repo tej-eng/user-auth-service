@@ -1589,7 +1589,7 @@ module.exports = {
     },
 
     getServices: async (_, __, context) => {
-      const { prisma } = context;
+    
 
       return prisma.service.findMany({
         include: {
