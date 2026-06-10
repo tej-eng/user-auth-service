@@ -947,7 +947,7 @@ type AstrologerFollowersResponse {
     getCategories: [Category!]!
     getCategory(slug: String!): Category
     getServices: [Service!]!
-    getService(id: ID!): Service
+    getService(slug: String!): Service
     getUsersDetails(page: Int, limit: Int, search: String): UserPagination!
     getAstrologerListBySearch(
       searchInput: AstrologerSearchInput

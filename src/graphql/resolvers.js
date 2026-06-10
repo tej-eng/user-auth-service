@@ -1633,7 +1633,7 @@ module.exports = {
     },
     isFollowing: async (_, { astrologerId }, context) => {
       try {
-        const { prisma, user } = context;
+        const {  user } = context;
 
         if (!user) {
           return {
@@ -1659,7 +1659,7 @@ module.exports = {
     },
     getAstrologerFollowersCount: async (_, { astrologerId }, context) => {
       try {
-        const { prisma } = context;
+       // const { prisma } = context;
 
         const totalFollowers = await prisma.astrologerFollow.count({
           where: {
