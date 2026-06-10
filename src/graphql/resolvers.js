@@ -1694,34 +1694,34 @@ module.exports = {
       }
     },
 
-    getCategory: async (_, { id }) => {
-      try {
-        const category = await prisma.category.findUnique({
-          where: { id },
-          include: {
-            services: true,
-          },
-        });
+   getCategory: async (_, { slug }) => {
+  try {
+    const category = await prisma.category.findUnique({
+      where: { slug },
+      include: {
+        services: true,
+      },
+    });
 
-        if (!category) {
-          throw new Error("Category not found");
-        }
+    if (!category) {
+      throw new Error("Category not found");
+    }
 
-        return {
-          ...category,
-          createdAt: category.createdAt.toISOString(),
-          services: category.services.map((service) => ({
-            ...service,
-            createdAt: service.createdAt.toISOString(),
-            updatedAt: service.updatedAt.toISOString(),
-          })),
-        };
-      } catch (error) {
-        console.error("getCategory error:", error);
+    return {
+      ...category,
+      createdAt: category.createdAt.toISOString(),
+      services: category.services.map((service) => ({
+        ...service,
+        createdAt: service.createdAt.toISOString(),
+        updatedAt: service.updatedAt.toISOString(),
+      })),
+    };
+  } catch (error) {
+    console.error("getCategory error:", error);
 
-        throw new Error(error.message || "Failed to fetch category");
-      }
-    },
+    throw new Error(error.message || "Failed to fetch category");
+  }
+},
 
     getServices: async () => {
       try {
