@@ -845,48 +845,97 @@ module.exports = gql`
   #------------END free services section----------------
   #-----START CODE FOR SEND GIFT TO ASTROLOGER-------------
   input SendGiftInput {
-  astro_id: String!
-  gift_id: String!
-  giftname: String!
-  giftprice: Float!
-  user_name: String
-  astro_name: String
-  user_id: String!
+    astro_id: String!
+    gift_id: String!
+    giftname: String!
+    giftprice: Float!
+    user_name: String
+    astro_name: String
+    user_id: String!
+  }
+
+  type SendGiftResponse {
+    success: Boolean!
+    message: String!
+    userBalance: Float
+    astrologerBalance: Float
+  }
+
+  #-----END CODE FOR SEND GIFT TO ASTROLOGER---------------
+  #----START code forsendgift history ----
+  type GiftHistory {
+    id: ID!
+    userId: String!
+    astrologerId: String!
+    giftId: String!
+    giftName: String!
+    giftPrice: Float!
+    createdAt: String!
+
+    user: GiftUser
+    astrologer: GiftAstrologer
+  }
+
+  type GiftUser {
+    id: String!
+    name: String
+    mobile: String
+  }
+  type GiftAstrologer {
+    id: String!
+    name: String
+    profilePic: String
+  }
+  #----END code for sendgift history----------------
+  #------START CODE FOR FOLLOWERS AND FOLLOWING----------------
+  type AstrologerFollow {
+    id: ID!
+
+    userId: ID!
+    astrologerId: ID!
+
+    user: User
+    astrologer: Astrologer
+
+    createdAt: String!
+  }
+
+  type FollowResponse {
+    success: Boolean!
+    message: String!
+  }
+
+  type FollowStatusResponse {
+    isFollowing: Boolean!
+  }
+
+  type FollowCountResponse {
+    totalFollowers: Int!
+  }
+
+  type FollowerUser {
+  id: ID!
+  name: String
+  mobile: String
+  countryCode: String
 }
 
-type SendGiftResponse {
-  success: Boolean!
-  message: String!
-  userBalance: Float
-  astrologerBalance: Float
-}
-
- #-----END CODE FOR SEND GIFT TO ASTROLOGER---------------
- #----START code forsendgift history ----
- type GiftHistory {
+type AstrologerFollower {
   id: ID!
   userId: String!
   astrologerId: String!
-  giftId: String!
-  giftName: String!
-  giftPrice: Float!
   createdAt: String!
-
-  user: GiftUser
-  astrologer: GiftAstrologer
+  user: FollowerUser
 }
 
-type GiftUser {
-  id: String!
-  name: String
-  mobile: String
+type AstrologerFollowersResponse {
+  followers: [AstrologerFollower!]!
+  total: Int!
+  page: Int!
+  limit: Int!
+  totalPages: Int!
 }
-type GiftAstrologer {
-  id: String!
-  name: String
-  profilePic: String
-}
- #----END code for sendgift history----------------
+  #------END CODE FOR FOLLOWERS AND FOLLOWING----------------
   type Query {
     getServices: [Service!]!
     getUsersDetails(page: Int, limit: Int, search: String): UserPagination!
@@ -940,6 +989,10 @@ type GiftAstrologer {
 
     getFreeServiceById(id: ID!): FreeService
     getGiftHistory: [GiftHistory!]!
+
+    isFollowing(astrologerId: ID!): FollowStatusResponse!
+
+    getAstrologerFollowersCount(astrologerId: ID!): FollowCountResponse!
   }
 
   type Mutation {
@@ -961,5 +1014,9 @@ type GiftAstrologer {
       input: CreateApplicationInput!
     ): AstrologerApplication!
     sendGift(input: SendGiftInput!): SendGiftResponse!
+
+    followAstrologer(astrologerId: ID!): FollowResponse!
+
+    unfollowAstrologer(astrologerId: ID!): FollowResponse!
   }
 `;

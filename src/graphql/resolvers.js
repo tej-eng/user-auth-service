@@ -1642,6 +1642,59 @@ module.exports = {
     throw new Error(error.message);
   }
 },
+isFollowing: async (
+  _,
+  { astrologerId },
+  context
+) => {
+  try {
+    const { prisma, user } = context;
+
+    if (!user) {
+      return {
+        isFollowing: false,
+      };
+    }
+
+    const follow =
+      await prisma.astrologerFollow.findUnique({
+        where: {
+          userId_astrologerId: {
+            userId: user.id,
+            astrologerId,
+          },
+        },
+      });
+
+    return {
+      isFollowing: !!follow,
+    };
+  } catch (error) {
+    throw new Error(error.message);
+  }
+},
+getAstrologerFollowersCount: async (
+  _,
+  { astrologerId },
+  context
+) => {
+  try {
+    const { prisma } = context;
+
+    const totalFollowers =
+      await prisma.astrologerFollow.count({
+        where: {
+          astrologerId,
+        },
+      });
+
+    return {
+      totalFollowers,
+    };
+  } catch (error) {
+    throw new Error(error.message);
+  }
+},
   },
 
   Mutation: {
@@ -2469,6 +2522,89 @@ sendGift: async (_, { input }, context) => {
   } catch (error) {
     console.error("sendGift error:", error);
 
+    throw new Error(error.message);
+  }
+},
+followAstrologer: async (
+  _,
+  { astrologerId },
+  context
+) => {
+  try {
+    const { prisma, user } = context;
+
+    if (!user) {
+      throw new Error("Unauthorized");
+    }
+
+    const astrologer =
+      await prisma.astrologer.findUnique({
+        where: {
+          id: astrologerId,
+        },
+      });
+
+    if (!astrologer) {
+      throw new Error("Astrologer not found");
+    }
+
+    const existingFollow =
+      await prisma.astrologerFollow.findUnique({
+        where: {
+          userId_astrologerId: {
+            userId: user.id,
+            astrologerId,
+          },
+        },
+      });
+
+    if (existingFollow) {
+      throw new Error(
+        "Already following this astrologer"
+      );
+    }
+
+    await prisma.astrologerFollow.create({
+      data: {
+        userId: user.id,
+        astrologerId,
+      },
+    });
+
+    return {
+      success: true,
+      message: "Astrologer followed successfully",
+    };
+  } catch (error) {
+    throw new Error(error.message);
+  }
+},
+unfollowAstrologer: async (
+  _,
+  { astrologerId },
+  context
+) => {
+  try {
+    const { prisma, user } = context;
+
+    if (!user) {
+      throw new Error("Unauthorized");
+    }
+
+    await prisma.astrologerFollow.delete({
+      where: {
+        userId_astrologerId: {
+          userId: user.id,
+          astrologerId,
+        },
+      },
+    });
+
+    return {
+      success: true,
+      message: "Astrologer unfollowed successfully",
+    };
+  } catch (error) {
     throw new Error(error.message);
   }
 },
