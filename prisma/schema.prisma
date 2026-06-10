@@ -521,6 +521,7 @@ model Category {
   services  Service[]
 }
 
+
 model Service {
   id          String   @id @default(cuid())
 

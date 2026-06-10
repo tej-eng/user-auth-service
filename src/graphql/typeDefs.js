@@ -805,7 +805,7 @@ module.exports = gql`
   #--------END APP VERSION SECTION --------------------
 
   #------ Healing --------#
-type Category {
+  type Category {
   id: ID!
 
   name: String!
@@ -816,7 +816,7 @@ type Category {
   services: [Service!]
 }
 
-type Service {
+  type Service {
   id: ID!
 
   name: String!
@@ -945,8 +945,7 @@ type Service {
   #------END CODE FOR FOLLOWERS AND FOLLOWING----------------
   type Query {
     getCategories: [Category!]!
-    getCategory(id: ID!): Category
-
+    getCategory(slug: String!): Category
     getServices: [Service!]!
     getService(id: ID!): Service
     getUsersDetails(page: Int, limit: Int, search: String): UserPagination!

@@ -1589,42 +1589,7 @@ module.exports = {
       }
     },
 
-      getCategories: async (_, __, { prisma }) => {
-      return prisma.category.findMany({
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
-    },
-
-    getCategory: async (_, { id }, { prisma }) => {
-      return prisma.category.findUnique({
-        where: { id },
-        include: {
-          services: true,
-        },
-      });
-    },
-
-    getServices: async (_, __, { prisma }) => {
-      return prisma.service.findMany({
-        include: {
-          category: true,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
-    },
-
-    getService: async (_, { id }, { prisma }) => {
-      return prisma.service.findUnique({
-        where: { id },
-        include: {
-          category: true,
-        },
-      });
-    },
+   
     getGiftHistory: async (_, args, context) => {
       try {
         const giftHistory = await prisma.giftHistory.findMany({
@@ -1709,8 +1674,116 @@ module.exports = {
         throw new Error(error.message);
       }
     },
-  },
 
+        getCategories: async () => {
+      try {
+        const categories = await prisma.category.findMany({
+          orderBy: {
+            createdAt: "desc",
+          },
+        });
+
+        return categories.map((category) => ({
+          ...category,
+          createdAt: category.createdAt.toISOString(),
+        }));
+      } catch (error) {
+        console.error("getCategories error:", error);
+
+        throw new Error(error.message || "Failed to fetch categories");
+      }
+    },
+
+   getCategory: async (_, { slug }) => {
+  try {
+    const category = await prisma.category.findUnique({
+      where: { slug },
+      include: {
+        services: true,
+      },
+    });
+
+    if (!category) {
+      throw new Error("Category not found");
+    }
+
+    return {
+      ...category,
+      createdAt: category.createdAt.toISOString(),
+      services: category.services.map((service) => ({
+        ...service,
+        createdAt: service.createdAt.toISOString(),
+        updatedAt: service.updatedAt.toISOString(),
+      })),
+    };
+  } catch (error) {
+    console.error("getCategory error:", error);
+
+    throw new Error(error.message || "Failed to fetch category");
+  }
+},
+
+    getServices: async () => {
+      try {
+        const services = await prisma.service.findMany({
+          include: {
+            category: true,
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        });
+
+        return services.map((service) => ({
+          ...service,
+          createdAt: service.createdAt.toISOString(),
+          updatedAt: service.updatedAt.toISOString(),
+          category: service.category
+            ? {
+                ...service.category,
+                createdAt: service.category.createdAt.toISOString(),
+              }
+            : null,
+        }));
+      } catch (error) {
+        console.error("getServices error:", error);
+
+        throw new Error(error.message || "Failed to fetch services");
+      }
+    },
+
+    getService: async (_, { slug }) => {
+      try {
+        const service = await prisma.service.findUnique({
+          where: { slug },
+          include: {
+            category: true,
+          },
+        });
+
+        if (!service) {
+          throw new Error("Service not found");
+        }
+
+        return {
+          ...service,
+          createdAt: service.createdAt.toISOString(),
+          updatedAt: service.updatedAt.toISOString(),
+          category: service.category
+            ? {
+                ...service.category,
+                createdAt: service.category.createdAt.toISOString(),
+              }
+            : null,
+        };
+      } catch (error) {
+        console.error("getService error:", error);
+
+        throw new Error(error.message || "Failed to fetch service");
+      }
+    },
+  },
+//----------------start code for mutation ----------------------------
   Mutation: {
     requestOtp: async (_, { countryCode, mobile }) => {
       try {
@@ -2533,8 +2606,9 @@ module.exports = {
       }
     },
     followAstrologer: async (_, { astrologerId }, context) => {
+      console.log("followAstrologer called with astrologerId:", astrologerId);
       try {
-        const { prisma, user } = context;
+        const { user } = context;
 
         if (!user) {
           throw new Error("Unauthorized");
@@ -2545,7 +2619,7 @@ module.exports = {
             id: astrologerId,
           },
         });
-
+        console.log("Astrologer found:", astrologer);
         if (!astrologer) {
           throw new Error("Astrologer not found");
         }
@@ -2580,7 +2654,7 @@ module.exports = {
     },
     unfollowAstrologer: async (_, { astrologerId }, context) => {
       try {
-        const { prisma, user } = context;
+        const { user } = context;
 
         if (!user) {
           throw new Error("Unauthorized");
