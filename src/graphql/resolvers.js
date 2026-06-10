@@ -1752,10 +1752,10 @@ module.exports = {
       }
     },
 
-    getService: async (_, { id }) => {
+    getService: async (_, { slug }) => {
       try {
         const service = await prisma.service.findUnique({
-          where: { id },
+          where: { slug },
           include: {
             category: true,
           },
@@ -2606,6 +2606,7 @@ module.exports = {
       }
     },
     followAstrologer: async (_, { astrologerId }, context) => {
+      console.log("followAstrologer called with astrologerId:", astrologerId);
       try {
         const { prisma, user } = context;
 
@@ -2618,7 +2619,7 @@ module.exports = {
             id: astrologerId,
           },
         });
-
+        console.log("Astrologer found:", astrologer);
         if (!astrologer) {
           throw new Error("Astrologer not found");
         }
