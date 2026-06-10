@@ -805,23 +805,30 @@ module.exports = gql`
   #--------END APP VERSION SECTION --------------------
 
   #------ Healing --------#
-  type Category {
-    id: ID!
-    name: String!
-    slug: String!
-  }
+type Category {
+  id: ID!
 
-  type Service {
-    id: ID!
-    name: String!
-    slug: String!
-    type: String!
-    image: String
-    description: String
-    price: Float
+  name: String!
+  slug: String!
 
-    category: Category
-  }
+  image: String
+
+  services: [Service!]
+}
+
+type Service {
+  id: ID!
+
+  name: String!
+  slug: String!
+
+  image: String
+  description: String
+  longText: String
+  price: Float
+
+  category: Category
+}
 
   #------------START free services section----------------
 
@@ -914,30 +921,34 @@ module.exports = gql`
   }
 
   type FollowerUser {
-  id: ID!
-  name: String
-  mobile: String
-  countryCode: String
-}
+    id: ID!
+    name: String
+    mobile: String
+    countryCode: String
+  }
 
-type AstrologerFollower {
-  id: ID!
-  userId: String!
-  astrologerId: String!
-  createdAt: String!
-  user: FollowerUser
-}
+  type AstrologerFollower {
+    id: ID!
+    userId: String!
+    astrologerId: String!
+    createdAt: String!
+    user: FollowerUser
+  }
 
-type AstrologerFollowersResponse {
-  followers: [AstrologerFollower!]!
-  total: Int!
-  page: Int!
-  limit: Int!
-  totalPages: Int!
-}
+  type AstrologerFollowersResponse {
+    followers: [AstrologerFollower!]!
+    total: Int!
+    page: Int!
+    limit: Int!
+    totalPages: Int!
+  }
   #------END CODE FOR FOLLOWERS AND FOLLOWING----------------
   type Query {
+    getCategories: [Category!]!
+    getCategory(id: ID!): Category
+
     getServices: [Service!]!
+    getService(id: ID!): Service
     getUsersDetails(page: Int, limit: Int, search: String): UserPagination!
     getAstrologerListBySearch(
       searchInput: AstrologerSearchInput
