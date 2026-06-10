@@ -1783,7 +1783,7 @@ module.exports = {
       }
     },
   },
-
+//----------------start code for mutation ----------------------------
   Mutation: {
     requestOtp: async (_, { countryCode, mobile }) => {
       try {
@@ -2608,7 +2608,7 @@ module.exports = {
     followAstrologer: async (_, { astrologerId }, context) => {
       console.log("followAstrologer called with astrologerId:", astrologerId);
       try {
-        const { prisma, user } = context;
+        const { user } = context;
 
         if (!user) {
           throw new Error("Unauthorized");
@@ -2654,7 +2654,7 @@ module.exports = {
     },
     unfollowAstrologer: async (_, { astrologerId }, context) => {
       try {
-        const { prisma, user } = context;
+        const { user } = context;
 
         if (!user) {
           throw new Error("Unauthorized");
