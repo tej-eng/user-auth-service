@@ -1590,8 +1590,6 @@ module.exports = {
     },
 
     getServices: async (_, __, context) => {
-    
-
       return prisma.service.findMany({
         include: {
           category: true,
@@ -1602,99 +1600,126 @@ module.exports = {
       });
     },
     getGiftHistory: async (_, args, context) => {
-  try {
-    const giftHistory = await prisma.giftHistory.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            mobile: true,
+      try {
+        const giftHistory = await prisma.giftHistory.findMany({
+          orderBy: {
+            createdAt: "desc",
           },
-        },
-        astrologer: {
-          select: {
-            id: true,
-            name: true,
-            profilePic: true,
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                mobile: true,
+              },
+            },
+            astrologer: {
+              select: {
+                id: true,
+                name: true,
+                profilePic: true,
+              },
+            },
           },
-        },
-      },
-    });
+        });
 
-    return giftHistory.map((item) => ({
-      id: item.id,
-      userId: item.userId,
-      astrologerId: item.astrologerId,
-      giftId: item.giftId,
-      giftName: item.giftName,
-      giftPrice: item.giftPrice,
-      createdAt: item.createdAt.toISOString(),
+        return giftHistory.map((item) => ({
+          id: item.id,
+          userId: item.userId,
+          astrologerId: item.astrologerId,
+          giftId: item.giftId,
+          giftName: item.giftName,
+          giftPrice: item.giftPrice,
+          createdAt: item.createdAt.toISOString(),
 
-      user: item.user,
-      astrologer: item.astrologer,
-    }));
-  } catch (error) {
-    console.error("getGiftHistory error:", error);
-    throw new Error(error.message);
-  }
-},
-isFollowing: async (
-  _,
-  { astrologerId },
-  context
-) => {
-  try {
-    const { prisma, user } = context;
+          user: item.user,
+          astrologer: item.astrologer,
+        }));
+      } catch (error) {
+        console.error("getGiftHistory error:", error);
+        throw new Error(error.message);
+      }
+    },
+    isFollowing: async (_, { astrologerId }, context) => {
+      try {
+        const { prisma, user } = context;
 
-    if (!user) {
-      return {
-        isFollowing: false,
-      };
-    }
+        if (!user) {
+          return {
+            isFollowing: false,
+          };
+        }
 
-    const follow =
-      await prisma.astrologerFollow.findUnique({
-        where: {
-          userId_astrologerId: {
-            userId: user.id,
+        const follow = await prisma.astrologerFollow.findUnique({
+          where: {
+            userId_astrologerId: {
+              userId: user.id,
+              astrologerId,
+            },
+          },
+        });
+
+        return {
+          isFollowing: !!follow,
+        };
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    },
+    getAstrologerFollowersCount: async (_, { astrologerId }, context) => {
+      try {
+        const { prisma } = context;
+
+        const totalFollowers = await prisma.astrologerFollow.count({
+          where: {
             astrologerId,
           },
+        });
+
+        return {
+          totalFollowers,
+        };
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    },
+
+    getCategories: async (_, __, { prisma }) => {
+      return prisma.category.findMany({
+        orderBy: {
+          createdAt: "desc",
         },
       });
+    },
 
-    return {
-      isFollowing: !!follow,
-    };
-  } catch (error) {
-    throw new Error(error.message);
-  }
-},
-getAstrologerFollowersCount: async (
-  _,
-  { astrologerId },
-  context
-) => {
-  try {
-    const { prisma } = context;
-
-    const totalFollowers =
-      await prisma.astrologerFollow.count({
-        where: {
-          astrologerId,
+    getCategory: async (_, { id }, { prisma }) => {
+      return prisma.category.findUnique({
+        where: { id },
+        include: {
+          services: true,
         },
       });
+    },
 
-    return {
-      totalFollowers,
-    };
-  } catch (error) {
-    throw new Error(error.message);
-  }
-},
+    getServices: async (_, __, { prisma }) => {
+      return prisma.service.findMany({
+        include: {
+          category: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+    },
+
+    getService: async (_, { id }, { prisma }) => {
+      return prisma.service.findUnique({
+        where: { id },
+        include: {
+          category: true,
+        },
+      });
+    },
   },
 
   Mutation: {
@@ -2396,217 +2421,198 @@ getAstrologerFollowersCount: async (
         throw new Error(error.message || "Failed to logout");
       }
     },
-sendGift: async (_, { input }, context) => {
-  try {
-    if (!context.user) {
-      throw new Error("Unauthorized");
-    }
-  
-    const {
-      astro_id,
-      gift_id,
-      giftname,
-      giftprice,
-      user_id,
-    } = input;
+    sendGift: async (_, { input }, context) => {
+      try {
+        if (!context.user) {
+          throw new Error("Unauthorized");
+        }
 
-    // -----------------------------
-    // Fetch wallets
-    // -----------------------------
-    const userWallet = await prisma.userWallet.findUnique({
-      where: {
-        userId: user_id,
-      },
-    });
-    if (!userWallet) {
-      throw new Error("User wallet not found");
-    }
+        const { astro_id, gift_id, giftname, giftprice, user_id } = input;
 
-    if (Number(userWallet.balanceCoins) < Number(giftprice)) {
-      throw new Error("Insufficient wallet balance");
-    }
-
-    const astrologerWallet = await prisma.astrologerWallet.findUnique({
-      where: {
-        astrologerId: astro_id,
-      },
-    });
-   console.log("Astrologer Wallet:", astrologerWallet);
-
-    if (!astrologerWallet) {
-      throw new Error("Astrologer wallet not found");
-    }
-
-    // -----------------------------
-    // Transaction
-    // -----------------------------
-    const result = await prisma.$transaction(async (tx) => {
-      // Debit User Wallet
-      const updatedUserWallet = await tx.userWallet.update({
-        where: {
-          id: userWallet.id,
-        },
-        data: {
-          balanceCoins: {
-            decrement: Number(giftprice),
+        // -----------------------------
+        // Fetch wallets
+        // -----------------------------
+        const userWallet = await prisma.userWallet.findUnique({
+          where: {
+            userId: user_id,
           },
-        },
-      });
+        });
+        if (!userWallet) {
+          throw new Error("User wallet not found");
+        }
 
-      // Credit Astrologer Wallet
-      const updatedAstroWallet = await tx.astrologerWallet.update({
-        where: {
-          id: astrologerWallet.id,
-        },
-        data: {
-          balanceCoins: {
-            increment: Number(giftprice),
+        if (Number(userWallet.balanceCoins) < Number(giftprice)) {
+          throw new Error("Insufficient wallet balance");
+        }
+
+        const astrologerWallet = await prisma.astrologerWallet.findUnique({
+          where: {
+            astrologerId: astro_id,
           },
-        },
-      });
+        });
+        console.log("Astrologer Wallet:", astrologerWallet);
 
-      // Save Gift History
-      await tx.giftHistory.create({
-        data: {
-          userId: user_id,
-          astrologerId: astro_id,
-          giftId: gift_id,
-          giftName: giftname,
-          giftPrice: Number(giftprice),
-        },
-      });
+        if (!astrologerWallet) {
+          throw new Error("Astrologer wallet not found");
+        }
 
-      // User Wallet Transaction
-      await tx.walletTransaction.create({
-        data: {
-          userWalletId: userWallet.id,
+        // -----------------------------
+        // Transaction
+        // -----------------------------
+        const result = await prisma.$transaction(async (tx) => {
+          // Debit User Wallet
+          const updatedUserWallet = await tx.userWallet.update({
+            where: {
+              id: userWallet.id,
+            },
+            data: {
+              balanceCoins: {
+                decrement: Number(giftprice),
+              },
+            },
+          });
 
-          type: "DEBIT",
+          // Credit Astrologer Wallet
+          const updatedAstroWallet = await tx.astrologerWallet.update({
+            where: {
+              id: astrologerWallet.id,
+            },
+            data: {
+              balanceCoins: {
+                increment: Number(giftprice),
+              },
+            },
+          });
 
-          coins: Number(giftprice),
-          amount: Number(giftprice),
+          // Save Gift History
+          await tx.giftHistory.create({
+            data: {
+              userId: user_id,
+              astrologerId: astro_id,
+              giftId: gift_id,
+              giftName: giftname,
+              giftPrice: Number(giftprice),
+            },
+          });
 
-          description: `Gift Sent - ${giftname}`,
-        },
-      });
+          // User Wallet Transaction
+          await tx.walletTransaction.create({
+            data: {
+              userWalletId: userWallet.id,
 
-      // Astrologer Wallet Transaction
-      await tx.walletTransaction.create({
-        data: {
-          astrologerWalletId: astrologerWallet.id,
+              type: "DEBIT",
 
-          type: "CREDIT",
+              coins: Number(giftprice),
+              amount: Number(giftprice),
 
-          coins: Number(giftprice),
-          amount: Number(giftprice),
+              description: `Gift Sent - ${giftname}`,
+            },
+          });
 
-          description: `Gift Received - ${giftname}`,
-        },
-      });
+          // Astrologer Wallet Transaction
+          await tx.walletTransaction.create({
+            data: {
+              astrologerWalletId: astrologerWallet.id,
 
-      return {
-        updatedUserWallet,
-        updatedAstroWallet,
-      };
-    });
+              type: "CREDIT",
 
-    return {
-      success: true,
-      message: "Gift sent successfully",
+              coins: Number(giftprice),
+              amount: Number(giftprice),
 
-      userBalance: result.updatedUserWallet.balanceCoins,
+              description: `Gift Received - ${giftname}`,
+            },
+          });
 
-      astrologerBalance:
-        result.updatedAstroWallet.balanceCoins,
-    };
-  } catch (error) {
-    console.error("sendGift error:", error);
+          return {
+            updatedUserWallet,
+            updatedAstroWallet,
+          };
+        });
 
-    throw new Error(error.message);
-  }
-},
-followAstrologer: async (
-  _,
-  { astrologerId },
-  context
-) => {
-  try {
-    const { prisma, user } = context;
+        return {
+          success: true,
+          message: "Gift sent successfully",
 
-    if (!user) {
-      throw new Error("Unauthorized");
-    }
+          userBalance: result.updatedUserWallet.balanceCoins,
 
-    const astrologer =
-      await prisma.astrologer.findUnique({
-        where: {
-          id: astrologerId,
-        },
-      });
+          astrologerBalance: result.updatedAstroWallet.balanceCoins,
+        };
+      } catch (error) {
+        console.error("sendGift error:", error);
 
-    if (!astrologer) {
-      throw new Error("Astrologer not found");
-    }
+        throw new Error(error.message);
+      }
+    },
+    followAstrologer: async (_, { astrologerId }, context) => {
+      try {
+        const { prisma, user } = context;
 
-    const existingFollow =
-      await prisma.astrologerFollow.findUnique({
-        where: {
-          userId_astrologerId: {
+        if (!user) {
+          throw new Error("Unauthorized");
+        }
+
+        const astrologer = await prisma.astrologer.findUnique({
+          where: {
+            id: astrologerId,
+          },
+        });
+
+        if (!astrologer) {
+          throw new Error("Astrologer not found");
+        }
+
+        const existingFollow = await prisma.astrologerFollow.findUnique({
+          where: {
+            userId_astrologerId: {
+              userId: user.id,
+              astrologerId,
+            },
+          },
+        });
+
+        if (existingFollow) {
+          throw new Error("Already following this astrologer");
+        }
+
+        await prisma.astrologerFollow.create({
+          data: {
             userId: user.id,
             astrologerId,
           },
-        },
-      });
+        });
 
-    if (existingFollow) {
-      throw new Error(
-        "Already following this astrologer"
-      );
-    }
+        return {
+          success: true,
+          message: "Astrologer followed successfully",
+        };
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    },
+    unfollowAstrologer: async (_, { astrologerId }, context) => {
+      try {
+        const { prisma, user } = context;
 
-    await prisma.astrologerFollow.create({
-      data: {
-        userId: user.id,
-        astrologerId,
-      },
-    });
+        if (!user) {
+          throw new Error("Unauthorized");
+        }
 
-    return {
-      success: true,
-      message: "Astrologer followed successfully",
-    };
-  } catch (error) {
-    throw new Error(error.message);
-  }
-},
-unfollowAstrologer: async (
-  _,
-  { astrologerId },
-  context
-) => {
-  try {
-    const { prisma, user } = context;
+        await prisma.astrologerFollow.delete({
+          where: {
+            userId_astrologerId: {
+              userId: user.id,
+              astrologerId,
+            },
+          },
+        });
 
-    if (!user) {
-      throw new Error("Unauthorized");
-    }
-
-    await prisma.astrologerFollow.delete({
-      where: {
-        userId_astrologerId: {
-          userId: user.id,
-          astrologerId,
-        },
-      },
-    });
-
-    return {
-      success: true,
-      message: "Astrologer unfollowed successfully",
-    };
-  } catch (error) {
-    throw new Error(error.message);
-  }
-},
+        return {
+          success: true,
+          message: "Astrologer unfollowed successfully",
+        };
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    },
   },
 };

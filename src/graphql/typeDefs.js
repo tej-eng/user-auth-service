@@ -806,22 +806,29 @@ module.exports = gql`
 
   #------ Healing --------#
   type Category {
-    id: ID!
-    name: String!
-    slug: String!
-  }
+  id: ID!
+
+  name: String!
+  slug: String!
+
+  image: String
+
+  services: [Service!]
+}
 
   type Service {
-    id: ID!
-    name: String!
-    slug: String!
-    type: String!
-    image: String
-    description: String
-    price: Float
+  id: ID!
 
-    category: Category
-  }
+  name: String!
+  slug: String!
+
+  image: String
+  description: String
+  longText: String
+  price: Float
+
+  category: Category
+}
 
   #------------START free services section----------------
 
@@ -937,7 +944,10 @@ type AstrologerFollowersResponse {
 }
   #------END CODE FOR FOLLOWERS AND FOLLOWING----------------
   type Query {
+    getCategories: [Category!]!
+    getCategory(id: ID!): Category
     getServices: [Service!]!
+    getService(id: ID!): Service
     getUsersDetails(page: Int, limit: Int, search: String): UserPagination!
     getAstrologerListBySearch(
       searchInput: AstrologerSearchInput
