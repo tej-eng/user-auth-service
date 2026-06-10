@@ -942,7 +942,15 @@ type AstrologerFollowersResponse {
   limit: Int!
   totalPages: Int!
 }
-  #------END CODE FOR FOLLOWERS AND FOLLOWING----------------
+
+type FollowedAstrologersResponse {
+  astrologers: [Astrologer!]!
+  total: Int!
+  page: Int!
+  limit: Int!
+  totalPages: Int!
+}
+   #------END CODE FOR FOLLOWERS AND FOLLOWING----------------
   type Query {
     getCategories: [Category!]!
     getCategory(slug: String!): Category
@@ -1003,6 +1011,11 @@ type AstrologerFollowersResponse {
     isFollowing(astrologerId: ID!): FollowStatusResponse!
 
     getAstrologerFollowersCount(astrologerId: ID!): FollowCountResponse!
+
+   getFollowedAstrologers(
+    page: Int = 1
+    limit: Int = 10
+  ): FollowedAstrologersResponse!
   }
 
   type Mutation {
