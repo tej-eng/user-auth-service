@@ -968,6 +968,9 @@ type ServiceBooking {
 
   service: Service!
 
+  astrologerId: String
+  astrologer: Astrologer
+
   name: String!
   email: String!
   phone: String!

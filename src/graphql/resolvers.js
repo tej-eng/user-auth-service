@@ -2766,12 +2766,11 @@ module.exports = {
       });
     },
 
-    updateBookingAstrologer: async (
-  _,
-  { bookingId, astrologerId }
-) => {
+  updateBookingAstrologer: async (_, { bookingId, astrologerId }) => {
   const astrologer = await prisma.astrologer.findUnique({
-    where: { id: astrologerId },
+    where: {
+      id: astrologerId,
+    },
   });
 
   if (!astrologer) {
@@ -2784,7 +2783,10 @@ module.exports = {
     },
     data: {
       astrologerId,
-      astrologerName: astrologer.name,
+    },
+    include: {
+      astrologer: true,
+      service: true,
     },
   });
 },
