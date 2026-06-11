@@ -1832,25 +1832,25 @@ module.exports = {
         throw new Error(error.message || "Failed to fetch service");
       }
     },
-     getServiceBooking: async (_, { id }) => {
-  return prisma.serviceBooking.findUnique({
-    where: { id },
-    include: {
-      service: true,
+    getServiceBooking: async (_, { id }) => {
+      return prisma.serviceBooking.findUnique({
+        where: { id },
+        include: {
+          service: true,
+        },
+      });
     },
-  });
-},
 
-getServiceBookings: async () => {
-  return prisma.serviceBooking.findMany({
-    include: {
-      service: true,
+    getServiceBookings: async () => {
+      return prisma.serviceBooking.findMany({
+        include: {
+          service: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
     },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
-},
   },
   //----------------start code for mutation ----------------------------
   Mutation: {
@@ -2766,6 +2766,27 @@ getServiceBookings: async () => {
       });
     },
 
-   
+    updateBookingAstrologer: async (
+  _,
+  { bookingId, astrologerId }
+) => {
+  const astrologer = await prisma.astrologer.findUnique({
+    where: { id: astrologerId },
+  });
+
+  if (!astrologer) {
+    throw new Error("Astrologer not found");
+  }
+
+  return prisma.serviceBooking.update({
+    where: {
+      id: bookingId,
+    },
+    data: {
+      astrologerId,
+      astrologerName: astrologer.name,
+    },
+  });
+},
   },
 };
