@@ -950,6 +950,23 @@ type FollowedAstrologersResponse {
   limit: Int!
   totalPages: Int!
 }
+
+input CreateServiceBookingInput {
+  serviceId: ID!
+
+  name: String!
+  email: String!
+  phone: String!
+
+  dob: String!
+  tob: String!
+  pob: String!
+
+  gender: String
+
+  concern: String
+}
+
    #------END CODE FOR FOLLOWERS AND FOLLOWING----------------
   type Query {
     getCategories: [Category!]!
@@ -1016,6 +1033,8 @@ type FollowedAstrologersResponse {
     page: Int = 1
     limit: Int = 10
   ): FollowedAstrologersResponse!
+    getServiceBooking(id: ID!): ServiceBooking
+  getServiceBookings: [ServiceBooking!]!
   }
 
   type Mutation {
@@ -1041,5 +1060,14 @@ type FollowedAstrologersResponse {
     followAstrologer(astrologerId: ID!): FollowResponse!
 
     unfollowAstrologer(astrologerId: ID!): FollowResponse!
+    CreateServiceBooking(
+  $input: CreateServiceBookingInput!
+) {
+  createServiceBooking(input: $input) {
+    id
+    amount
+    paymentStatus
+  }
+}
   }
 `;

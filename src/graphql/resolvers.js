@@ -1589,7 +1589,6 @@ module.exports = {
       }
     },
 
-   
     getGiftHistory: async (_, args, context) => {
       try {
         const giftHistory = await prisma.giftHistory.findMany({
@@ -1633,7 +1632,7 @@ module.exports = {
     },
     isFollowing: async (_, { astrologerId }, context) => {
       try {
-        const {  user } = context;
+        const { user } = context;
 
         if (!user) {
           return {
@@ -1659,7 +1658,7 @@ module.exports = {
     },
     getAstrologerFollowersCount: async (_, { astrologerId }, context) => {
       try {
-       // const { prisma } = context;
+        // const { prisma } = context;
 
         const totalFollowers = await prisma.astrologerFollow.count({
           where: {
@@ -1674,61 +1673,59 @@ module.exports = {
         throw new Error(error.message);
       }
     },
-  getFollowedAstrologers: async (_, { page = 1, limit = 10 }, context) => {
-  try {
-    const { user } = context;
+    getFollowedAstrologers: async (_, { page = 1, limit = 10 }, context) => {
+      try {
+        const { user } = context;
 
-    if (!user) {
-      throw new Error("Unauthorized");
-    }
+        if (!user) {
+          throw new Error("Unauthorized");
+        }
 
-    const skip = (page - 1) * limit;
+        const skip = (page - 1) * limit;
 
-    const total = await prisma.astrologerFollow.count({
-      where: {
-        userId: user.id,
-      },
-    });
+        const total = await prisma.astrologerFollow.count({
+          where: {
+            userId: user.id,
+          },
+        });
 
-    const followedAstrologers = await prisma.astrologerFollow.findMany({
-      where: {
-        userId: user.id,
-      },
-      include: {
-        astrologer: {
+        const followedAstrologers = await prisma.astrologerFollow.findMany({
+          where: {
+            userId: user.id,
+          },
           include: {
-            pricing: true,
-            wallet: true,
-            offers: {
+            astrologer: {
               include: {
-                offer: true,
+                pricing: true,
+                wallet: true,
+                offers: {
+                  include: {
+                    offer: true,
+                  },
+                },
               },
             },
           },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      skip,
-      take: limit,
-    });
+          orderBy: {
+            createdAt: "desc",
+          },
+          skip,
+          take: limit,
+        });
 
-    return {
-      astrologers: followedAstrologers.map(
-        (follow) => follow.astrologer
-      ),
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
-  } catch (error) {
-    throw new Error(error.message);
-  }
-},
+        return {
+          astrologers: followedAstrologers.map((follow) => follow.astrologer),
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        };
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    },
 
-        getCategories: async () => {
+    getCategories: async () => {
       try {
         const categories = await prisma.category.findMany({
           orderBy: {
@@ -1747,34 +1744,34 @@ module.exports = {
       }
     },
 
-   getCategory: async (_, { slug }) => {
-  try {
-    const category = await prisma.category.findUnique({
-      where: { slug },
-      include: {
-        services: true,
-      },
-    });
+    getCategory: async (_, { slug }) => {
+      try {
+        const category = await prisma.category.findUnique({
+          where: { slug },
+          include: {
+            services: true,
+          },
+        });
 
-    if (!category) {
-      throw new Error("Category not found");
-    }
+        if (!category) {
+          throw new Error("Category not found");
+        }
 
-    return {
-      ...category,
-      createdAt: category.createdAt.toISOString(),
-      services: category.services.map((service) => ({
-        ...service,
-        createdAt: service.createdAt.toISOString(),
-        updatedAt: service.updatedAt.toISOString(),
-      })),
-    };
-  } catch (error) {
-    console.error("getCategory error:", error);
+        return {
+          ...category,
+          createdAt: category.createdAt.toISOString(),
+          services: category.services.map((service) => ({
+            ...service,
+            createdAt: service.createdAt.toISOString(),
+            updatedAt: service.updatedAt.toISOString(),
+          })),
+        };
+      } catch (error) {
+        console.error("getCategory error:", error);
 
-    throw new Error(error.message || "Failed to fetch category");
-  }
-},
+        throw new Error(error.message || "Failed to fetch category");
+      }
+    },
 
     getServices: async () => {
       try {
@@ -1835,8 +1832,27 @@ module.exports = {
         throw new Error(error.message || "Failed to fetch service");
       }
     },
+     getServiceBooking: async (_, { id }) => {
+  return prisma.serviceBooking.findUnique({
+    where: { id },
+    include: {
+      service: true,
+    },
+  });
+},
+
+getServiceBookings: async () => {
+  return prisma.serviceBooking.findMany({
+    include: {
+      service: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+},
   },
-//----------------start code for mutation ----------------------------
+  //----------------start code for mutation ----------------------------
   Mutation: {
     requestOtp: async (_, { countryCode, mobile }) => {
       try {
@@ -2730,5 +2746,26 @@ module.exports = {
         throw new Error(error.message);
       }
     },
+
+    createServiceBooking: async (_, { input }) => {
+      const service = await prisma.service.findUnique({
+        where: {
+          id: input.serviceId,
+        },
+      });
+
+      if (!service) {
+        throw new Error("Service not found");
+      }
+
+      return prisma.serviceBooking.create({
+        data: {
+          ...input,
+          amount: service.price,
+        },
+      });
+    },
+
+   
   },
 };
