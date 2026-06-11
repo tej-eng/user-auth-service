@@ -950,6 +950,19 @@ module.exports = gql`
     limit: Int!
     totalPages: Int!
   }
+    enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+enum BookingStatus {
+  PENDING
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
 type ServiceBooking {
   id: ID!
 
