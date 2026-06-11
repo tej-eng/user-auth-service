@@ -806,29 +806,29 @@ module.exports = gql`
 
   #------ Healing --------#
   type Category {
-  id: ID!
+    id: ID!
 
-  name: String!
-  slug: String!
+    name: String!
+    slug: String!
 
-  image: String
+    image: String
 
-  services: [Service!]
-}
+    services: [Service!]
+  }
 
   type Service {
-  id: ID!
+    id: ID!
 
-  name: String!
-  slug: String!
+    name: String!
+    slug: String!
 
-  image: String
-  description: String
-  longText: String
-  price: Float
+    image: String
+    description: String
+    longText: String
+    price: Float
 
-  category: Category
-}
+    category: Category
+  }
 
   #------------START free services section----------------
 
@@ -921,38 +921,39 @@ module.exports = gql`
   }
 
   type FollowerUser {
+    id: ID!
+    name: String
+    mobile: String
+    countryCode: String
+  }
+
+  type AstrologerFollower {
+    id: ID!
+    userId: String!
+    astrologerId: String!
+    createdAt: String!
+    user: FollowerUser
+  }
+
+  type AstrologerFollowersResponse {
+    followers: [AstrologerFollower!]!
+    total: Int!
+    page: Int!
+    limit: Int!
+    totalPages: Int!
+  }
+
+  type FollowedAstrologersResponse {
+    astrologers: [Astrologer!]!
+    total: Int!
+    page: Int!
+    limit: Int!
+    totalPages: Int!
+  }
+type ServiceBooking {
   id: ID!
-  name: String
-  mobile: String
-  countryCode: String
-}
 
-type AstrologerFollower {
-  id: ID!
-  userId: String!
-  astrologerId: String!
-  createdAt: String!
-  user: FollowerUser
-}
-
-type AstrologerFollowersResponse {
-  followers: [AstrologerFollower!]!
-  total: Int!
-  page: Int!
-  limit: Int!
-  totalPages: Int!
-}
-
-type FollowedAstrologersResponse {
-  astrologers: [Astrologer!]!
-  total: Int!
-  page: Int!
-  limit: Int!
-  totalPages: Int!
-}
-
-input CreateServiceBookingInput {
-  serviceId: ID!
+  service: Service!
 
   name: String!
   email: String!
@@ -963,11 +964,33 @@ input CreateServiceBookingInput {
   pob: String!
 
   gender: String
-
   concern: String
-}
 
-   #------END CODE FOR FOLLOWERS AND FOLLOWING----------------
+  amount: Float!
+
+  paymentStatus: PaymentStatus!
+  bookingStatus: BookingStatus!
+
+  createdAt: String!
+  updatedAt: String!
+}
+  input CreateServiceBookingInput {
+    serviceId: ID!
+
+    name: String!
+    email: String!
+    phone: String!
+
+    dob: String!
+    tob: String!
+    pob: String!
+
+    gender: String
+
+    concern: String
+  }
+
+  #------END CODE FOR FOLLOWERS AND FOLLOWING----------------
   type Query {
     getCategories: [Category!]!
     getCategory(slug: String!): Category
@@ -1029,12 +1052,12 @@ input CreateServiceBookingInput {
 
     getAstrologerFollowersCount(astrologerId: ID!): FollowCountResponse!
 
-   getFollowedAstrologers(
-    page: Int = 1
-    limit: Int = 10
-  ): FollowedAstrologersResponse!
+    getFollowedAstrologers(
+      page: Int = 1
+      limit: Int = 10
+    ): FollowedAstrologersResponse!
     getServiceBooking(id: ID!): ServiceBooking
-  getServiceBookings: [ServiceBooking!]!
+    getServiceBookings: [ServiceBooking!]!
   }
 
   type Mutation {
@@ -1060,8 +1083,6 @@ input CreateServiceBookingInput {
     followAstrologer(astrologerId: ID!): FollowResponse!
 
     unfollowAstrologer(astrologerId: ID!): FollowResponse!
-  createServiceBooking(
-    input: CreateServiceBookingInput!
-  ): ServiceBooking!
+    createServiceBooking(input: CreateServiceBookingInput!): ServiceBooking!
   }
 `;
