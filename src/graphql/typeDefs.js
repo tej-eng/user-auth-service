@@ -1097,5 +1097,9 @@ type ServiceBooking {
 
     unfollowAstrologer(astrologerId: ID!): FollowResponse!
     createServiceBooking(input: CreateServiceBookingInput!): ServiceBooking!
+    updateBookingAstrologer(
+    bookingId: ID!
+    astrologerId: ID!
+  ): ServiceBooking!
   }
 `;
