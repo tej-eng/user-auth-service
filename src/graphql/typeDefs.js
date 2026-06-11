@@ -1060,14 +1060,8 @@ input CreateServiceBookingInput {
     followAstrologer(astrologerId: ID!): FollowResponse!
 
     unfollowAstrologer(astrologerId: ID!): FollowResponse!
-    CreateServiceBooking(
-  $input: CreateServiceBookingInput!
-) {
-  createServiceBooking(input: $input) {
-    id
-    amount
-    paymentStatus
-  }
-}
+  createServiceBooking(
+    input: CreateServiceBookingInput!
+  ): ServiceBooking!
   }
 `;
