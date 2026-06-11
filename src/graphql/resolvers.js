@@ -1633,7 +1633,7 @@ module.exports = {
     },
     isFollowing: async (_, { astrologerId }, context) => {
       try {
-        const { prisma, user } = context;
+        const {  user } = context;
 
         if (!user) {
           return {
@@ -1659,7 +1659,7 @@ module.exports = {
     },
     getAstrologerFollowersCount: async (_, { astrologerId }, context) => {
       try {
-        const { prisma } = context;
+       // const { prisma } = context;
 
         const totalFollowers = await prisma.astrologerFollow.count({
           where: {
@@ -1674,6 +1674,59 @@ module.exports = {
         throw new Error(error.message);
       }
     },
+  getFollowedAstrologers: async (_, { page = 1, limit = 10 }, context) => {
+  try {
+    const { user } = context;
+
+    if (!user) {
+      throw new Error("Unauthorized");
+    }
+
+    const skip = (page - 1) * limit;
+
+    const total = await prisma.astrologerFollow.count({
+      where: {
+        userId: user.id,
+      },
+    });
+
+    const followedAstrologers = await prisma.astrologerFollow.findMany({
+      where: {
+        userId: user.id,
+      },
+      include: {
+        astrologer: {
+          include: {
+            pricing: true,
+            wallet: true,
+            offers: {
+              include: {
+                offer: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      skip,
+      take: limit,
+    });
+
+    return {
+      astrologers: followedAstrologers.map(
+        (follow) => follow.astrologer
+      ),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  } catch (error) {
+    throw new Error(error.message);
+  }
+},
 
         getCategories: async () => {
       try {

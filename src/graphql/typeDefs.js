@@ -935,19 +935,27 @@ module.exports = gql`
     user: FollowerUser
   }
 
-  type AstrologerFollowersResponse {
-    followers: [AstrologerFollower!]!
-    total: Int!
-    page: Int!
-    limit: Int!
-    totalPages: Int!
-  }
-  #------END CODE FOR FOLLOWERS AND FOLLOWING----------------
+type AstrologerFollowersResponse {
+  followers: [AstrologerFollower!]!
+  total: Int!
+  page: Int!
+  limit: Int!
+  totalPages: Int!
+}
+
+type FollowedAstrologersResponse {
+  astrologers: [Astrologer!]!
+  total: Int!
+  page: Int!
+  limit: Int!
+  totalPages: Int!
+}
+   #------END CODE FOR FOLLOWERS AND FOLLOWING----------------
   type Query {
     getCategories: [Category!]!
     getCategory(slug: String!): Category
     getServices: [Service!]!
-    getService(id: ID!): Service
+    getService(slug: String!): Service
     getUsersDetails(page: Int, limit: Int, search: String): UserPagination!
     getAstrologerListBySearch(
       searchInput: AstrologerSearchInput
@@ -1003,6 +1011,11 @@ module.exports = gql`
     isFollowing(astrologerId: ID!): FollowStatusResponse!
 
     getAstrologerFollowersCount(astrologerId: ID!): FollowCountResponse!
+
+   getFollowedAstrologers(
+    page: Int = 1
+    limit: Int = 10
+  ): FollowedAstrologersResponse!
   }
 
   type Mutation {
