@@ -950,46 +950,46 @@ module.exports = gql`
     limit: Int!
     totalPages: Int!
   }
-    enum PaymentStatus {
-  PENDING
-  SUCCESS
-  FAILED
-}
+  enum PaymentStatus {
+    PENDING
+    SUCCESS
+    FAILED
+  }
 
-enum BookingStatus {
-  PENDING
-  ASSIGNED
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
-}
-type ServiceBooking {
-  id: ID!
+  enum BookingStatus {
+    PENDING
+    ASSIGNED
+    IN_PROGRESS
+    COMPLETED
+    CANCELLED
+  }
+  type ServiceBooking {
+    id: ID!
 
-  service: Service!
+    service: Service!
 
-  astrologerId: String
-  astrologer: Astrologer
+    astrologerId: String
+    astrologer: Astrologer
 
-  name: String!
-  email: String!
-  phone: String!
+    name: String!
+    email: String!
+    phone: String!
 
-  dob: String!
-  tob: String!
-  pob: String!
+    dob: String!
+    tob: String!
+    pob: String!
 
-  gender: String
-  concern: String
+    gender: String
+    concern: String
 
-  amount: Float!
+    amount: Float!
 
-  paymentStatus: PaymentStatus!
-  bookingStatus: BookingStatus!
+    paymentStatus: PaymentStatus!
+    bookingStatus: BookingStatus!
 
-  createdAt: String!
-  updatedAt: String!
-}
+    createdAt: String!
+    updatedAt: String!
+  }
   input CreateServiceBookingInput {
     serviceId: ID!
 
@@ -1007,6 +1007,15 @@ type ServiceBooking {
   }
 
   #------END CODE FOR FOLLOWERS AND FOLLOWING----------------
+  #-----START CODE FOR CREATE ORDER FOR HEALING SERVICES---
+  type CreateHealingOrderResponse {
+    success: Boolean!
+    orderId: String!
+    amount: Int!
+    currency: String!
+    bookingId: String!
+  }
+  #-----END code for healing service-------------
   type Query {
     getCategories: [Category!]!
     getCategory(slug: String!): Category
@@ -1099,10 +1108,11 @@ type ServiceBooking {
     followAstrologer(astrologerId: ID!): FollowResponse!
 
     unfollowAstrologer(astrologerId: ID!): FollowResponse!
+
     createServiceBooking(input: CreateServiceBookingInput!): ServiceBooking!
-    updateBookingAstrologer(
-    bookingId: ID!
-    astrologerId: ID!
-  ): ServiceBooking!
+
+    updateBookingAstrologer(bookingId: ID!, astrologerId: ID!): ServiceBooking!
+
+    createHealingOrder(bookingId: ID!): CreateHealingOrderResponse!
   }
 `;
