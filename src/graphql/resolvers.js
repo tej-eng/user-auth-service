@@ -2516,26 +2516,28 @@ module.exports = {
     // ======================
     // FETCH USER WALLET
     // ======================
-    const user = await prisma.user.findUnique({
-      where: {
-        id: userId,
-      },
-      select: {
-        walletBalance: true, // adjust field name if different
-      },
-    });
+   const user = await prisma.user.findUnique({
+  where: {
+    id: userId,
+  },
+  include: {
+    wallet: true,
+  },
+});
 
-    const totalAmount = booking.amount;
+const walletBalance =
+  user?.wallet?.balanceCoins || 0;
 
-    // Use wallet balance up to booking amount
-    const walletAmount = Math.min(
-      user?.walletBalance || 0,
-      totalAmount
-    );
+const totalAmount = booking.amount;
 
-    const payableAmount = Number(
-      (totalAmount - walletAmount).toFixed(2)
-    );
+const walletAmount = Math.min(
+  walletBalance,
+  totalAmount
+);
+
+const payableAmount = Number(
+  (totalAmount - walletAmount).toFixed(2)
+);
 
     let razorpayOrderId = null;
 
