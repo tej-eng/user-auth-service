@@ -1008,7 +1008,7 @@ module.exports = gql`
 
   #------END CODE FOR FOLLOWERS AND FOLLOWING----------------
   #-----START CODE FOR CREATE ORDER FOR HEALING SERVICES---
-type HealingOrderResponse {
+type CreateHealingOrderResponse {
   success: Boolean!
   orderId: String
   bookingId: String!
