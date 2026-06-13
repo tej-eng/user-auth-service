@@ -2489,7 +2489,7 @@ module.exports = {
       }
     },
 
-   createHealingOrder: async (_, { bookingId }, context) => {
+    createHealingOrder: async (_, { bookingId }, context) => {
   try {
     // ======================
     // AUTH CHECK
@@ -2514,49 +2514,92 @@ module.exports = {
     }
 
     // ======================
-    // CREATE RECEIPT ID
+    // FETCH USER WALLET
     // ======================
-    const receiptId = uuidv4();
+    const user = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+      select: {
+        walletBalance: true, // adjust field name if different
+      },
+    });
+
+    const totalAmount = booking.amount;
+
+    // Use wallet balance up to booking amount
+    const walletAmount = Math.min(
+      user?.walletBalance || 0,
+      totalAmount
+    );
+
+    const payableAmount = Number(
+      (totalAmount - walletAmount).toFixed(2)
+    );
+
+    let razorpayOrderId = null;
 
     // ======================
     // CREATE RAZORPAY ORDER
     // ======================
-    const order = await razorpay.orders.create({
-      amount: Math.round(booking.amount * 100),
-      currency: "INR",
-      receipt: receiptId,
-      notes: {
-        bookingId: booking.id,
-        userId,
-        serviceId: booking.serviceId || "",
-      },
-    });
+    if (payableAmount > 0) {
+      const receiptId = uuidv4();
+
+      const order = await razorpay.orders.create({
+        amount: Math.round(payableAmount * 100),
+        currency: "INR",
+        receipt: receiptId,
+        notes: {
+          bookingId: booking.id,
+          userId,
+          serviceId: booking.serviceId || "",
+        },
+      });
+
+      razorpayOrderId = order.id;
+    }
 
     // ======================
     // SAVE ORDER IN DB
     // ======================
-    await prisma.servicePaymentOrder.create({
-      data: {
-        userId,
-        bookingId: booking.id,
-        razorpayOrderId: order.id,
-        amount: booking.amount,
-        status: "CREATED",
-      },
-    });
+    const paymentOrder =
+      await prisma.servicePaymentOrder.create({
+        data: {
+          userId,
+          bookingId: booking.id,
+          razorpayOrderId,
+          totalAmount,
+          walletAmount,
+          payableAmount,
+          status:
+            payableAmount > 0
+              ? "CREATED"
+              : "PAID",
+        },
+      });
 
     return {
       success: true,
-      orderId: order.id,
-      amount: order.amount,
-      currency: order.currency,
+      orderId: razorpayOrderId,
+      amount: payableAmount,
+      currency: "INR",
       bookingId: booking.id,
+      paymentOrderId: paymentOrder.id,
+      totalAmount,
+      walletAmount,
+      payableAmount,
     };
   } catch (error) {
-    console.error("createHealingOrder error:", error);
-    throw new Error(error.message || "Failed to create healing order");
+    console.error(
+      "createHealingOrder error:",
+      error
+    );
+    throw new Error(
+      error.message || "Failed to create healing order"
+    );
   }
 },
+   
     // new astrologer
     // new astrologer
     createAstrologerApplication: async (_, { input }) => {
