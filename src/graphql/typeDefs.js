@@ -1013,6 +1013,8 @@ type CreateHealingOrderResponse {
   orderId: String
   bookingId: String!
 
+  amount: Float!
+
   totalAmount: Float!
   walletAmount: Float!
   payableAmount: Float!

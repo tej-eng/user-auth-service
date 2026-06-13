@@ -2578,17 +2578,16 @@ module.exports = {
         },
       });
 
-    return {
-      success: true,
-      orderId: razorpayOrderId,
-      amount: payableAmount,
-      currency: "INR",
-      bookingId: booking.id,
-      paymentOrderId: paymentOrder.id,
-      totalAmount,
-      walletAmount,
-      payableAmount,
-    };
+   return {
+  success: true,
+  orderId: razorpayOrderId,
+  currency: "INR",
+  bookingId: booking.id,
+
+  totalAmount,
+  walletAmount,
+  payableAmount,
+};
   } catch (error) {
     console.error(
       "createHealingOrder error:",
