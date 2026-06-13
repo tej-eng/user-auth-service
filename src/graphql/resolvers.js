@@ -2488,81 +2488,75 @@ module.exports = {
         throw new Error(error.message || "Failed to create order");
       }
     },
-    createHealingOrder: async (_, { bookingId }, context) => {
-      try {
-        // ======================
-        // AUTH CHECK
-        // ======================
-        if (!context.user) {
-          throw new Error("Unauthorized");
-        }
 
-        const userId = context.user.id;
+   createHealingOrder: async (_, { bookingId }, context) => {
+  try {
+    // ======================
+    // AUTH CHECK
+    // ======================
+    if (!context.user) {
+      throw new Error("Unauthorized");
+    }
 
-        // ======================
-        // FIND BOOKING
-        // ======================
-        const booking = await context.prisma.serviceBooking.findUnique({
-          where: {
-            id: bookingId,
-          },
-        });
+    const userId = context.user.id;
 
-        if (!booking) {
-          throw new Error("Booking not found");
-        }
+    // ======================
+    // FIND BOOKING
+    // ======================
+    const booking = await prisma.serviceBooking.findUnique({
+      where: {
+        id: bookingId,
+      },
+    });
 
-        // Optional Security Check
-        if (booking.userId !== userId) {
-          throw new Error("You are not authorized for this booking");
-        }
+    if (!booking) {
+      throw new Error("Booking not found");
+    }
 
-        // ======================
-        // CREATE RECEIPT ID
-        // ======================
-        const receiptId = uuidv4();
+    // ======================
+    // CREATE RECEIPT ID
+    // ======================
+    const receiptId = uuidv4();
 
-        // ======================
-        // CREATE RAZORPAY ORDER
-        // ======================
-        const order = await razorpay.orders.create({
-          amount: Math.round(booking.amount * 100),
-          currency: "INR",
-          receipt: receiptId,
-          notes: {
-            bookingId: booking.id,
-            userId,
-            serviceId: booking.serviceId || "",
-          },
-        });
+    // ======================
+    // CREATE RAZORPAY ORDER
+    // ======================
+    const order = await razorpay.orders.create({
+      amount: Math.round(booking.amount * 100),
+      currency: "INR",
+      receipt: receiptId,
+      notes: {
+        bookingId: booking.id,
+        userId,
+        serviceId: booking.serviceId || "",
+      },
+    });
 
-        // ======================
-        // SAVE ORDER IN DB
-        // ======================
-        const paymentOrder =
-          await context.prisma.servicePaymentOrder.findUnique({
-            where: {
-              razorpayOrderId: razorpay_order_id,
-            },
-            include: {
-              booking: true,
-              user: true,
-            },
-          });
+    // ======================
+    // SAVE ORDER IN DB
+    // ======================
+    await prisma.servicePaymentOrder.create({
+      data: {
+        userId,
+        bookingId: booking.id,
+        razorpayOrderId: order.id,
+        amount: booking.amount,
+        status: "CREATED",
+      },
+    });
 
-        return {
-          success: true,
-          orderId: order.id,
-          amount: order.amount,
-          currency: order.currency,
-          bookingId: booking.id,
-        };
-      } catch (error) {
-        console.error("createHealingOrder error:", error);
-
-        throw new Error(error.message || "Failed to create healing order");
-      }
-    },
+    return {
+      success: true,
+      orderId: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      bookingId: booking.id,
+    };
+  } catch (error) {
+    console.error("createHealingOrder error:", error);
+    throw new Error(error.message || "Failed to create healing order");
+  }
+},
     // new astrologer
     // new astrologer
     createAstrologerApplication: async (_, { input }) => {
