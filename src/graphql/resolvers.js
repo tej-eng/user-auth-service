@@ -2489,7 +2489,7 @@ module.exports = {
       }
     },
 
-    createHealingOrder: async (_, { bookingId }, context) => {
+  createHealingOrder: async (_, { bookingId,useWallet }, context) => {
   try {
     // ======================
     // AUTH CHECK

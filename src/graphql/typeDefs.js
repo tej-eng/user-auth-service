@@ -1008,19 +1008,19 @@ module.exports = gql`
 
   #------END CODE FOR FOLLOWERS AND FOLLOWING----------------
   #-----START CODE FOR CREATE ORDER FOR HEALING SERVICES---
-type CreateHealingOrderResponse {
-  success: Boolean!
-  orderId: String
-  bookingId: String!
+  type CreateHealingOrderResponse {
+    success: Boolean!
+    orderId: String
+    bookingId: String!
 
-  amount: Float!
+    amount: Float!
 
-  totalAmount: Float!
-  walletAmount: Float!
-  payableAmount: Float!
+    totalAmount: Float!
+    walletAmount: Float!
+    payableAmount: Float!
 
-  currency: String!
-}
+    currency: String!
+  }
   #-----END code for healing service-------------
   type Query {
     getCategories: [Category!]!
@@ -1119,6 +1119,9 @@ type CreateHealingOrderResponse {
 
     updateBookingAstrologer(bookingId: ID!, astrologerId: ID!): ServiceBooking!
 
-    createHealingOrder(bookingId: ID!): CreateHealingOrderResponse!
+    createHealingOrder(
+      bookingId: ID!
+      useWallet: Boolean!
+    ): CreateHealingOrderResponse!
   }
 `;
