@@ -1027,6 +1027,12 @@ module.exports = gql`
   message: String!
   booking: ServiceBooking
 }
+  type ServiceBookingPagination {
+  data: [ServiceBooking!]!
+  totalCount: Int!
+  currentPage: Int!
+  totalPages: Int!
+}
   #-----END code for healing service-------------
   type Query {
     getCategories: [Category!]!
@@ -1095,6 +1101,10 @@ module.exports = gql`
     ): FollowedAstrologersResponse!
     getServiceBooking(id: ID!): ServiceBooking
     getServiceBookings: [ServiceBooking!]!
+    getMyServiceBookings(
+  page: Int = 1
+  limit: Int = 10
+): ServiceBookingPagination!
   }
 
   type Mutation {

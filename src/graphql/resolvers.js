@@ -1851,6 +1851,49 @@ module.exports = {
         },
       });
     },
+
+  getMyServiceBookings: async (
+  _,
+  { page = 1, limit = 10 },
+  { user }
+) => {
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+
+  const skip = (page - 1) * limit;
+
+  const [data, totalCount] = await Promise.all([
+    prisma.serviceBooking.findMany({
+      where: {
+        userId: user.id,
+      },
+      include: {
+        service: true,
+        astrologer: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      skip,
+      take: limit,
+    }),
+
+    prisma.serviceBooking.count({
+      where: {
+        userId: user.id,
+      },
+    }),
+  ]);
+
+  return {
+    data,
+    totalCount,
+    currentPage: page,
+    totalPages: Math.ceil(totalCount / limit),
+  };
+},
+
   },
   //----------------start code for mutation ----------------------------
   Mutation: {
