@@ -167,6 +167,7 @@ model User {
 
   follows AstrologerFollow[]
   servicePaymentOrders ServicePaymentOrder[]
+  serviceBookings ServiceBooking[]
 
   @@unique([countryCode, mobile])
 }
@@ -1293,6 +1294,9 @@ model AstrologerFollow {
 model ServiceBooking {
   id String @id @default(cuid())
 
+  userId String
+  user User @relation(fields: [userId], references: [id])
+
   serviceId String
   service Service @relation(fields: [serviceId], references: [id])
 
@@ -1314,11 +1318,13 @@ model ServiceBooking {
 
   paymentStatus PaymentStatus @default(PENDING)
   bookingStatus BookingStatus @default(PENDING)
-   paymentOrders ServicePaymentOrder[]
+
+  paymentOrders ServicePaymentOrder[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([userId])
   @@index([serviceId])
   @@index([astrologerId])
   @@index([paymentStatus])

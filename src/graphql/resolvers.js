@@ -1841,26 +1841,8 @@ module.exports = {
       });
     },
 
-    getServiceBookings: async () => {
-      return prisma.serviceBooking.findMany({
-        include: {
-          service: true,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
-    },
-
-  getMyServiceBookings: async (
-  _,
-  { page = 1, limit = 10 },
-  { user }
-) => {
-  if (!user) {
-    throw new Error("Unauthorized");
-  }
-
+   
+ getMyServiceBookings: async (_, { page = 1, limit = 10 }, { user }) => {
   const skip = (page - 1) * limit;
 
   const [data, totalCount] = await Promise.all([
@@ -1878,7 +1860,6 @@ module.exports = {
       skip,
       take: limit,
     }),
-
     prisma.serviceBooking.count({
       where: {
         userId: user.id,
@@ -2903,24 +2884,29 @@ const payableAmount = Number(
       }
     },
 
-    createServiceBooking: async (_, { input }) => {
-      const service = await prisma.service.findUnique({
-        where: {
-          id: input.serviceId,
-        },
-      });
+    createServiceBooking: async (_, { input }, { user }) => {
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
 
-      if (!service) {
-        throw new Error("Service not found");
-      }
-
-      return prisma.serviceBooking.create({
-        data: {
-          ...input,
-          amount: service.price,
-        },
-      });
+  const service = await prisma.service.findUnique({
+    where: {
+      id: input.serviceId,
     },
+  });
+
+  if (!service) {
+    throw new Error("Service not found");
+  }
+
+  return prisma.serviceBooking.create({
+    data: {
+      ...input,
+      userId: user.id,
+      amount: service.price,
+    },
+  });
+},
 
     updateBookingAstrologer: async (_, { bookingId, astrologerId }) => {
       const astrologer = await prisma.astrologer.findUnique({
