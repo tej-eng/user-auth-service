@@ -2903,5 +2903,59 @@ const payableAmount = Number(
         },
       });
     },
+
+confirmWalletBooking: async (
+  _,
+  { bookingId, astrologerId, walletAmount },
+  { user }
+) => {
+  const result = await prisma.$transaction(async (tx) => {
+    const booking = await tx.serviceBooking.findUnique({
+      where: { id: bookingId },
+    });
+
+    if (!booking) {
+      throw new Error("Booking not found");
+    }
+
+    const wallet = await tx.userWallet.findUnique({
+      where: { userId: user.id },
+    });
+
+    if (!wallet || wallet.balanceCoins < walletAmount) {
+      throw new Error("Insufficient wallet balance");
+    }
+
+    await tx.userWallet.update({
+      where: { userId: user.id },
+      data: {
+        balanceCoins: {
+          decrement: walletAmount,
+        },
+      },
+    });
+
+    const updatedBooking = await tx.serviceBooking.update({
+      where: { id: bookingId },
+      data: {
+        astrologerId,
+        bookingStatus: "COMPLETED", // or ASSIGNED as per your flow
+        paymentStatus: "SUCCESS",
+      },
+      include: {
+        astrologer: true,
+        service: true,
+      },
+    });
+
+    return updatedBooking;
+  });
+
+  return {
+    success: true,
+    message: "Booking confirmed successfully",
+    booking: result,
+  };
+},
   },
 };

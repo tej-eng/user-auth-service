@@ -1021,6 +1021,12 @@ module.exports = gql`
 
     currency: String!
   }
+
+  type ConfirmWalletBookingResponse {
+  success: Boolean!
+  message: String!
+  booking: ServiceBooking
+}
   #-----END code for healing service-------------
   type Query {
     getCategories: [Category!]!
@@ -1123,5 +1129,13 @@ module.exports = gql`
       bookingId: ID!
       useWallet: Boolean!
     ): CreateHealingOrderResponse!
+
+    confirmWalletBooking(
+    bookingId: ID!
+    astrologerId: ID!
+    walletAmount: Float!
+  ): ConfirmWalletBookingResponse!
+
+
   }
 `;
