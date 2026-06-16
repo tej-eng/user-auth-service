@@ -1875,6 +1875,47 @@ module.exports = {
   };
 },
 
+
+    blogs: async () => {
+      return await prisma.blog.findMany({
+        include: {
+          categories: {
+            include: {
+              category: true,
+            },
+          },
+        },
+
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+    },
+    blogBySlug: async (_, { slug }) => {
+      return await prisma.blog.findUnique({
+        where: {
+          slug,
+        },
+
+        include: {
+          categories: {
+            include: {
+              category: true,
+            },
+          },
+        },
+      });
+    },
+    blogCategories: async () => {
+      console.log("blogCategories called");
+
+      const data = await prisma.blogCategory.findMany();
+
+      console.log(data);
+
+      return data;
+    },
+
   },
   //----------------start code for mutation ----------------------------
   Mutation: {

@@ -1033,6 +1033,43 @@ module.exports = gql`
   currentPage: Int!
   totalPages: Int!
 }
+
+  type Blog {
+    id: ID!
+
+    title: String!
+    slug: String!
+
+    language: String!
+
+    shortDescription: String!
+    content: String!
+
+    featuredImage: String
+
+    publishDate: String
+
+    status: String!
+
+    hashtags: [String!]
+
+    metaTitle: String
+    metaDescription: String
+    metaKeywords: String
+
+    schemaMarkup: String
+
+    categories: [BlogCategory!]
+
+    createdAt: String
+    updatedAt: String
+  }
+  type BlogCategory {
+    id: ID!
+    name: String!
+    slug: String!
+  }
+
   #-----END code for healing service-------------
   type Query {
     getCategories: [Category!]!
@@ -1105,6 +1142,15 @@ module.exports = gql`
   page: Int = 1
   limit: Int = 10
 ): ServiceBookingPagination!
+
+  blogs: [Blog!]!
+
+    blog(id: ID!): Blog
+      blogBySlug(slug: String!): Blog
+
+    blogCategories: [BlogCategory!]!
+
+    blogCategory(id: ID!): BlogCategory
   }
 
   type Mutation {

@@ -164,7 +164,7 @@ model User {
   sessions      Session[]
   reviews       Review[]
   giftsSent GiftHistory[] @relation("UserGiftHistory")
-
+  noticesCreated Notice[] @relation("NoticeCreatedBy")
   follows AstrologerFollow[]
   servicePaymentOrders ServicePaymentOrder[]
   serviceBookings ServiceBooking[]
@@ -293,6 +293,7 @@ model Astrologer {
   giftsReceived GiftHistory[] @relation("AstrologerGiftHistory")
   followers AstrologerFollow[]
   serviceBookings ServiceBooking[]
+    noticeAstrologers NoticeAstrologer[]
 
   @@index([rating])
   @@index([experience])
@@ -1357,4 +1358,105 @@ model ServicePaymentOrder {
   @@index([bookingId])
   @@index([razorpayOrderId])
   @@index([status])
+}
+
+enum NoticeTargetType {
+  ALL
+  SELECTED
+}
+
+model Notice {
+  id String @id @default(uuid())
+
+  title       String
+  description String @db.Text
+
+  targetType NoticeTargetType @default(ALL)
+
+  isPinned Boolean @default(false)
+  isActive Boolean @default(true)
+
+  startDate DateTime?
+  endDate   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdById String?
+
+  createdBy User? @relation("NoticeCreatedBy", fields: [createdById], references: [id])
+
+  astrologers NoticeAstrologer[]
+}
+
+model NoticeAstrologer {
+  id String @id @default(uuid())
+
+  noticeId String
+  notice   Notice @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+
+  astrologerId String
+  astrologer   Astrologer @relation(fields: [astrologerId], references: [id], onDelete: Cascade)
+
+  @@unique([noticeId, astrologerId])
+}
+
+enum BlogStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+}
+
+model Blog {
+  id String @id @default(cuid())
+
+  title String
+  slug  String @unique
+
+  language String
+
+  shortDescription String @db.Text
+  content          String @db.Text
+
+  featuredImage String?
+
+  publishDate DateTime?
+
+  status BlogStatus @default(DRAFT)
+
+  hashtags String[]
+
+  metaTitle       String?
+  metaDescription String? @db.Text
+  metaKeywords    String?
+
+  schemaMarkup String? @db.Text
+
+  categories BlogCategoryMapping[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model BlogCategory {
+  id String @id @default(cuid())
+
+  name String
+  slug String @unique
+
+  blogs BlogCategoryMapping[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model BlogCategoryMapping {
+  blogId         String
+  blogCategoryId String
+
+  blog Blog @relation(fields: [blogId], references: [id])
+
+  category BlogCategory @relation(fields: [blogCategoryId], references: [id])
+
+  @@id([blogId, blogCategoryId])
 }
