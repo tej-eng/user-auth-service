@@ -1841,43 +1841,41 @@ module.exports = {
       });
     },
 
-   
- getMyServiceBookings: async (_, { page = 1, limit = 10 }, { user }) => {
-  const skip = (page - 1) * limit;
+    getMyServiceBookings: async (_, { page = 1, limit = 10 }, { user }) => {
+      const skip = (page - 1) * limit;
 
-  const [data, totalCount] = await Promise.all([
-    prisma.serviceBooking.findMany({
-      where: {
-        userId: user.id,
-      },
-      include: {
-        service: true,
-        astrologer: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      skip,
-      take: limit,
-    }),
-    prisma.serviceBooking.count({
-      where: {
-        userId: user.id,
-      },
-    }),
-  ]);
+      const [data, totalCount] = await Promise.all([
+        prisma.serviceBooking.findMany({
+          where: {
+            userId: user.id,
+          },
+          include: {
+            service: true,
+            astrologer: true,
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+          skip,
+          take: limit,
+        }),
+        prisma.serviceBooking.count({
+          where: {
+            userId: user.id,
+          },
+        }),
+      ]);
 
-  return {
-    data,
-    totalCount,
-    currentPage: page,
-    totalPages: Math.ceil(totalCount / limit),
-  };
-},
-
+      return {
+        data,
+        totalCount,
+        currentPage: page,
+        totalPages: Math.ceil(totalCount / limit),
+      };
+    },
 
     blogs: async () => {
-      return await prisma.blog.findMany({
+      const blogs = await prisma.blog.findMany({
         include: {
           categories: {
             include: {
@@ -1885,18 +1883,21 @@ module.exports = {
             },
           },
         },
-
         orderBy: {
           createdAt: "desc",
         },
       });
+
+      return blogs.map((blog) => ({
+        ...blog,
+        categories: blog.categories?.map((item) => item.category) || [],
+      }));
     },
     blogBySlug: async (_, { slug }) => {
-      return await prisma.blog.findUnique({
+      const blog = await prisma.blog.findUnique({
         where: {
           slug,
         },
-
         include: {
           categories: {
             include: {
@@ -1905,6 +1906,11 @@ module.exports = {
           },
         },
       });
+
+      return {
+        ...blog,
+        categories: blog?.categories?.map((item) => item.category) || [],
+      };
     },
     blogCategories: async () => {
       console.log("blogCategories called");
@@ -1915,7 +1921,6 @@ module.exports = {
 
       return data;
     },
-
   },
   //----------------start code for mutation ----------------------------
   Mutation: {
@@ -2554,93 +2559,91 @@ module.exports = {
       }
     },
 
- createHealingOrder: async (_, { bookingId }, context) => {
-  try {
-    // ======================
-    // AUTH CHECK
-    // ======================
-    if (!context.user) {
-      throw new Error("Unauthorized");
-    }
+    createHealingOrder: async (_, { bookingId }, context) => {
+      try {
+        // ======================
+        // AUTH CHECK
+        // ======================
+        if (!context.user) {
+          throw new Error("Unauthorized");
+        }
 
-    const userId = context.user.id;
+        const userId = context.user.id;
 
-    // ======================
-    // FIND BOOKING
-    // ======================
-    const booking = await prisma.serviceBooking.findUnique({
-      where: {
-        id: bookingId,
-      },
-    });
+        // ======================
+        // FIND BOOKING
+        // ======================
+        const booking = await prisma.serviceBooking.findUnique({
+          where: {
+            id: bookingId,
+          },
+        });
 
-    if (!booking) {
-      throw new Error("Booking not found");
-    }
+        if (!booking) {
+          throw new Error("Booking not found");
+        }
 
-    // ======================
-    // PAYMENT AMOUNT
-    // ======================
-    const totalAmount = Number(booking.amount);
+        // ======================
+        // PAYMENT AMOUNT
+        // ======================
+        const totalAmount = Number(booking.amount);
 
-    // Full amount paid via Razorpay
-    const walletAmount = 0;
-    const payableAmount = totalAmount;
+        // Full amount paid via Razorpay
+        const walletAmount = 0;
+        const payableAmount = totalAmount;
 
-    // ======================
-    // CREATE RAZORPAY ORDER
-    // ======================
-    const receiptId = uuidv4();
+        // ======================
+        // CREATE RAZORPAY ORDER
+        // ======================
+        const receiptId = uuidv4();
 
-    const order = await razorpay.orders.create({
-      amount: Math.round(payableAmount * 100),
-      currency: "INR",
-      receipt: receiptId,
-      notes: {
-        bookingId: booking.id,
-        userId,
-        serviceId: booking.serviceId || "",
-      },
-    });
+        const order = await razorpay.orders.create({
+          amount: Math.round(payableAmount * 100),
+          currency: "INR",
+          receipt: receiptId,
+          notes: {
+            bookingId: booking.id,
+            userId,
+            serviceId: booking.serviceId || "",
+          },
+        });
 
-    const razorpayOrderId = order.id;
+        const razorpayOrderId = order.id;
 
-    // ======================
-    // SAVE ORDER IN DB
-    // ======================
-    await prisma.servicePaymentOrder.create({
-      data: {
-        userId,
-        bookingId: booking.id,
-        razorpayOrderId,
+        // ======================
+        // SAVE ORDER IN DB
+        // ======================
+        await prisma.servicePaymentOrder.create({
+          data: {
+            userId,
+            bookingId: booking.id,
+            razorpayOrderId,
 
-        totalAmount,
-        walletAmount,
-        payableAmount,
+            totalAmount,
+            walletAmount,
+            payableAmount,
 
-        status: "CREATED",
-      },
-    });
+            status: "CREATED",
+          },
+        });
 
-    return {
-      success: true,
-      orderId: razorpayOrderId,
-      currency: "INR",
-      bookingId: booking.id,
+        return {
+          success: true,
+          orderId: razorpayOrderId,
+          currency: "INR",
+          bookingId: booking.id,
 
-      totalAmount,
-      walletAmount,
-      payableAmount,
-    };
-  } catch (error) {
-    console.error("createHealingOrder error:", error);
+          totalAmount,
+          walletAmount,
+          payableAmount,
+        };
+      } catch (error) {
+        console.error("createHealingOrder error:", error);
 
-    throw new Error(
-      error.message || "Failed to create healing order"
-    );
-  }
-},
-   
+        throw new Error(error.message || "Failed to create healing order");
+      }
+    },
+
     // new astrologer
     // new astrologer
     createAstrologerApplication: async (_, { input }) => {
@@ -2901,28 +2904,28 @@ module.exports = {
     },
 
     createServiceBooking: async (_, { input }, { user }) => {
-  if (!user) {
-    throw new Error("Unauthorized");
-  }
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
 
-  const service = await prisma.service.findUnique({
-    where: {
-      id: input.serviceId,
+      const service = await prisma.service.findUnique({
+        where: {
+          id: input.serviceId,
+        },
+      });
+
+      if (!service) {
+        throw new Error("Service not found");
+      }
+
+      return prisma.serviceBooking.create({
+        data: {
+          ...input,
+          userId: user.id,
+          amount: service.price,
+        },
+      });
     },
-  });
-
-  if (!service) {
-    throw new Error("Service not found");
-  }
-
-  return prisma.serviceBooking.create({
-    data: {
-      ...input,
-      userId: user.id,
-      amount: service.price,
-    },
-  });
-},
 
     updateBookingAstrologer: async (_, { bookingId, astrologerId }) => {
       const astrologer = await prisma.astrologer.findUnique({
@@ -2949,58 +2952,58 @@ module.exports = {
       });
     },
 
-confirmWalletBooking: async (
-  _,
-  { bookingId, astrologerId, walletAmount },
-  { user }
-) => {
-  const result = await prisma.$transaction(async (tx) => {
-    const booking = await tx.serviceBooking.findUnique({
-      where: { id: bookingId },
-    });
+    confirmWalletBooking: async (
+      _,
+      { bookingId, astrologerId, walletAmount },
+      { user },
+    ) => {
+      const result = await prisma.$transaction(async (tx) => {
+        const booking = await tx.serviceBooking.findUnique({
+          where: { id: bookingId },
+        });
 
-    if (!booking) {
-      throw new Error("Booking not found");
-    }
+        if (!booking) {
+          throw new Error("Booking not found");
+        }
 
-    const wallet = await tx.userWallet.findUnique({
-      where: { userId: user.id },
-    });
+        const wallet = await tx.userWallet.findUnique({
+          where: { userId: user.id },
+        });
 
-    if (!wallet || wallet.balanceCoins < walletAmount) {
-      throw new Error("Insufficient wallet balance");
-    }
+        if (!wallet || wallet.balanceCoins < walletAmount) {
+          throw new Error("Insufficient wallet balance");
+        }
 
-    await tx.userWallet.update({
-      where: { userId: user.id },
-      data: {
-        balanceCoins: {
-          decrement: walletAmount,
-        },
-      },
-    });
+        await tx.userWallet.update({
+          where: { userId: user.id },
+          data: {
+            balanceCoins: {
+              decrement: walletAmount,
+            },
+          },
+        });
 
-    const updatedBooking = await tx.serviceBooking.update({
-      where: { id: bookingId },
-      data: {
-        astrologerId,
-        bookingStatus: "COMPLETED", // or ASSIGNED as per your flow
-        paymentStatus: "SUCCESS",
-      },
-      include: {
-        astrologer: true,
-        service: true,
-      },
-    });
+        const updatedBooking = await tx.serviceBooking.update({
+          where: { id: bookingId },
+          data: {
+            astrologerId,
+            bookingStatus: "COMPLETED", // or ASSIGNED as per your flow
+            paymentStatus: "SUCCESS",
+          },
+          include: {
+            astrologer: true,
+            service: true,
+          },
+        });
 
-    return updatedBooking;
-  });
+        return updatedBooking;
+      });
 
-  return {
-    success: true,
-    message: "Booking confirmed successfully",
-    booking: result,
-  };
-},
+      return {
+        success: true,
+        message: "Booking confirmed successfully",
+        booking: result,
+      };
+    },
   },
 };
