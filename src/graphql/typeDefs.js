@@ -1023,16 +1023,16 @@ module.exports = gql`
   }
 
   type ConfirmWalletBookingResponse {
-  success: Boolean!
-  message: String!
-  booking: ServiceBooking
-}
+    success: Boolean!
+    message: String!
+    booking: ServiceBooking
+  }
   type ServiceBookingPagination {
-  data: [ServiceBooking!]!
-  totalCount: Int!
-  currentPage: Int!
-  totalPages: Int!
-}
+    data: [ServiceBooking!]!
+    totalCount: Int!
+    currentPage: Int!
+    totalPages: Int!
+  }
   #-----END code for healing service-------------
   type Query {
     getCategories: [Category!]!
@@ -1102,9 +1102,9 @@ module.exports = gql`
     getServiceBooking(id: ID!): ServiceBooking
     getServiceBookings: [ServiceBooking!]!
     getMyServiceBookings(
-  page: Int = 1
-  limit: Int = 10
-): ServiceBookingPagination!
+      page: Int = 1
+      limit: Int = 10
+    ): ServiceBookingPagination!
   }
 
   type Mutation {
@@ -1135,17 +1135,12 @@ module.exports = gql`
 
     updateBookingAstrologer(bookingId: ID!, astrologerId: ID!): ServiceBooking!
 
-    createHealingOrder(
-      bookingId: ID!
-      useWallet: Boolean!
-    ): CreateHealingOrderResponse!
+    createHealingOrder(bookingId: ID!): CreateHealingOrderResponse!
 
     confirmWalletBooking(
-    bookingId: ID!
-    astrologerId: ID!
-    walletAmount: Float!
-  ): ConfirmWalletBookingResponse!
-
-
+      bookingId: ID!
+      astrologerId: ID!
+      walletAmount: Float!
+    ): ConfirmWalletBookingResponse!
   }
 `;

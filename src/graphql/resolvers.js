@@ -2513,7 +2513,7 @@ module.exports = {
       }
     },
 
-  createHealingOrder: async (_, { bookingId,useWallet }, context) => {
+ createHealingOrder: async (_, { bookingId }, context) => {
   try {
     // ======================
     // AUTH CHECK
@@ -2538,87 +2538,62 @@ module.exports = {
     }
 
     // ======================
-    // FETCH USER WALLET
+    // PAYMENT AMOUNT
     // ======================
-   const user = await prisma.user.findUnique({
-  where: {
-    id: userId,
-  },
-  include: {
-    wallet: true,
-  },
-});
+    const totalAmount = Number(booking.amount);
 
-const walletBalance =
-  user?.wallet?.balanceCoins || 0;
-
-const totalAmount = booking.amount;
-
-const walletAmount = Math.min(
-  walletBalance,
-  totalAmount
-);
-
-const payableAmount = Number(
-  (totalAmount - walletAmount).toFixed(2)
-);
-
-    let razorpayOrderId = null;
+    // Full amount paid via Razorpay
+    const walletAmount = 0;
+    const payableAmount = totalAmount;
 
     // ======================
     // CREATE RAZORPAY ORDER
     // ======================
-    if (payableAmount > 0) {
-      const receiptId = uuidv4();
+    const receiptId = uuidv4();
 
-      const order = await razorpay.orders.create({
-        amount: Math.round(payableAmount * 100),
-        currency: "INR",
-        receipt: receiptId,
-        notes: {
-          bookingId: booking.id,
-          userId,
-          serviceId: booking.serviceId || "",
-        },
-      });
+    const order = await razorpay.orders.create({
+      amount: Math.round(payableAmount * 100),
+      currency: "INR",
+      receipt: receiptId,
+      notes: {
+        bookingId: booking.id,
+        userId,
+        serviceId: booking.serviceId || "",
+      },
+    });
 
-      razorpayOrderId = order.id;
-    }
+    const razorpayOrderId = order.id;
 
     // ======================
     // SAVE ORDER IN DB
     // ======================
-    const paymentOrder =
-      await prisma.servicePaymentOrder.create({
-        data: {
-          userId,
-          bookingId: booking.id,
-          razorpayOrderId,
-          totalAmount,
-          walletAmount,
-          payableAmount,
-          status:
-            payableAmount > 0
-              ? "CREATED"
-              : "PAID",
-        },
-      });
+    await prisma.servicePaymentOrder.create({
+      data: {
+        userId,
+        bookingId: booking.id,
+        razorpayOrderId,
 
-   return {
-  success: true,
-  orderId: razorpayOrderId,
-  currency: "INR",
-  bookingId: booking.id,
+        totalAmount,
+        walletAmount,
+        payableAmount,
 
-  totalAmount,
-  walletAmount,
-  payableAmount,
-};
+        status: "CREATED",
+      },
+    });
+
+    return {
+      success: true,
+      orderId: razorpayOrderId,
+      currency: "INR",
+      bookingId: booking.id,
+
+      totalAmount,
+      walletAmount,
+      payableAmount,
+    };
   } catch (error) {
-    console.error(
-      "createHealingOrder error:",
-      error
-    );
+    console.error("createHealingOrder error:", error);
+
     throw new Error(
       error.message || "Failed to create healing order"
     );
