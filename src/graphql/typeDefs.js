@@ -1074,7 +1074,29 @@ module.exports = gql`
     slug: String!
   }
  
-  #-----END code for healing service-------------
+  #-----END code for healing service------------
+  #--------START CODE FOR LIVE STREAMING--------
+  type UpcomingLivesResponse {
+  data: [LiveStream!]!
+  totalCount: Int!
+  currentPage: Int!
+  totalPages: Int!
+}
+
+type LiveStream {
+  id: String!
+  astrologerId: String!
+  title: String!
+  channelName: String!
+  status: String!
+  scheduledAt: String
+  createdAt: String
+  endedAt: String
+
+  astrologer: Astrologer
+}
+
+  #-------END CODE FOR LIVESTREAMING------------
   type Query {
     getCategories: [Category!]!
     getCategory(slug: String!): Category
@@ -1155,6 +1177,11 @@ module.exports = gql`
     blogCategories: [BlogCategory!]!
 
     blogCategory(id: ID!): BlogCategory
+    
+    getUpcomingLives(
+    page: Int
+    limit: Int
+  ): UpcomingLivesResponse
   }
 
   type Mutation {

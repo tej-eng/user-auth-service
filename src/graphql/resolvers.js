@@ -1921,6 +1921,70 @@ module.exports = {
 
       return data;
     },
+    getUpcomingLives: async (
+  _,
+  { page = 1, limit = 10 }
+) => {
+  try {
+    const skip = (page - 1) * limit;
+
+    const where = {
+      status: "SCHEDULED",
+      scheduledAt: {
+        gte: new Date(),
+      },
+    };
+
+    const [data, totalCount] =
+      await Promise.all([
+        prisma.liveStream.findMany({
+          where,
+
+          include: {
+            astrologer: {
+              select: {
+                id: true,
+                name: true,
+                displayName: true,
+                profilePic: true,
+                rating: true,
+              },
+            },
+          },
+
+          orderBy: {
+            scheduledAt: "asc",
+          },
+
+          skip,
+          take: limit,
+        }),
+
+        prisma.liveStream.count({
+          where,
+        }),
+      ]);
+
+    return {
+      data,
+      totalCount,
+      currentPage: page,
+      totalPages: Math.ceil(
+        totalCount / limit
+      ),
+    };
+  } catch (error) {
+    console.error(
+      "getUpcomingLives Error:",
+      error
+    );
+
+    throw new Error(
+      error.message ||
+        "Failed to fetch upcoming lives"
+    );
+  }
+    },
   },
   //----------------start code for mutation ----------------------------
   Mutation: {

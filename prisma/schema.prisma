@@ -303,6 +303,8 @@ model Astrologer {
   serviceBookings   ServiceBooking[]
   noticeAstrologers NoticeAstrologer[]
 
+  liveStreams LiveStream[]
+
   @@index([rating])
   @@index([experience])
 }
@@ -1468,3 +1470,29 @@ model BlogCategoryMapping {
 
   @@id([blogId, blogCategoryId])
 }
+//------------tables for live streaming----------------
+model LiveStream {
+  id            String      @id @default(uuid())
+
+  astrologerId  String
+  astrologer    Astrologer  @relation(fields: [astrologerId], references: [id])
+
+  title         String
+
+  channelName   String
+
+  status        LiveStatus  @default(SCHEDULED)
+
+  scheduledAt   DateTime?
+
+  createdAt     DateTime    @default(now())
+
+  endedAt       DateTime?
+}
+
+enum LiveStatus {
+  SCHEDULED
+  LIVE
+  ENDED
+}
+
