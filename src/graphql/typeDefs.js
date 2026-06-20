@@ -1096,6 +1096,15 @@ type LiveStream {
   astrologer: Astrologer
 }
 
+type LiveJoinResponse {
+  token: String!
+  uid: Int!
+  appId: String!
+  channelName: String!
+}
+
+
+
   #-------END CODE FOR LIVESTREAMING------------
   type Query {
     getCategories: [Category!]!
@@ -1182,6 +1191,11 @@ type LiveStream {
     page: Int
     limit: Int
   ): UpcomingLivesResponse
+
+   joinLive(
+    channelName: String!
+  ): LiveJoinResponse!
+
   }
 
   type Mutation {
@@ -1219,5 +1233,11 @@ type LiveStream {
       astrologerId: ID!
       walletAmount: Float!
     ): ConfirmWalletBookingResponse!
+
+     startLive(title: String!): LiveStream!
+
+     endLive(
+    streamId: String!
+  ): Boolean!
   }
 `;

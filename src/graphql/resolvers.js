@@ -1985,6 +1985,47 @@ module.exports = {
     );
   }
     },
+
+    joinLive: async (
+  _,
+  { channelName },
+  { user }
+) => {
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+
+  const stream =
+    await prisma.liveStream.findFirst({
+      where: {
+        channelName,
+        status: "LIVE",
+      },
+    });
+
+  if (!stream) {
+    throw new Error(
+      "Live stream not found"
+    );
+  }
+
+  const uid = Math.floor(
+    Math.random() * 100000
+  );
+
+  const token = generateRtcToken({
+    channelName,
+    uid,
+    role: "subscriber",
+  });
+
+  return {
+    token,
+    uid,
+    appId: process.env.AGORA_APP_ID,
+    channelName,
+  };
+    },
   },
   //----------------start code for mutation ----------------------------
   Mutation: {
@@ -3069,5 +3110,80 @@ module.exports = {
         booking: result,
       };
     },
+    startLive: async (
+  _,
+  { title },
+  { user }
+) => {
+  try {
+    if (!user) {
+      throw new Error("Unauthorized");
+    }
+
+    let stream =
+      await prisma.liveStream.findFirst({
+        where: {
+          astrologerId: user.id,
+          status: "SCHEDULED",
+        },
+        orderBy: {
+          scheduledAt: "asc",
+        },
+      });
+
+    if (stream) {
+      stream =
+        await prisma.liveStream.update({
+          where: {
+            id: stream.id,
+          },
+          data: {
+            status: "LIVE",
+          },
+        });
+    } else {
+      stream =
+        await prisma.liveStream.create({
+          data: {
+            astrologerId: user.id,
+            title,
+            channelName: `astro-${user.id}`,
+            status: "LIVE",
+          },
+        });
+    }
+
+    const uid = Math.floor(
+      Math.random() * 100000
+    );
+
+    const token =
+      generateRtcToken({
+        channelName:
+          stream.channelName,
+        uid,
+        role: "publisher",
+      });
+
+    return {
+      token,
+      uid,
+      appId:
+        process.env.AGORA_APP_ID,
+      channelName:
+        stream.channelName,
+    };
+  } catch (error) {
+    console.error(
+      "startLive Error:",
+      error
+    );
+
+    throw new Error(
+      error.message ||
+        "Failed to start live"
+    );
+  }
+},
   },
 };
