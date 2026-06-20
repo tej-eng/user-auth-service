@@ -184,11 +184,13 @@ module.exports = gql`
   # -----------------------------------------
 
   enum PricingType {
-    CHAT
-    CALL
-    VIDEO
-    AUDIO
-  }
+  CHAT
+  CALL
+  VIDEO
+  AUDIO
+  GIFT_COMMISSION
+  OFFER
+}
 
   type CreateIntakeResponse {
     roomId: String!
