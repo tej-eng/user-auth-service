@@ -1929,11 +1929,10 @@ module.exports = {
     const skip = (page - 1) * limit;
 
     const where = {
-      status: "SCHEDULED",
-      scheduledAt: {
-        gte: new Date(),
-      },
-    };
+  status: {
+    in: ["LIVE", "SCHEDULED"],
+  },
+};
 
     const [data, totalCount] =
       await Promise.all([
