@@ -18,7 +18,9 @@ const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
-
+const {
+  generateRtcToken,
+} = require("../utils/agoraToken");
 // Helper to log events in MongoDB
 async function logEvent({ userId, action, details }) {
   try {
@@ -2021,7 +2023,7 @@ module.exports = {
   return {
     token,
     uid,
-    appId: process.env.AGORA_APP_ID,
+    appId: process.env.AGORA_APP_ID || "3a1816ebf7bf47b094c7540e2cf2aac0",
     channelName,
   };
     },
@@ -3168,7 +3170,7 @@ module.exports = {
       token,
       uid,
       appId:
-        process.env.AGORA_APP_ID,
+        process.env.AGORA_APP_ID || "3a1816ebf7bf47b094c7540e2cf2aac0",
       channelName:
         stream.channelName,
     };
