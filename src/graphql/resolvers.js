@@ -1245,7 +1245,7 @@ module.exports = {
         throw new Error("Failed to fetch about page");
       }
     },
-     getPrivacyPage: async () => {
+    getPrivacyPage: async () => {
       return await prisma.privacyPage.findFirst({
         where: {
           pageType: "privacy-policy",
@@ -2190,6 +2190,39 @@ module.exports = {
 
       if (!astrologer) {
         throw new Error("Astrologer not found");
+      }
+
+      if (requestType === "CALL" && !astrologer.isCallActive) {
+        return {
+          roomId: null,
+          chatTime: 0,
+          intakeId: null,
+          message: "Call service is disabled by astrologer",
+          pricePerMin: 0,
+          pricingType: null,
+        };
+      }
+
+      if (requestType === "CHAT" && !astrologer.isChatActive) {
+        return {
+          roomId: null,
+          chatTime: 0,
+          intakeId: null,
+          message: "Chat service is disabled by astrologer",
+          pricePerMin: 0,
+          pricingType: null,
+        };
+      }
+
+      if (!astrologer.isOnline) {
+        return {
+          roomId: null,
+          chatTime: 0,
+          intakeId: null,
+          message: "Astrologer is offline",
+          pricePerMin: 0,
+          pricingType: null,
+        };
       }
 
       // Get pricing according to request type
