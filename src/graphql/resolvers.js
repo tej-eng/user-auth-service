@@ -1245,6 +1245,27 @@ module.exports = {
         throw new Error("Failed to fetch about page");
       }
     },
+     getPrivacyPage: async () => {
+      return await prisma.privacyPage.findFirst({
+        where: {
+          pageType: "privacy-policy",
+        },
+      });
+    },
+    getRefundPolicyPage: async () => {
+      return await prisma.refundPolicyPage.findFirst({
+        where: {
+          pageType: "refund-policy",
+        },
+      });
+    },
+    getDisclaimerPage: async () => {
+      return await prisma.disclaimerPage.findFirst({
+        where: {
+          pageType: "disclaimer",
+        },
+      });
+    },
 
     getAppVersion: async (_, { platform }) => {
       try {

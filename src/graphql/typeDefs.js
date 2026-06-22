@@ -184,13 +184,13 @@ module.exports = gql`
   # -----------------------------------------
 
   enum PricingType {
-  CHAT
-  CALL
-  VIDEO
-  AUDIO
-  GIFT_COMMISSION
-  OFFER
-}
+    CHAT
+    CALL
+    VIDEO
+    AUDIO
+    GIFT_COMMISSION
+    OFFER
+  }
 
   type CreateIntakeResponse {
     roomId: String!
@@ -1036,8 +1036,6 @@ module.exports = gql`
     totalPages: Int!
   }
 
-
-  
   type Blog {
     id: ID!
 
@@ -1073,37 +1071,95 @@ module.exports = gql`
     name: String!
     slug: String!
   }
- 
+
   #-----END code for healing service------------
   #--------START CODE FOR LIVE STREAMING--------
   type UpcomingLivesResponse {
-  data: [LiveStream!]!
-  totalCount: Int!
-  currentPage: Int!
-  totalPages: Int!
-}
+    data: [LiveStream!]!
+    totalCount: Int!
+    currentPage: Int!
+    totalPages: Int!
+  }
 
-type LiveStream {
-  id: String!
-  astrologerId: String!
-  title: String!
-  channelName: String!
-  status: String!
-  scheduledAt: String
-  createdAt: String
-  endedAt: String
+  type LiveStream {
+    id: String!
+    astrologerId: String!
+    title: String!
+    channelName: String!
+    status: String!
+    scheduledAt: String
+    createdAt: String
+    endedAt: String
 
-  astrologer: Astrologer
-}
+    astrologer: Astrologer
+  }
 
-type LiveJoinResponse {
-  token: String!
-  uid: Int!
-  appId: String!
-  channelName: String!
-}
+  type LiveJoinResponse {
+    token: String!
+    uid: Int!
+    appId: String!
+    channelName: String!
+  }
+      type PrivacyPage {
+    id: ID
 
+    pageType: String
 
+    title: String
+
+    content: String
+
+    metaTitle: String
+
+    metaDescription: String
+
+    keywords: [String]
+
+    status: CmsStatus
+
+    createdAt: String
+    updatedAt: String
+  }
+      type RefundPolicyPage {
+    id: ID
+
+    pageType: String
+
+    title: String
+
+    content: String
+
+    metaTitle: String
+
+    metaDescription: String
+
+    keywords: [String]
+
+    status: CmsStatus
+
+    createdAt: String
+    updatedAt: String
+  }
+      type DisclaimerPage {
+    id: ID
+
+    pageType: String
+
+    title: String
+
+    content: String
+
+    metaTitle: String
+
+    metaDescription: String
+
+    keywords: [String]
+
+    status: CmsStatus
+
+    createdAt: String
+    updatedAt: String
+  }
 
   #-------END CODE FOR LIVESTREAMING------------
   type Query {
@@ -1155,6 +1211,9 @@ type LiveJoinResponse {
     getRemedies: RemedyResponse!
 
     getAboutPage: AboutPage
+    getPrivacyPage: PrivacyPage
+    getRefundPolicyPage: RefundPolicyPage
+    getDisclaimerPage: DisclaimerPage
 
     getAppVersion(platform: PlatformType!): AppVersion
 
@@ -1178,24 +1237,18 @@ type LiveJoinResponse {
       limit: Int = 10
     ): ServiceBookingPagination!
 
-     blogs: [Blog!]!
+    blogs: [Blog!]!
 
     blog(id: ID!): Blog
-      blogBySlug(slug: String!): Blog
+    blogBySlug(slug: String!): Blog
 
     blogCategories: [BlogCategory!]!
 
     blogCategory(id: ID!): BlogCategory
-    
-    getUpcomingLives(
-    page: Int
-    limit: Int
-  ): UpcomingLivesResponse
 
-   joinLive(
-    channelName: String!
-  ): LiveJoinResponse!
+    getUpcomingLives(page: Int, limit: Int): UpcomingLivesResponse
 
+    joinLive(channelName: String!): LiveJoinResponse!
   }
 
   type Mutation {
@@ -1234,10 +1287,8 @@ type LiveJoinResponse {
       walletAmount: Float!
     ): ConfirmWalletBookingResponse!
 
-     startLive(title: String!): LiveStream!
+    startLive(title: String!): LiveStream!
 
-     endLive(
-    streamId: String!
-  ): Boolean!
+    endLive(streamId: String!): Boolean!
   }
 `;
