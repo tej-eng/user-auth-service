@@ -2192,7 +2192,7 @@ module.exports = {
         throw new Error("Astrologer not found");
       }
 
-      if (requestType === "CALL" && !astrologer.isCallActive) {
+      if (input.requestType.toUpperCase() === "CALL" && !astrologer.isCallActive) {
         return {
           roomId: null,
           chatTime: 0,
@@ -2203,7 +2203,7 @@ module.exports = {
         };
       }
 
-      if (requestType === "CHAT" && !astrologer.isChatActive) {
+      if (input.requestType.toUpperCase() === "CHAT" && !astrologer.isChatActive) {
         return {
           roomId: null,
           chatTime: 0,
