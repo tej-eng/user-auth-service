@@ -18,9 +18,7 @@ const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
-const {
-  generateRtcToken,
-} = require("../utils/agoraToken");
+const { generateRtcToken } = require("../utils/agoraToken");
 // Helper to log events in MongoDB
 async function logEvent({ userId, action, details }) {
   try {
@@ -1095,21 +1093,10 @@ module.exports = {
 
     getGifts: async (_, __, context) => {
       try {
-        // ==============================
-        // AUTH CHECK
-        // ==============================
-        if (!context.user) {
-          throw new Error("Unauthorized");
-        }
-
-        // ==============================
-        // FETCH GIFTS
-        // ==============================
         const gifts = await prisma.gift.findMany({
           where: {
             status: "active",
           },
-
           orderBy: {
             createdAt: "desc",
           },
@@ -1121,7 +1108,6 @@ module.exports = {
         };
       } catch (error) {
         console.error("getGifts error:", error);
-
         throw new Error(error.message || "Failed to fetch gifts");
       }
     },
@@ -1923,109 +1909,88 @@ module.exports = {
 
       return data;
     },
-    getUpcomingLives: async (
-  _,
-  { page = 1, limit = 10 }
-) => {
-  try {
-    const skip = (page - 1) * limit;
+    getUpcomingLives: async (_, { page = 1, limit = 10 }) => {
+      try {
+        const skip = (page - 1) * limit;
 
-    const where = {
-  status: {
-    in: ["LIVE", "SCHEDULED"],
-  },
-};
+        const where = {
+          status: {
+            in: ["LIVE", "SCHEDULED"],
+          },
+        };
 
-    const [data, totalCount] =
-      await Promise.all([
-        prisma.liveStream.findMany({
-          where,
+        const [data, totalCount] = await Promise.all([
+          prisma.liveStream.findMany({
+            where,
 
-          include: {
-            astrologer: {
-              select: {
-                id: true,
-                name: true,
-                displayName: true,
-                profilePic: true,
-                rating: true,
+            include: {
+              astrologer: {
+                select: {
+                  id: true,
+                  name: true,
+                  displayName: true,
+                  profilePic: true,
+                  rating: true,
+                },
               },
             },
-          },
 
-          orderBy: {
-            scheduledAt: "asc",
-          },
+            orderBy: {
+              scheduledAt: "asc",
+            },
 
-          skip,
-          take: limit,
-        }),
+            skip,
+            take: limit,
+          }),
 
-        prisma.liveStream.count({
-          where,
-        }),
-      ]);
+          prisma.liveStream.count({
+            where,
+          }),
+        ]);
 
-    return {
-      data,
-      totalCount,
-      currentPage: page,
-      totalPages: Math.ceil(
-        totalCount / limit
-      ),
-    };
-  } catch (error) {
-    console.error(
-      "getUpcomingLives Error:",
-      error
-    );
+        return {
+          data,
+          totalCount,
+          currentPage: page,
+          totalPages: Math.ceil(totalCount / limit),
+        };
+      } catch (error) {
+        console.error("getUpcomingLives Error:", error);
 
-    throw new Error(
-      error.message ||
-        "Failed to fetch upcoming lives"
-    );
-  }
+        throw new Error(error.message || "Failed to fetch upcoming lives");
+      }
     },
 
-    joinLive: async (
-  _,
-  { channelName },
-  { user }
-) => {
-  if (!user) {
-    throw new Error("Unauthorized");
-  }
+    joinLive: async (_, { channelName }, { user }) => {
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
 
-  const stream =
-    await prisma.liveStream.findFirst({
-      where: {
+      const stream = await prisma.liveStream.findFirst({
+        where: {
+          channelName,
+          status: "LIVE",
+        },
+      });
+
+      if (!stream) {
+        throw new Error("Live stream not found");
+      }
+
+      const uid = Math.floor(Math.random() * 100000);
+
+      const token = generateRtcToken({
         channelName,
-        status: "LIVE",
-      },
-    });
+        uid,
+        role: "subscriber",
+      });
 
-  if (!stream) {
-    throw new Error(
-      "Live stream not found"
-    );
-  }
-
-  const uid = Math.floor(
-    Math.random() * 100000
-  );
-
-  const token = generateRtcToken({
-    channelName,
-    uid,
-    role: "subscriber",
-  });
-
-  return {
-    token,
-    uid,
-    appId: process.env.AGORA_APP_ID || "3a1816ebf7bf47b094c7540e2cf2aac0",
-    channelName,
-  };
+      return {
+        token,
+        uid,
+        appId: process.env.AGORA_APP_ID || "3a1816ebf7bf47b094c7540e2cf2aac0",
+        channelName,
+      };
     },
   },
   //----------------start code for mutation ----------------------------
@@ -3111,80 +3076,61 @@ module.exports = {
         booking: result,
       };
     },
-    startLive: async (
-  _,
-  { title },
-  { user }
-) => {
-  try {
-    if (!user) {
-      throw new Error("Unauthorized");
-    }
+    startLive: async (_, { title }, { user }) => {
+      try {
+        if (!user) {
+          throw new Error("Unauthorized");
+        }
 
-    let stream =
-      await prisma.liveStream.findFirst({
-        where: {
-          astrologerId: user.id,
-          status: "SCHEDULED",
-        },
-        orderBy: {
-          scheduledAt: "asc",
-        },
-      });
-
-    if (stream) {
-      stream =
-        await prisma.liveStream.update({
+        let stream = await prisma.liveStream.findFirst({
           where: {
-            id: stream.id,
-          },
-          data: {
-            status: "LIVE",
-          },
-        });
-    } else {
-      stream =
-        await prisma.liveStream.create({
-          data: {
             astrologerId: user.id,
-            title,
-            channelName: `astro-${user.id}`,
-            status: "LIVE",
+            status: "SCHEDULED",
+          },
+          orderBy: {
+            scheduledAt: "asc",
           },
         });
-    }
 
-    const uid = Math.floor(
-      Math.random() * 100000
-    );
+        if (stream) {
+          stream = await prisma.liveStream.update({
+            where: {
+              id: stream.id,
+            },
+            data: {
+              status: "LIVE",
+            },
+          });
+        } else {
+          stream = await prisma.liveStream.create({
+            data: {
+              astrologerId: user.id,
+              title,
+              channelName: `astro-${user.id}`,
+              status: "LIVE",
+            },
+          });
+        }
 
-    const token =
-      generateRtcToken({
-        channelName:
-          stream.channelName,
-        uid,
-        role: "publisher",
-      });
+        const uid = Math.floor(Math.random() * 100000);
 
-    return {
-      token,
-      uid,
-      appId:
-        process.env.AGORA_APP_ID || "3a1816ebf7bf47b094c7540e2cf2aac0",
-      channelName:
-        stream.channelName,
-    };
-  } catch (error) {
-    console.error(
-      "startLive Error:",
-      error
-    );
+        const token = generateRtcToken({
+          channelName: stream.channelName,
+          uid,
+          role: "publisher",
+        });
 
-    throw new Error(
-      error.message ||
-        "Failed to start live"
-    );
-  }
-},
+        return {
+          token,
+          uid,
+          appId: process.env.AGORA_APP_ID || "3a1816ebf7bf47b094c7540e2cf2aac0",
+          channelName: stream.channelName,
+        };
+      } catch (error) {
+        console.error("startLive Error:", error);
+
+        throw new Error(error.message || "Failed to start live");
+      }
+    },
   },
 };
