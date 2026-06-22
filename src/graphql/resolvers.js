@@ -2193,36 +2193,20 @@ module.exports = {
       }
 
       if (input.requestType.toUpperCase() === "CALL" && !astrologer.isCallActive) {
-        return {
-          roomId: null,
-          chatTime: 0,
-          intakeId: null,
-          message: "Call service is disabled by astrologer",
-          pricePerMin: 0,
-          pricingType: null,
-        };
+        throw new Error("Call service is disabled by astrologer");
+         return;
       }
 
       if (input.requestType.toUpperCase() === "CHAT" && !astrologer.isChatActive) {
-        return {
-          roomId: null,
-          chatTime: 0,
-          intakeId: null,
-          message: "Chat service is disabled by astrologer",
-          pricePerMin: 0,
-          pricingType: null,
-        };
+        throw new Error("Chat service is disabled by astrologer");
+         return;
+        
       }
 
       if (!astrologer.isOnline) {
-        return {
-          roomId: null,
-          chatTime: 0,
-          intakeId: null,
-          message: "Astrologer is offline",
-          pricePerMin: 0,
-          pricingType: null,
-        };
+        throw new Error("Astrologer is offline");
+         return;
+        
       }
 
       // Get pricing according to request type
