@@ -1093,7 +1093,10 @@ module.exports = gql`
 
     astrologer: Astrologer
   }
-
+enum CmsStatus {
+  DRAFT
+  PUBLISHED
+}
   type LiveJoinResponse {
     token: String!
     uid: Int!
