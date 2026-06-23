@@ -304,6 +304,7 @@ model Astrologer {
   noticeAstrologers NoticeAstrologer[]
 
   liveStreams LiveStream[]
+  source String?
 
   @@index([rating])
   @@index([experience])
