@@ -88,7 +88,8 @@ module.exports = gql`
     problems: [String]
     activeOffer: ActiveOffer
     about: String
-
+    isBusy: Boolean
+    isOnline: Boolean
     tags: String
     vtags: String
 

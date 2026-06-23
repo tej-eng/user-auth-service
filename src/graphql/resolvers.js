@@ -313,6 +313,8 @@ module.exports = {
             rating: astro.rating,
             skills: astro.skills,
             languages: astro.languages,
+            isBusy: astro.isBusy,
+            isOnline: astro.isOnline,
 
             activeOffer: specialOffer
               ? {
@@ -468,6 +470,8 @@ module.exports = {
             rating: astro.rating,
             skills: astro.skills,
             languages: astro.languages,
+            isBusy: astro.isBusy,
+            isOnline: astro.isOnline,
 
             activeOffer: specialOffer
               ? {
@@ -555,6 +559,7 @@ module.exports = {
         throw new Error(error.message);
       }
     },
+
     getRechargePacks: async (_, __, context) => {
       const packs = await prisma.rechargePack.findMany({
         where: { isActive: true },
