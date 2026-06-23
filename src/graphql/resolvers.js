@@ -2434,6 +2434,7 @@ module.exports = {
             user_id: userId,
             roomId: roomId,
             maximum_time: chatTime,
+            source:input.source,
             type: input.requestType.toUpperCase() === "CHAT" ? "chat" : "call",
           }),
         );
