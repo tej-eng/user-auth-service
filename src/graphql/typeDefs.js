@@ -90,6 +90,9 @@ module.exports = gql`
     about: String
     isBusy: Boolean
     isOnline: Boolean
+    isChatActive:Boolean
+    isCallActive:Boolean
+    
     tags: String
     vtags: String
 
@@ -97,6 +100,8 @@ module.exports = gql`
 
     reviews: [Review]
   }
+
+ 
 
   input AstrologerSearchInput {
     query: String # Search by name / skills / language

@@ -315,6 +315,8 @@ module.exports = {
             languages: astro.languages,
             isBusy: astro.isBusy,
             isOnline: astro.isOnline,
+            isChatActive,
+            isCallActive,
 
             activeOffer: specialOffer
               ? {
@@ -472,6 +474,8 @@ module.exports = {
             languages: astro.languages,
             isBusy: astro.isBusy,
             isOnline: astro.isOnline,
+            isChatActive,
+            isCallActive,
 
             activeOffer: specialOffer
               ? {
