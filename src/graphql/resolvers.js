@@ -682,7 +682,6 @@ module.exports = {
             user: {
               select: {
                 id: true,
-                source:true,
                 name: true,
                 mobile: true,
                 countryCode: true,
@@ -783,6 +782,7 @@ module.exports = {
             roomId: lastMessage?.roomId || null,
 
             sessionId: session.id,
+            source: session.source || null,
 
             startedAt: session.startedAt
               ? session.startedAt.toISOString()
