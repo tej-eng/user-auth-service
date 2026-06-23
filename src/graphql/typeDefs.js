@@ -217,6 +217,7 @@ module.exports = gql`
     requestType: String!
     latitude: Float
     longitude: Float
+    source: String!
   }
 
   type Intake {
@@ -236,6 +237,7 @@ module.exports = gql`
     # OPTIONAL ADDITIONS
     pricePerMin: Float
     pricingType: PricingType
+    source: String!
 
     createdAt: String!
   }
