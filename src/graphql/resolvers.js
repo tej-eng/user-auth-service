@@ -682,6 +682,7 @@ module.exports = {
             user: {
               select: {
                 id: true,
+                source:true,
                 name: true,
                 mobile: true,
                 countryCode: true,
@@ -697,7 +698,7 @@ module.exports = {
                 rating: true,
                 skills: true,
                 languages: true,
-                source: true,
+               
 
                 pricing: {
                   where: {
@@ -872,6 +873,7 @@ module.exports = {
         throw new Error(error.message || "Failed to fetch chat history");
       }
     },
+
     getUserCallHistory: async (_, { filter = {} }, context) => {
       try {
         if (!context.user) {
