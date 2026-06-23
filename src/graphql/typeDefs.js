@@ -90,8 +90,9 @@ module.exports = gql`
     about: String
     isBusy: Boolean
     isOnline: Boolean
-    isChatActive:Boolean
-    isCallActive:Boolean
+    isChatActive: Boolean
+    isCallActive: Boolean
+    isLiveActive: Boolean
     
     tags: String
     vtags: String
