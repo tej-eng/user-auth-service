@@ -697,6 +697,7 @@ module.exports = {
                 rating: true,
                 skills: true,
                 languages: true,
+                source: true,
 
                 pricing: {
                   where: {

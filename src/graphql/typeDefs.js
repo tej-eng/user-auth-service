@@ -595,6 +595,7 @@ module.exports = gql`
     astrologer: ChatAstrologer
 
     lastMessage: ChatMessage
+    source: String
   }
 
   type ChatUser {
