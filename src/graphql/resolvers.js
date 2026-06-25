@@ -1696,57 +1696,65 @@ module.exports = {
         throw new Error(error.message);
       }
     },
-    getFollowedAstrologers: async (_, { page = 1, limit = 10 }, context) => {
-      try {
-        const { user } = context;
+   getFollowedAstrologers: async (_, { page = 1, limit = 10 }, context) => {
+  try {
+    const { user } = context;
 
-        if (!user) {
-          throw new Error("Unauthorized");
-        }
+    if (!user) {
+      throw new Error("Unauthorized");
+    }
 
-        const skip = (page - 1) * limit;
+    const skip = (page - 1) * limit;
 
-        const total = await prisma.astrologerFollow.count({
-          where: {
-            userId: user.id,
-          },
-        });
+    const total = await prisma.astrologerFollow.count({
+      where: {
+        userId: user.id,
+      },
+    });
 
-        const followedAstrologers = await prisma.astrologerFollow.findMany({
-          where: {
-            userId: user.id,
-          },
+    const followedAstrologers = await prisma.astrologerFollow.findMany({
+      where: {
+        userId: user.id,
+      },
+      include: {
+        astrologer: {
           include: {
-            astrologer: {
+            pricing: true,
+            wallet: true,
+            offers: {
               include: {
-                pricing: true,
-                wallet: true,
-                offers: {
-                  include: {
-                    offer: true,
-                  },
-                },
+                offer: true,
               },
             },
           },
-          orderBy: {
-            createdAt: "desc",
-          },
-          skip,
-          take: limit,
-        });
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      skip,
+      take: limit,
+    });
 
-        return {
-          astrologers: followedAstrologers.map((follow) => follow.astrologer),
-          total,
-          page,
-          limit,
-          totalPages: Math.ceil(total / limit),
-        };
-      } catch (error) {
-        throw new Error(error.message);
-      }
-    },
+    return {
+      astrologers: followedAstrologers.map((follow) => ({
+        ...follow.astrologer,
+
+        isChatActive: follow.astrologer.isChatActive,
+        isCallActive: follow.astrologer.isCallActive,
+        isLiveActive: follow.astrologer.isLiveActive,
+        isPromotional: follow.astrologer.isPromotional,
+        isBusy: follow.astrologer.isBusy,
+      })),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  } catch (error) {
+    throw new Error(error.message);
+  }
+},
 
     getCategories: async () => {
       try {
