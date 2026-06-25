@@ -80,7 +80,7 @@ const sendOTPService = async (countryCode, mobile) => {
 };
 
 // ================= VERIFY OTP =================
-const verifyOTPService = async (countryCode, mobile, otp) => {
+const verifyOTPService = async (countryCode, mobile, otp,source) => {
   try {
     if (!countryCode || !mobile || !otp) {
       throw new Error("Country code, mobile and OTP required");
@@ -138,6 +138,7 @@ const verifyOTPService = async (countryCode, mobile, otp) => {
         data: {
           countryCode,
           mobile,
+          source
         },
       });
       isNewUser = true;

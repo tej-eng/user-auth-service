@@ -171,7 +171,7 @@ model User {
   servicePaymentOrders ServicePaymentOrder[]
   noticesCreated       Notice[]              @relation("NoticeCreatedBy")
   serviceBookings      ServiceBooking[]
-
+  source               String?
   @@unique([countryCode, mobile])
 }
 

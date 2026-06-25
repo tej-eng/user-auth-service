@@ -2049,51 +2049,66 @@ module.exports = {
       }
     },
 
-    authWithOtp: async (_, { countryCode, mobile, otp }, { res }) => {
-      try {
-        if (!countryCode || !mobile)
-          throw new Error("Country code and mobile required");
-        if (!otp) throw new Error("OTP required");
+    authWithOtp: async (_, { countryCode, mobile, otp, source }, { res }) => {
+  try {
+    if (!countryCode || !mobile)
+      throw new Error("Country code and mobile required");
+    if (!otp) throw new Error("OTP required");
 
-        const { accessToken, refreshToken, user, isNewUser, hasName } =
-          await verifyOTPService(countryCode, mobile, otp);
+    const { accessToken, refreshToken, user, isNewUser, hasName } =
+      await verifyOTPService(countryCode, mobile, otp, source);
 
-        if (res?.setHeader) {
-          res.cookie("accessToken", accessToken, {
-            httpOnly: true,
-            secure: true,
-            sameSite: "none",
-            domain: ".dhwaniastro.com",
-            maxAge: 1 * 24 * 60 * 60 * 1000, //for testing 1 day, can be changed to 15 * 60 * 1000 for 15 mins in production
-            path: "/",
-          });
+    if (res?.setHeader) {
+      res.cookie("accessToken", accessToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none",
+        domain: ".dhwaniastro.com",
+        maxAge: 1 * 24 * 60 * 60 * 1000,
+        path: "/",
+      });
 
-          res.cookie("refreshToken", refreshToken, {
-            httpOnly: true,
-            secure: true,
-            sameSite: "none",
-            domain: ".dhwaniastro.com",
-            maxAge: 7 * 24 * 60 * 60 * 1000,
-            path: "/",
-          });
-        }
+      res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none",
+        domain: ".dhwaniastro.com",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        path: "/",
+      });
+    }
 
-        await logEvent({
-          userId: user.id,
-          action: "LOGIN_OTP",
-          details: { countryCode, mobile },
-        });
+    await logEvent({
+      userId: user.id,
+      action: "LOGIN_OTP",
+      details: {
+        countryCode,
+        mobile,
+        source,
+      },
+    });
 
-        return { user, accessToken, refreshToken, isNewUser, hasName };
-      } catch (error) {
-        await logEvent({
-          action: "FAILED_LOGIN_OTP",
-          details: { countryCode, mobile, error: error.message },
-        });
+    return {
+      user,
+      accessToken,
+      refreshToken,
+      isNewUser,
+      hasName,
+    };
+  } catch (error) {
+    await logEvent({
+      action: "FAILED_LOGIN_OTP",
+      details: {
+        countryCode,
+        mobile,
+        source,
+        error: error.message,
+      },
+    });
 
-        throw new Error(error.message || "Failed to authenticate with OTP");
-      }
-    },
+    throw new Error(error.message || "Failed to authenticate with OTP");
+  }
+},
 
     refreshToken: async (_, { token }, { res }) => {
       try {

@@ -1270,6 +1270,7 @@ enum CmsStatus {
       countryCode: String!
       mobile: String!
       otp: String!
+      source: String!
     ): AuthPayload
     refreshToken(token: String!): AuthPayload
     logout: Boolean
