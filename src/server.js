@@ -13,6 +13,7 @@ const rateLimiter = require("./middleware/rateLimiter");
 const { verifyAccessToken } = require("./config/jwt");
 const { graphqlUploadExpress } = require("graphql-upload");
 const path = require("path");
+const morgan = require("morgan");
 
 
 
@@ -35,6 +36,11 @@ async function startServer() {
 app.use(graphqlUploadExpress({ maxFileSize: 10000000, maxFiles: 1 }));
   app.use(cookieParser());
   app.use(express.json());
+  app.use(
+  morgan(
+    ":date[iso] :method :url :status :response-time ms - :remote-addr"
+  )
+);
   app.use(rateLimiter);
 
   const server = new ApolloServer({
@@ -56,7 +62,6 @@ app.use(graphqlUploadExpress({ maxFileSize: 10000000, maxFiles: 1 }));
         if (token) {
           try {
             user = verifyAccessToken(token);
-            console.log("Authenticated user:", user);
           } catch {
             user = null;
           }
