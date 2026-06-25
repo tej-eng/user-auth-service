@@ -231,7 +231,7 @@ model Intake {
   pricePerMin  Float?
   latitude     Float?
   longitude    Float?
-  source String?
+  source       String?
 
   @@index([userId])
   @@index([astrologerId])
@@ -281,7 +281,6 @@ model Astrologer {
   isBusy       Boolean @default(false)
   isOnline     Boolean @default(false)
   isPromotional     Boolean @default(false)
-  
 
   approvedBy Staff?     @relation("ApprovedAstrologers", fields: [approvedById], references: [id])
   createdBy  Staff?     @relation("CreatedAstrologers", fields: [createdById], references: [id])
@@ -303,12 +302,26 @@ model Astrologer {
   followers         AstrologerFollow[]
   serviceBookings   ServiceBooking[]
   noticeAstrologers NoticeAstrologer[]
-
+serviceMappings ServiceAstrologer[]
   liveStreams LiveStream[]
-  
 
   @@index([rating])
   @@index([experience])
+}
+model ServiceAstrologer {
+  id String @id @default(cuid())
+
+  serviceId String
+  astrologerId String
+
+  price Float
+
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  astrologer Astrologer @relation(fields: [astrologerId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([serviceId, astrologerId])
 }
 
 model AstrologerApproved {
@@ -559,7 +572,7 @@ model Service {
   categoryId String?
 
   category Category? @relation(fields: [categoryId], references: [id])
-
+   astrologerMappings ServiceAstrologer[]
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
   bookings  ServiceBooking[]
@@ -749,7 +762,7 @@ model Session {
   coinsDeducted Int @default(0)
   coinsEarned   Int @default(0)
   commission    Int @default(0)
-
+  source        String?
   review    Review?
   startedAt DateTime?
   endedAt   DateTime?
@@ -761,7 +774,6 @@ model Session {
   fraudLogs FraudLog[]
 
   remedies SessionRemedy[]
-  source String?
 
   createdAt DateTime @default(now())
 
@@ -934,17 +946,17 @@ model KycDetail {
   ifsc              String?
   branchName        String?
   panNumber         String?
+  documentRemarks      String?
 
-  profileImage  String?
   aadhaarImage  String?
   panImage      String?
   passbookImage String?
-  astrologer    Astrologer     @relation(fields: [astrologerId], references: [id], onDelete: Cascade)
+  astrologer    Astrologer?     @relation(fields: [astrologerId], references: [id], onDelete: Cascade)
   status        DocumentStatus @default(PENDING)
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  astrologerId String   @unique
+  astrologerId String?   @unique
 }
 
 model Notification {
@@ -1473,12 +1485,13 @@ model BlogCategoryMapping {
 
   @@id([blogId, blogCategoryId])
 }
+
 //------------tables for live streaming----------------
 model LiveStream {
   id            String      @id @default(uuid())
 
   astrologerId  String
-  astrologer    Astrologer  @relation(fields: [astrologerId], references: [id])
+  astrologer    Astrologer  @relation(fields: [astrologerId], references: [id], onDelete: Cascade)
 
   title         String
 
@@ -1498,4 +1511,3 @@ enum LiveStatus {
   LIVE
   ENDED
 }
-
