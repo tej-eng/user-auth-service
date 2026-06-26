@@ -2888,9 +2888,9 @@ module.exports = {
         });
         console.log("Astrologer Wallet:", astrologerWallet);
 
-        if (!astrologerWallet) {
-          throw new Error("Astrologer wallet not found");
-        }
+        // if (!astrologerWallet) {
+        //   throw new Error("Astrologer wallet not found");
+        // }
 
         // -----------------------------
         // Transaction
