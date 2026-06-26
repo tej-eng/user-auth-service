@@ -1371,7 +1371,11 @@ module.exports = {
         throw new Error(error.message || "Failed to fetch session messages");
       }
     },
-    getSessionRemedy: async (_, { sessionId }, { prisma }) => {
+ getSessionRemedy: async (_, { sessionId }, context) => {
+  if (!context.user) {
+    throw new Error("Unauthorized");
+  }
+
   const remedy = await prisma.sessionRemedy.findFirst({
     where: {
       sessionId,
