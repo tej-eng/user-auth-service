@@ -1090,6 +1090,14 @@ module.exports = gql`
     currentPage: Int!
     totalPages: Int!
   }
+    type SessionRemedyResponse {
+  id: ID!
+  remedyText: String!
+  createdAt: String!
+  astrologerName: String
+}
+
+
 
   type LiveStream {
     id: String!
@@ -1176,6 +1184,7 @@ enum CmsStatus {
 
   #-------END CODE FOR LIVESTREAMING------------
   type Query {
+   getSessionRemedy(sessionId: ID!): SessionRemedyResponse
     getCategories: [Category!]!
     getCategory(slug: String!): Category
     getServices: [Service!]!
