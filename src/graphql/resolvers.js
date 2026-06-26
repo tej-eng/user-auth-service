@@ -1371,6 +1371,29 @@ module.exports = {
         throw new Error(error.message || "Failed to fetch session messages");
       }
     },
+    getSessionRemedy: async (_, { sessionId }, { prisma }) => {
+  const remedy = await prisma.sessionRemedy.findFirst({
+    where: {
+      sessionId,
+    },
+    include: {
+      session: {
+        include: {
+          astrologer: true,
+        },
+      },
+    },
+  });
+
+  if (!remedy) return null;
+
+  return {
+    id: remedy.id,
+    remedyText: remedy.remedyText,
+    createdAt: remedy.createdAt.toISOString(),
+    astrologerName: remedy.session.astrologer.name,
+  };
+},
     getUserSessions: async (_, { filter }, context) => {
       try {
         if (!context.user) throw new Error("Unauthorized");
