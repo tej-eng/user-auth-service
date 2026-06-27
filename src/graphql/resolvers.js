@@ -315,9 +315,9 @@ module.exports = {
             languages: astro.languages,
             isBusy: astro.isBusy,
             isOnline: astro.isOnline,
-            isChatActive:astro.isChatActive,
-            isCallActive:astro.isCallActive,
-            isLiveActive:astro.isLiveActive,
+            isChatActive: astro.isChatActive,
+            isCallActive: astro.isCallActive,
+            isLiveActive: astro.isLiveActive,
 
             activeOffer: specialOffer
               ? {
@@ -475,9 +475,9 @@ module.exports = {
             languages: astro.languages,
             isBusy: astro.isBusy,
             isOnline: astro.isOnline,
-            isChatActive:astro.isChatActive,
-            isCallActive:astro.isCallActive,
-            isLiveActive:astro.isLiveActive,
+            isChatActive: astro.isChatActive,
+            isCallActive: astro.isCallActive,
+            isLiveActive: astro.isLiveActive,
 
             activeOffer: specialOffer
               ? {
@@ -708,7 +708,6 @@ module.exports = {
                 rating: true,
                 skills: true,
                 languages: true,
-               
 
                 pricing: {
                   where: {
@@ -1371,33 +1370,33 @@ module.exports = {
         throw new Error(error.message || "Failed to fetch session messages");
       }
     },
- getSessionRemedy: async (_, { sessionId }, context) => {
-  if (!context.user) {
-    throw new Error("Unauthorized");
-  }
+    getSessionRemedy: async (_, { sessionId }, context) => {
+      if (!context.user) {
+        throw new Error("Unauthorized");
+      }
 
-  const remedy = await prisma.sessionRemedy.findFirst({
-    where: {
-      sessionId,
-    },
-    include: {
-      session: {
-        include: {
-          astrologer: true,
+      const remedy = await prisma.sessionRemedy.findFirst({
+        where: {
+          sessionId,
         },
-      },
+        include: {
+          session: {
+            include: {
+              astrologer: true,
+            },
+          },
+        },
+      });
+
+      if (!remedy) return null;
+
+      return {
+        id: remedy.id,
+        remedyText: remedy.remedyText,
+        createdAt: remedy.createdAt.toISOString(),
+        astrologerName: remedy.session.astrologer.name,
+      };
     },
-  });
-
-  if (!remedy) return null;
-
-  return {
-    id: remedy.id,
-    remedyText: remedy.remedyText,
-    createdAt: remedy.createdAt.toISOString(),
-    astrologerName: remedy.session.astrologer.name,
-  };
-},
     getUserSessions: async (_, { filter }, context) => {
       try {
         if (!context.user) throw new Error("Unauthorized");
@@ -1723,65 +1722,65 @@ module.exports = {
         throw new Error(error.message);
       }
     },
-   getFollowedAstrologers: async (_, { page = 1, limit = 10 }, context) => {
-  try {
-    const { user } = context;
+    getFollowedAstrologers: async (_, { page = 1, limit = 10 }, context) => {
+      try {
+        const { user } = context;
 
-    if (!user) {
-      throw new Error("Unauthorized");
-    }
+        if (!user) {
+          throw new Error("Unauthorized");
+        }
 
-    const skip = (page - 1) * limit;
+        const skip = (page - 1) * limit;
 
-    const total = await prisma.astrologerFollow.count({
-      where: {
-        userId: user.id,
-      },
-    });
+        const total = await prisma.astrologerFollow.count({
+          where: {
+            userId: user.id,
+          },
+        });
 
-    const followedAstrologers = await prisma.astrologerFollow.findMany({
-      where: {
-        userId: user.id,
-      },
-      include: {
-        astrologer: {
+        const followedAstrologers = await prisma.astrologerFollow.findMany({
+          where: {
+            userId: user.id,
+          },
           include: {
-            pricing: true,
-            wallet: true,
-            offers: {
+            astrologer: {
               include: {
-                offer: true,
+                pricing: true,
+                wallet: true,
+                offers: {
+                  include: {
+                    offer: true,
+                  },
+                },
               },
             },
           },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      skip,
-      take: limit,
-    });
+          orderBy: {
+            createdAt: "desc",
+          },
+          skip,
+          take: limit,
+        });
 
-    return {
-      astrologers: followedAstrologers.map((follow) => ({
-        ...follow.astrologer,
+        return {
+          astrologers: followedAstrologers.map((follow) => ({
+            ...follow.astrologer,
 
-        isChatActive: follow.astrologer.isChatActive,
-        isCallActive: follow.astrologer.isCallActive,
-        isLiveActive: follow.astrologer.isLiveActive,
-        isPromotional: follow.astrologer.isPromotional,
-        isBusy: follow.astrologer.isBusy,
-      })),
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
-  } catch (error) {
-    throw new Error(error.message);
-  }
-},
+            isChatActive: follow.astrologer.isChatActive,
+            isCallActive: follow.astrologer.isCallActive,
+            isLiveActive: follow.astrologer.isLiveActive,
+            isPromotional: follow.astrologer.isPromotional,
+            isBusy: follow.astrologer.isBusy,
+          })),
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        };
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    },
 
     getCategories: async () => {
       try {
@@ -1836,6 +1835,12 @@ module.exports = {
         const services = await prisma.service.findMany({
           include: {
             category: true,
+
+            astrologerMappings: {
+              include: {
+                astrologer: true,
+              },
+            },
           },
           orderBy: {
             createdAt: "desc",
@@ -2085,65 +2090,65 @@ module.exports = {
     },
 
     authWithOtp: async (_, { countryCode, mobile, otp, source }, { res }) => {
-  try {
-    if (!countryCode || !mobile)
-      throw new Error("Country code and mobile required");
-    if (!otp) throw new Error("OTP required");
+      try {
+        if (!countryCode || !mobile)
+          throw new Error("Country code and mobile required");
+        if (!otp) throw new Error("OTP required");
 
-    const { accessToken, refreshToken, user, isNewUser, hasName } =
-      await verifyOTPService(countryCode, mobile, otp, source);
+        const { accessToken, refreshToken, user, isNewUser, hasName } =
+          await verifyOTPService(countryCode, mobile, otp, source);
 
-    if (res?.setHeader) {
-      res.cookie("accessToken", accessToken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "none",
-        domain: ".dhwaniastro.com",
-        maxAge: 1 * 24 * 60 * 60 * 1000,
-        path: "/",
-      });
+        if (res?.setHeader) {
+          res.cookie("accessToken", accessToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none",
+            domain: ".dhwaniastro.com",
+            maxAge: 1 * 24 * 60 * 60 * 1000,
+            path: "/",
+          });
 
-      res.cookie("refreshToken", refreshToken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "none",
-        domain: ".dhwaniastro.com",
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-        path: "/",
-      });
-    }
+          res.cookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none",
+            domain: ".dhwaniastro.com",
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+            path: "/",
+          });
+        }
 
-    await logEvent({
-      userId: user.id,
-      action: "LOGIN_OTP",
-      details: {
-        countryCode,
-        mobile,
-        source,
-      },
-    });
+        await logEvent({
+          userId: user.id,
+          action: "LOGIN_OTP",
+          details: {
+            countryCode,
+            mobile,
+            source,
+          },
+        });
 
-    return {
-      user,
-      accessToken,
-      refreshToken,
-      isNewUser,
-      hasName,
-    };
-  } catch (error) {
-    await logEvent({
-      action: "FAILED_LOGIN_OTP",
-      details: {
-        countryCode,
-        mobile,
-        source,
-        error: error.message,
-      },
-    });
+        return {
+          user,
+          accessToken,
+          refreshToken,
+          isNewUser,
+          hasName,
+        };
+      } catch (error) {
+        await logEvent({
+          action: "FAILED_LOGIN_OTP",
+          details: {
+            countryCode,
+            mobile,
+            source,
+            error: error.message,
+          },
+        });
 
-    throw new Error(error.message || "Failed to authenticate with OTP");
-  }
-},
+        throw new Error(error.message || "Failed to authenticate with OTP");
+      }
+    },
 
     refreshToken: async (_, { token }, { res }) => {
       try {
@@ -2207,7 +2212,7 @@ module.exports = {
 
       // Generate Room ID
       const roomId = uuidv4();
-      console.log("source---------------",input);
+      console.log("source---------------", input);
       // Get User Wallet
       const user = await prisma.user.findUnique({
         where: { id: userId },
@@ -2256,21 +2261,25 @@ module.exports = {
         throw new Error("Astrologer not found");
       }
 
-      if (input.requestType.toUpperCase() === "CALL" && !astrologer.isCallActive) {
+      if (
+        input.requestType.toUpperCase() === "CALL" &&
+        !astrologer.isCallActive
+      ) {
         throw new Error("Call service is disabled by astrologer");
-         return;
+        return;
       }
 
-      if (input.requestType.toUpperCase() === "CHAT" && !astrologer.isChatActive) {
+      if (
+        input.requestType.toUpperCase() === "CHAT" &&
+        !astrologer.isChatActive
+      ) {
         throw new Error("Chat service is disabled by astrologer");
-         return;
-        
+        return;
       }
 
       if (!astrologer.isOnline) {
         throw new Error("Astrologer is offline");
-         return;
-        
+        return;
       }
 
       // Get pricing according to request type
@@ -2422,7 +2431,7 @@ module.exports = {
           pricePerMin,
           latitude: input.latitude,
           longitude: input.longitude,
-          source:input.source,
+          source: input.source,
         },
       });
 
@@ -2444,7 +2453,7 @@ module.exports = {
         user_image: user.profilePic || "",
         phoneNumber: `${input.countryCode}${input.mobile}`,
         createdAt: Date.now(),
-        source:input.source,
+        source: input.source,
       };
 
       if (
@@ -2498,7 +2507,7 @@ module.exports = {
             user_id: userId,
             roomId: roomId,
             maximum_time: chatTime,
-            source:input.source,
+            source: input.source,
             type: input.requestType.toUpperCase() === "CHAT" ? "chat" : "call",
           }),
         );
