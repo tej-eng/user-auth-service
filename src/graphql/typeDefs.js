@@ -994,7 +994,7 @@ module.exports = gql`
     gender: String
     concern: String
 
-    amount: Float!
+    amount: Float
 
     paymentStatus: PaymentStatus!
     bookingStatus: BookingStatus!
