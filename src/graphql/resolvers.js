@@ -1806,7 +1806,15 @@ module.exports = {
         const category = await prisma.category.findUnique({
           where: { slug },
           include: {
-            services: true,
+            services: {
+              include: {
+                astrologerMappings: {
+                  select: {
+                    price: true,
+                  },
+                },
+              },
+            },
           },
         });
 
@@ -1819,6 +1827,10 @@ module.exports = {
           createdAt: category.createdAt.toISOString(),
           services: category.services.map((service) => ({
             ...service,
+            price:
+              service.astrologerMappings.length > 0
+                ? Math.min(...service.astrologerMappings.map((m) => m.price))
+                : null,
             createdAt: service.createdAt.toISOString(),
             updatedAt: service.updatedAt.toISOString(),
           })),
@@ -1837,8 +1849,8 @@ module.exports = {
             category: true,
 
             astrologerMappings: {
-              include: {
-                astrologer: true,
+              select: {
+                price: true,
               },
             },
           },
@@ -1867,28 +1879,55 @@ module.exports = {
 
     getService: async (_, { slug }) => {
       try {
-        const service = await prisma.service.findUnique({
-          where: { slug },
+    const service = await prisma.service.findUnique({
+  where: {
+    slug,
+  },
+
+  include: {
+    category: true,
+
+    astrologerMappings: {
+      include: {
+        astrologer: {
           include: {
-            category: true,
+            pricing: {
+              where: {
+                isActive: true,
+              },
+            },
           },
-        });
+        },
+      },
+    },
+  },
+});
 
         if (!service) {
           throw new Error("Service not found");
         }
 
-        return {
-          ...service,
-          createdAt: service.createdAt.toISOString(),
-          updatedAt: service.updatedAt.toISOString(),
-          category: service.category
-            ? {
-                ...service.category,
-                createdAt: service.category.createdAt.toISOString(),
-              }
-            : null,
-        };
+      return {
+  ...service,
+
+  createdAt: service.createdAt.toISOString(),
+  updatedAt: service.updatedAt.toISOString(),
+
+  category: service.category
+    ? {
+        ...service.category,
+        createdAt: service.category.createdAt.toISOString(),
+      }
+    : null,
+
+  astrologerMappings: service.astrologerMappings.map((mapping) => ({
+    ...mapping,
+
+    astrologer: {
+      ...mapping.astrologer,
+    },
+  })),
+};
       } catch (error) {
         console.error("getService error:", error);
 
