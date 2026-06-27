@@ -838,7 +838,7 @@ module.exports = gql`
     description: String
     longText: String
     price: Float
-
+ astrologerMappings: [ServiceAstrologer!]
     category: Category
   }
 
@@ -1004,7 +1004,7 @@ module.exports = gql`
   }
   input CreateServiceBookingInput {
     serviceId: ID!
-
+ astrologerId: ID!
     name: String!
     email: String!
     phone: String!
@@ -1016,6 +1016,12 @@ module.exports = gql`
     gender: String
 
     concern: String
+  }
+      type ServiceAstrologer {
+    id: ID!
+    price: Float!
+
+    astrologer: Astrologer!
   }
 
   #------END CODE FOR FOLLOWERS AND FOLLOWING----------------

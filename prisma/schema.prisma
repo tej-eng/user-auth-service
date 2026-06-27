@@ -758,6 +758,7 @@ model Session {
 
   ratePerMin  Int
   durationSec Int @default(0)
+  roomId        String?
 
   coinsDeducted Int @default(0)
   coinsEarned   Int @default(0)
