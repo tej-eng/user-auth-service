@@ -1879,55 +1879,55 @@ module.exports = {
 
     getService: async (_, { slug }) => {
       try {
-    const service = await prisma.service.findUnique({
-  where: {
-    slug,
-  },
+        const service = await prisma.service.findUnique({
+          where: {
+            slug,
+          },
 
-  include: {
-    category: true,
-
-    astrologerMappings: {
-      include: {
-        astrologer: {
           include: {
-            pricing: {
-              where: {
-                isActive: true,
+            category: true,
+
+            astrologerMappings: {
+              include: {
+                astrologer: {
+                  include: {
+                    pricing: {
+                      where: {
+                        isActive: true,
+                      },
+                    },
+                  },
+                },
               },
             },
           },
-        },
-      },
-    },
-  },
-});
+        });
 
         if (!service) {
           throw new Error("Service not found");
         }
 
-      return {
-  ...service,
+        return {
+          ...service,
 
-  createdAt: service.createdAt.toISOString(),
-  updatedAt: service.updatedAt.toISOString(),
+          createdAt: service.createdAt.toISOString(),
+          updatedAt: service.updatedAt.toISOString(),
 
-  category: service.category
-    ? {
-        ...service.category,
-        createdAt: service.category.createdAt.toISOString(),
-      }
-    : null,
+          category: service.category
+            ? {
+                ...service.category,
+                createdAt: service.category.createdAt.toISOString(),
+              }
+            : null,
 
-  astrologerMappings: service.astrologerMappings.map((mapping) => ({
-    ...mapping,
+          astrologerMappings: service.astrologerMappings.map((mapping) => ({
+            ...mapping,
 
-    astrologer: {
-      ...mapping.astrologer,
-    },
-  })),
-};
+            astrologer: {
+              ...mapping.astrologer,
+            },
+          })),
+        };
       } catch (error) {
         console.error("getService error:", error);
 
@@ -2807,9 +2807,10 @@ module.exports = {
           throw new Error("Booking not found");
         }
 
-        // ======================
-        // PAYMENT AMOUNT
-        // ======================
+        if (booking.amount == null) {
+          throw new Error("Booking amount not found");
+        }
+
         const totalAmount = Number(booking.amount);
 
         // Full amount paid via Razorpay
@@ -2822,13 +2823,14 @@ module.exports = {
         const receiptId = uuidv4();
 
         const order = await razorpay.orders.create({
-          amount: Math.round(payableAmount * 100),
+          amount: totalAmount * 100,
           currency: "INR",
           receipt: receiptId,
           notes: {
             bookingId: booking.id,
+            serviceId: booking.serviceId,
+            astrologerId: booking.astrologerId,
             userId,
-            serviceId: booking.serviceId || "",
           },
         });
 
@@ -3146,35 +3148,63 @@ module.exports = {
         data: {
           ...input,
           userId: user.id,
-          amount: service.price,
+          amount: null,
         },
       });
     },
 
-    updateBookingAstrologer: async (_, { bookingId, astrologerId }) => {
-      const astrologer = await prisma.astrologer.findUnique({
-        where: {
-          id: astrologerId,
-        },
-      });
-
-      if (!astrologer) {
-        throw new Error("Astrologer not found");
-      }
-
-      return prisma.serviceBooking.update({
-        where: {
-          id: bookingId,
-        },
-        data: {
-          astrologerId,
-        },
-        include: {
-          astrologer: true,
-          service: true,
-        },
-      });
+updateBookingAstrologer: async (_, { bookingId, astrologerId }) => {
+  // Check booking
+  const booking = await prisma.serviceBooking.findUnique({
+    where: {
+      id: bookingId,
     },
+  });
+
+  if (!booking) {
+    throw new Error("Booking not found");
+  }
+
+  // Check astrologer
+  const astrologer = await prisma.astrologer.findUnique({
+    where: {
+      id: astrologerId,
+    },
+  });
+
+  if (!astrologer) {
+    throw new Error("Astrologer not found");
+  }
+
+  // Find service-astrologer mapping
+  const mapping = await prisma.serviceAstrologer.findFirst({
+    where: {
+      serviceId: booking.serviceId,
+      astrologerId,
+    },
+  });
+
+  if (!mapping) {
+    throw new Error(
+      "Selected astrologer is not available for this service"
+    );
+  }
+
+  // Update booking
+  return prisma.serviceBooking.update({
+    where: {
+      id: bookingId,
+    },
+    data: {
+      astrologerId,
+      amount: mapping.price, 
+    },
+    include: {
+      astrologer: true,
+      service: true,
+    },
+  });
+},
 
     confirmWalletBooking: async (
       _,
