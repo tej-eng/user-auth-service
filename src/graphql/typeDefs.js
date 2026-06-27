@@ -1004,7 +1004,7 @@ module.exports = gql`
   }
   input CreateServiceBookingInput {
     serviceId: ID!
- astrologerId: ID!
+ astrologerId: ID
     name: String!
     email: String!
     phone: String!
