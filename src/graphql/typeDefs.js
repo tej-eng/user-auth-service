@@ -1002,6 +1002,39 @@ module.exports = gql`
     createdAt: String!
     updatedAt: String!
   }
+    enum CouponType {
+  CASHBACK
+  DISCOUNT
+}
+
+enum CouponVisibility {
+  VISIBLE
+  HIDDEN
+}
+    type Coupon {
+  id: ID!
+  code: String!
+  description: String
+  type: CouponType!
+  visibility: CouponVisibility!
+  couponCount: Int!
+  applicable: String
+  status: Boolean!
+
+  percentage: Float
+  flatAmount: Float
+  maxDiscount: Float
+  minOrderAmount: Float
+
+  redeemLimit: Int
+  usedCount: Int
+
+  startDate: String!
+  endDate: String!
+
+  createdAt: String!
+  updatedAt: String!
+}
   input CreateServiceBookingInput {
     serviceId: ID!
  astrologerId: ID
@@ -1190,6 +1223,7 @@ enum CmsStatus {
 
   #-------END CODE FOR LIVESTREAMING------------
   type Query {
+    getCoupons: [Coupon!]!
    getSessionRemedy(sessionId: ID!): SessionRemedyResponse
     getCategories: [Category!]!
     getCategory(slug: String!): Category

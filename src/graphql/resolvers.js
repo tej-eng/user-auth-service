@@ -2106,6 +2106,22 @@ module.exports = {
         channelName,
       };
     },
+getCoupons: async (_, __, context) => {
+  const { prisma } = context;
+
+  try {
+    return await prisma.coupon.findMany({
+      where: {
+        status: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+  } catch (error) {
+    throw error;
+  }
+},
   },
   //----------------start code for mutation ----------------------------
   Mutation: {
@@ -3153,58 +3169,58 @@ module.exports = {
       });
     },
 
-updateBookingAstrologer: async (_, { bookingId, astrologerId }) => {
-  // Check booking
-  const booking = await prisma.serviceBooking.findUnique({
-    where: {
-      id: bookingId,
-    },
-  });
+    updateBookingAstrologer: async (_, { bookingId, astrologerId }) => {
+      // Check booking
+      const booking = await prisma.serviceBooking.findUnique({
+        where: {
+          id: bookingId,
+        },
+      });
 
-  if (!booking) {
-    throw new Error("Booking not found");
-  }
+      if (!booking) {
+        throw new Error("Booking not found");
+      }
 
-  // Check astrologer
-  const astrologer = await prisma.astrologer.findUnique({
-    where: {
-      id: astrologerId,
-    },
-  });
+      // Check astrologer
+      const astrologer = await prisma.astrologer.findUnique({
+        where: {
+          id: astrologerId,
+        },
+      });
 
-  if (!astrologer) {
-    throw new Error("Astrologer not found");
-  }
+      if (!astrologer) {
+        throw new Error("Astrologer not found");
+      }
 
-  // Find service-astrologer mapping
-  const mapping = await prisma.serviceAstrologer.findFirst({
-    where: {
-      serviceId: booking.serviceId,
-      astrologerId,
-    },
-  });
+      // Find service-astrologer mapping
+      const mapping = await prisma.serviceAstrologer.findFirst({
+        where: {
+          serviceId: booking.serviceId,
+          astrologerId,
+        },
+      });
 
-  if (!mapping) {
-    throw new Error(
-      "Selected astrologer is not available for this service"
-    );
-  }
+      if (!mapping) {
+        throw new Error(
+          "Selected astrologer is not available for this service",
+        );
+      }
 
-  // Update booking
-  return prisma.serviceBooking.update({
-    where: {
-      id: bookingId,
+      // Update booking
+      return prisma.serviceBooking.update({
+        where: {
+          id: bookingId,
+        },
+        data: {
+          astrologerId,
+          amount: mapping.price,
+        },
+        include: {
+          astrologer: true,
+          service: true,
+        },
+      });
     },
-    data: {
-      astrologerId,
-      amount: mapping.price, 
-    },
-    include: {
-      astrologer: true,
-      service: true,
-    },
-  });
-},
 
     confirmWalletBooking: async (
       _,
