@@ -775,6 +775,7 @@ model Session {
   fraudLogs FraudLog[]
 
   remedies SessionRemedy[]
+  callRecordings CallRecording[]
 
   createdAt DateTime @default(now())
 
