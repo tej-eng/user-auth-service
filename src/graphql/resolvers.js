@@ -2826,6 +2826,8 @@ uploadCallRecording: async (_, {
     }
 
     // Save to database using Prisma - MATCHES YOUR SCHEMA
+    console.log("Astrologer ID received:", astroId);
+    console.log("User ID received:", userId);
     const recordingData = await prisma.callRecording.create({
       data: {
         roomId: roomId,
