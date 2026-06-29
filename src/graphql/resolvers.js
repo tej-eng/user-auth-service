@@ -2120,6 +2120,17 @@ getCoupons: async () => {
     throw error;
   }
 },
+getServiceBooking: async (_, { bookingId }) => {
+    return prisma.serviceBooking.findUnique({
+        where: {
+            id: bookingId,
+        },
+        include: {
+            service: true,
+            astrologer: true,
+        },
+    });
+},
   },
   //----------------start code for mutation ----------------------------
   Mutation: {
