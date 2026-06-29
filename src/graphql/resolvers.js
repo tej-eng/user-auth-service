@@ -1934,14 +1934,14 @@ module.exports = {
         throw new Error(error.message || "Failed to fetch service");
       }
     },
-    getServiceBooking: async (_, { id }) => {
-      return prisma.serviceBooking.findUnique({
-        where: { id },
-        include: {
-          service: true,
-        },
-      });
-    },
+    // getServiceBooking: async (_, { id }) => {
+    //   return prisma.serviceBooking.findUnique({
+    //     where: { id },
+    //     include: {
+    //       service: true,
+    //     },
+    //   });
+    // },
 
     getMyServiceBookings: async (_, { page = 1, limit = 10 }, { user }) => {
       const skip = (page - 1) * limit;
