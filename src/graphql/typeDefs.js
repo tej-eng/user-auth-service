@@ -1223,6 +1223,7 @@ enum CmsStatus {
 
   #-------END CODE FOR LIVESTREAMING------------
   type Query {
+ getServiceBooking(bookingId: ID!): ServiceBooking
     getCoupons: [Coupon!]!
    getSessionRemedy(sessionId: ID!): SessionRemedyResponse
     getCategories: [Category!]!
