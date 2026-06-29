@@ -2813,19 +2813,24 @@ uploadCallRecording: async (_, {
     const fileUrl = `https://dhwaniastro.com/v2/uploads/call-recordings/${newFileName}?token=${fileToken}`;
 
     // Find session by roomId (optional)
-    let session = null;
+    let sessionId = null;
     if (roomId) {
-      session = await prisma.session.findFirst({
-        where: { roomId: roomId }
+      const session = await prisma.session.findFirst({
+        where: { roomId: roomId },
+        select: { id: true }
       });
+      if (session) {
+        sessionId = session.id;
+        console.log('✅ Found session:', sessionId);
+      }
     }
 
-    // Save to database using Prisma
+    // Save to database using Prisma - MATCHES YOUR SCHEMA
     const recordingData = await prisma.callRecording.create({
       data: {
         roomId: roomId,
-        sessionId: session?.id || null,
-        userId: userId,
+        sessionId: sessionId, // This is a field in your model
+        userId: userId || context.user.id,
         astrologerId: astroId,
         astrologerName: astroName || '',
         fileName: newFileName,
@@ -2860,6 +2865,13 @@ uploadCallRecording: async (_, {
             name: true,
             displayName: true
           }
+        },
+        session: {
+          select: {
+            id: true,
+            status: true,
+            type: true
+          }
         }
       }
     });
@@ -2867,6 +2879,7 @@ uploadCallRecording: async (_, {
     console.log('📊 Recording saved to database:', {
       id: recordingData.id,
       roomId: recordingData.roomId,
+      sessionId: recordingData.sessionId,
       duration: recordingData.duration,
       fileSize: `${(fileSize / 1024 / 1024).toFixed(2)} MB`
     });
@@ -2881,14 +2894,10 @@ uploadCallRecording: async (_, {
         astroName: recordingData.astrologerName,
         userId: recordingData.userId,
         duration: recordingData.duration,
-        timestamp: recordingData.timestamp,
         callType: recordingData.callType,
-        fileName: recordingData.fileName,
-        fileUrl: recordingData.fileUrl,
-        fileSize: recordingData.fileSize,
+        recordingUrl: recordingData.fileUrl,
         createdAt: recordingData.createdAt.toISOString(),
-        uploadedBy: recordingData.uploadedBy,
-        status: recordingData.status
+        updatedAt: recordingData.updatedAt.toISOString()
       },
       fileUrl: fileUrl
     };
