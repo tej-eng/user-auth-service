@@ -172,6 +172,8 @@ model User {
   noticesCreated       Notice[]              @relation("NoticeCreatedBy")
   serviceBookings      ServiceBooking[]
   source               String?
+  callRecordings CallRecording[]
+
   @@unique([countryCode, mobile])
 }
 
@@ -275,12 +277,12 @@ model Astrologer {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  isCallActive Boolean @default(false)
-  isChatActive Boolean @default(false)
-  isLiveActive Boolean @default(false)
-  isBusy       Boolean @default(false)
-  isOnline     Boolean @default(false)
-  isPromotional     Boolean @default(false)
+  isCallActive  Boolean @default(false)
+  isChatActive  Boolean @default(false)
+  isLiveActive  Boolean @default(false)
+  isBusy        Boolean @default(false)
+  isOnline      Boolean @default(false)
+  isPromotional Boolean @default(false)
 
   approvedBy Staff?     @relation("ApprovedAstrologers", fields: [approvedById], references: [id])
   createdBy  Staff?     @relation("CreatedAstrologers", fields: [createdById], references: [id])
@@ -302,21 +304,23 @@ model Astrologer {
   followers         AstrologerFollow[]
   serviceBookings   ServiceBooking[]
   noticeAstrologers NoticeAstrologer[]
-serviceMappings ServiceAstrologer[]
-  liveStreams LiveStream[]
+  serviceMappings   ServiceAstrologer[]
+  liveStreams       LiveStream[]
+  callRecordings CallRecording[]
 
   @@index([rating])
   @@index([experience])
 }
+
 model ServiceAstrologer {
   id String @id @default(cuid())
 
-  serviceId String
+  serviceId    String
   astrologerId String
 
   price Float
 
-  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  service    Service    @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   astrologer Astrologer @relation(fields: [astrologerId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
@@ -571,11 +575,11 @@ model Service {
 
   categoryId String?
 
-  category Category? @relation(fields: [categoryId], references: [id])
-   astrologerMappings ServiceAstrologer[]
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
-  bookings  ServiceBooking[]
+  category           Category?           @relation(fields: [categoryId], references: [id])
+  astrologerMappings ServiceAstrologer[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  bookings           ServiceBooking[]
 }
 
 model Gift {
@@ -758,16 +762,17 @@ model Session {
 
   ratePerMin  Int
   durationSec Int @default(0)
-  roomId        String?
 
-  coinsDeducted Int @default(0)
-  coinsEarned   Int @default(0)
-  commission    Int @default(0)
+  coinsDeducted Int       @default(0)
+  coinsEarned   Int       @default(0)
+  commission    Int       @default(0)
   source        String?
-  review    Review?
-  startedAt DateTime?
-  endedAt   DateTime?
-
+  by        String?
+  review        Review?
+  roomId        String?
+  startedAt     DateTime?
+  endedAt       DateTime?
+  
   messages Message[]
 
   transactions WalletTransaction[]
@@ -776,6 +781,7 @@ model Session {
 
   remedies SessionRemedy[]
   callRecordings CallRecording[]
+
 
   createdAt DateTime @default(now())
 
@@ -844,30 +850,30 @@ model PaymentOrder {
 }
 
 model Coupon {
-  id             String           @id @default(uuid())
-  code           String           @unique
-  description    String?
-  type           CouponType
-  visibility     CouponVisibility
-  couponCount    Int              @default(0)
-applicable  String?
-  status         Boolean          @default(true)
+  id          String           @id @default(uuid())
+  code        String           @unique
+  description String?
+  type        CouponType
+  visibility  CouponVisibility
+  couponCount Int              @default(0)
+  applicable  String?
+  status      Boolean          @default(true)
 
   percentage     Float?
   flatAmount     Float?
   maxDiscount    Float?
   minOrderAmount Float?
 
-  redeemLimit    Int?
-  usedCount      Int              @default(0)
+  redeemLimit Int?
+  usedCount   Int  @default(0)
 
-  startDate      DateTime
-  endDate        DateTime
+  startDate DateTime
+  endDate   DateTime
 
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  rechargePacks  RechargePack[]   @relation("CouponToRechargePack")
+  rechargePacks RechargePack[] @relation("CouponToRechargePack")
 }
 
 model Message {
@@ -948,17 +954,17 @@ model KycDetail {
   ifsc              String?
   branchName        String?
   panNumber         String?
-  documentRemarks      String?
+  documentRemarks   String?
 
   aadhaarImage  String?
   panImage      String?
   passbookImage String?
-  astrologer    Astrologer?     @relation(fields: [astrologerId], references: [id], onDelete: Cascade)
+  astrologer    Astrologer?    @relation(fields: [astrologerId], references: [id], onDelete: Cascade)
   status        DocumentStatus @default(PENDING)
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  astrologerId String?   @unique
+  astrologerId String?  @unique
 }
 
 model Notification {
@@ -1192,10 +1198,16 @@ enum PlatformType {
   ANDROID
   IOS
 }
+enum AppType {
+  USER
+  ASTROLOGER
+}
+
+
 
 model AppVersion {
   id String @id @default(uuid())
-
+  appType            AppType
   platform PlatformType
 
   latestVersion  String
@@ -1490,22 +1502,22 @@ model BlogCategoryMapping {
 
 //------------tables for live streaming----------------
 model LiveStream {
-  id            String      @id @default(uuid())
+  id String @id @default(uuid())
 
-  astrologerId  String
-  astrologer    Astrologer  @relation(fields: [astrologerId], references: [id], onDelete: Cascade)
+  astrologerId String
+  astrologer   Astrologer @relation(fields: [astrologerId], references: [id], onDelete: Cascade)
 
-  title         String
+  title String
 
-  channelName   String
+  channelName String
 
-  status        LiveStatus  @default(SCHEDULED)
+  status LiveStatus @default(SCHEDULED)
 
-  scheduledAt   DateTime?
+  scheduledAt DateTime?
 
-  createdAt     DateTime    @default(now())
+  createdAt DateTime @default(now())
 
-  endedAt       DateTime?
+  endedAt DateTime?
 }
 
 enum LiveStatus {
@@ -1513,6 +1525,8 @@ enum LiveStatus {
   LIVE
   ENDED
 }
+
+
 
 model CallRecording {
   id          String   @id @default(uuid())
@@ -1551,9 +1565,9 @@ model CallRecording {
   metadata    Json?    @default("{}")
   
   // Relations
-  session     Session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
-  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  astrologer  Astrologer? @relation(fields: [astrologerId], references: [id], onDelete: SetNull)
+  session     Session? @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  astrologer  Astrologer? @relation(fields: [astrologerId], references: [id], onDelete: Cascade)
   
   // Indexes
   @@index([roomId])
