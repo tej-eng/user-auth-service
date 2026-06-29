@@ -2106,9 +2106,7 @@ module.exports = {
         channelName,
       };
     },
-getCoupons: async (_, __, context) => {
-  const { prisma } = context;
-
+getCoupons: async () => {
   try {
     return await prisma.coupon.findMany({
       where: {
