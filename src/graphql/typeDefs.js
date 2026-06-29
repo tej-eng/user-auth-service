@@ -1222,6 +1222,29 @@ enum CmsStatus {
   }
 
   #-------END CODE FOR LIVESTREAMING------------
+
+
+  #-----------------START CODE FOR CALL RECORDING----
+  type CallRecording {
+  id: ID!
+  roomId: String!
+  astroId: String!
+  astroName: String!
+  userId: String!
+  duration: Int!
+  callType: String!
+  recordingUrl: String!
+  createdAt: String!
+  updatedAt: String!
+}
+
+  type UploadCallRecordingResponse {
+  success: Boolean!
+  message: String!
+  recording: CallRecording
+  fileUrl: String
+}
+  #-------------END CALL RECORDING---
   type Query {
  getServiceBooking(bookingId: ID!): ServiceBooking
     getCoupons: [Coupon!]!
@@ -1354,5 +1377,15 @@ enum CmsStatus {
     startLive(title: String!): LiveStream!
 
     endLive(streamId: String!): Boolean!
+
+      uploadCallRecording(
+    recording: Upload!
+    roomId: String!
+    astroId: String!
+    astroName: String!
+    userId: String!
+    duration: Int!
+    callType: String!
+  ): UploadCallRecordingResponse!
   }
 `;
