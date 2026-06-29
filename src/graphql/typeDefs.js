@@ -1293,7 +1293,7 @@ enum CmsStatus {
       page: Int = 1
       limit: Int = 10
     ): FollowedAstrologersResponse!
-    // getServiceBooking(id: ID!): ServiceBooking
+   
     getServiceBookings: [ServiceBooking!]!
     getMyServiceBookings(
       page: Int = 1
