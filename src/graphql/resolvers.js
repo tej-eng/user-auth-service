@@ -2106,31 +2106,31 @@ module.exports = {
         channelName,
       };
     },
-getCoupons: async () => {
-  try {
-    return await prisma.coupon.findMany({
-      where: {
-        status: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-  } catch (error) {
-    throw error;
-  }
-},
-getServiceBooking: async (_, { bookingId }) => {
-    return prisma.serviceBooking.findUnique({
+    getCoupons: async () => {
+      try {
+        return await prisma.coupon.findMany({
+          where: {
+            status: true,
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        });
+      } catch (error) {
+        throw error;
+      }
+    },
+    getServiceBooking: async (_, { bookingId }) => {
+      return prisma.serviceBooking.findUnique({
         where: {
-            id: bookingId,
+          id: bookingId,
         },
         include: {
-            service: true,
-            astrologer: true,
+          service: true,
+          astrologer: true,
         },
-    });
-},
+      });
+    },
   },
   //----------------start code for mutation ----------------------------
   Mutation: {
@@ -2741,248 +2741,354 @@ getServiceBooking: async (_, { bookingId }) => {
 
     // In your resolvers file
 
-uploadCallRecording: async (_, { 
-  recording, 
-  roomId, 
-  astroId, 
-  astroName, 
-  userId, 
-  duration, 
-  callType 
-}, context) => {
-  try {
-    // Check authentication
-    if (!context.user) {
-      throw new Error("Unauthorized - Please login to upload recordings");
-    }
-
-    console.log('🎙 Starting call recording upload...');
-    console.log('Uploaded by:', context.user.email || context.user.id);
-    console.log('Room ID:', roomId);
-
-    const { createReadStream, filename, mimetype } = await recording;
-
-    // Validate file type - allow audio files only
-    const allowedMimeTypes = [
-      'audio/webm', 
-      'audio/webm;codecs=opus',
-      'audio/ogg',
-      'audio/mpeg',
-      'audio/mp4',
-      'audio/wav'
-    ];
-
-    if (!allowedMimeTypes.some(type => mimetype.includes(type) || mimetype.startsWith('audio/'))) {
-      throw new Error("Only audio files are allowed for call recordings");
-    }
-
-    // Generate unique filename
-    const ext = filename.split('.').pop() || 'webm';
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const newFileName = `call-${roomId}-${timestamp}.${ext}`;
-    
-    // Create upload directory with restricted permissions
-    const uploadDir = path.join(__dirname, "..", "uploads", "call-recordings");
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true, mode: 0o750 });
-      console.log('📁 Created upload directory:', uploadDir);
-    }
-
-    const uploadPath = path.join(uploadDir, newFileName);
-    console.log('💾 Saving recording to:', uploadPath);
-
-    // Save file asynchronously
-    await new Promise((resolve, reject) => {
-      const stream = createReadStream();
-      const out = fs.createWriteStream(uploadPath, { mode: 0o640 });
-
-      stream.pipe(out);
-      out.on("finish", resolve);
-      out.on("error", reject);
-      stream.on("error", reject);
-    });
-
-    console.log('✅ Recording saved successfully:', newFileName);
-
-    // Get file size
-    const stats = fs.statSync(uploadPath);
-    const fileSize = stats.size;
-
-    // Generate secure file URL
-    const fileToken = Buffer.from(`${roomId}:${Date.now()}`).toString('base64');
-    const fileUrl = `https://dhwaniastro.com/v2/uploads/call-recordings/${newFileName}?token=${fileToken}`;
-
-    // Find session by roomId (optional)
-    let sessionId = null;
-    if (roomId) {
-      const session = await prisma.session.findFirst({
-        where: { roomId: roomId },
-        select: { id: true }
-      });
-      if (session) {
-        sessionId = session.id;
-        console.log('✅ Found session:', sessionId);
-      }
-    }
-
-    // Save to database using Prisma - MATCHES YOUR SCHEMA
-    console.log("Astrologer ID received:", astroId);
-    console.log("User ID received:", userId);
-    const recordingData = await prisma.callRecording.create({
-      data: {
-        roomId: roomId,
-        sessionId: sessionId, // This is a field in your model
-        userId: userId || context.user.id,
-        astrologerId: astroId,
-        astrologerName: astroName || '',
-        fileName: newFileName,
-        fileUrl: fileUrl,
-        filePath: uploadPath,
-        fileSize: fileSize,
-        duration: parseInt(duration) || 0,
-        callType: callType || 'audio',
-        timestamp: new Date().toISOString(),
-        status: 'active',
-        isAdminOnly: true,
-        uploadedBy: context.user.id || context.user.email || 'unknown',
-        uploadedAt: new Date(),
-        metadata: {
-          userAgent: context.user?.userAgent || null,
-          ipAddress: context.user?.ipAddress || null,
-          originalFilename: filename,
-          mimeType: mimetype
-        }
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            mobile: true
-          }
-        },
-        astrologer: {
-          select: {
-            id: true,
-            name: true,
-            displayName: true
-          }
-        },
-        session: {
-          select: {
-            id: true,
-            status: true,
-            type: true
-          }
-        }
-      }
-    });
-
-    console.log('📊 Recording saved to database:', {
-      id: recordingData.id,
-      roomId: recordingData.roomId,
-      sessionId: recordingData.sessionId,
-      duration: recordingData.duration,
-      fileSize: `${(fileSize / 1024 / 1024).toFixed(2)} MB`
-    });
-
-    return {
-      success: true,
-      message: "Call recording uploaded successfully (Admin only access)",
-      recording: {
-        id: recordingData.id,
-        roomId: recordingData.roomId,
-        astroId: recordingData.astrologerId,
-        astroName: recordingData.astrologerName,
-        userId: recordingData.userId,
-        duration: recordingData.duration,
-        callType: recordingData.callType,
-        recordingUrl: recordingData.fileUrl,
-        createdAt: recordingData.createdAt.toISOString(),
-        updatedAt: recordingData.updatedAt.toISOString()
-      },
-      fileUrl: fileUrl
-    };
-
-  } catch (error) {
-    console.error('❌ uploadCallRecording error:', error);
-    return {
-      success: false,
-      message: error.message || "Failed to upload call recording",
-      recording: null,
-      fileUrl: null
-    };
-  }
-},
-
-    createOrder: async (_, { input }, context) => {
+    uploadCallRecording: async (
+      _,
+      { recording, roomId, astroId, astroName, userId, duration, callType },
+      context,
+    ) => {
       try {
-        // ======================
-        // AUTH CHECK
-        // ======================
+        // Check authentication
         if (!context.user) {
-          throw new Error("Unauthorized");
+          throw new Error("Unauthorized - Please login to upload recordings");
         }
 
-        const userId = context.user.id;
+        console.log("🎙 Starting call recording upload...");
+        console.log("Uploaded by:", context.user.email || context.user.id);
+        console.log("Room ID:", roomId);
 
-        const { rechargePackId } = input;
+        const { createReadStream, filename, mimetype } = await recording;
 
-        // ======================
-        // VALIDATE PACK
-        // ======================
-        const pack = await prisma.rechargePack.findUnique({
-          where: { id: rechargePackId },
-        });
+        // Validate file type - allow audio files only
+        const allowedMimeTypes = [
+          "audio/webm",
+          "audio/webm;codecs=opus",
+          "audio/ogg",
+          "audio/mpeg",
+          "audio/mp4",
+          "audio/wav",
+        ];
 
-        if (!pack) {
-          throw new Error("Recharge pack not found");
+        if (
+          !allowedMimeTypes.some(
+            (type) => mimetype.includes(type) || mimetype.startsWith("audio/"),
+          )
+        ) {
+          throw new Error("Only audio files are allowed for call recordings");
         }
 
-        // ======================
-        // CREATE ORDER ID
-        // ======================
-        const receiptId = uuidv4();
+        // Generate unique filename
+        const ext = filename.split(".").pop() || "webm";
+        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+        const newFileName = `call-${roomId}-${timestamp}.${ext}`;
 
-        // ======================
-        // CREATE RAZORPAY ORDER
-        // ======================
-        const order = await razorpay.orders.create({
-          amount: Math.round(pack.price * 100), // paise
-          currency: "INR",
-          receipt: receiptId,
-          notes: {
-            userId,
-            rechargePackId: pack.id,
-            coins: pack.coins,
-          },
+        // Create upload directory with restricted permissions
+        const uploadDir = path.join(
+          __dirname,
+          "..",
+          "uploads",
+          "call-recordings",
+        );
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true, mode: 0o750 });
+          console.log("📁 Created upload directory:", uploadDir);
+        }
+
+        const uploadPath = path.join(uploadDir, newFileName);
+        console.log("💾 Saving recording to:", uploadPath);
+
+        // Save file asynchronously
+        await new Promise((resolve, reject) => {
+          const stream = createReadStream();
+          const out = fs.createWriteStream(uploadPath, { mode: 0o640 });
+
+          stream.pipe(out);
+          out.on("finish", resolve);
+          out.on("error", reject);
+          stream.on("error", reject);
         });
 
-        // ======================
-        // OPTIONAL: SAVE ORDER IN DB
-        // ======================
-        await prisma.paymentOrder.create({
+        console.log("✅ Recording saved successfully:", newFileName);
+
+        // Get file size
+        const stats = fs.statSync(uploadPath);
+        const fileSize = stats.size;
+
+        // Generate secure file URL
+        const fileToken = Buffer.from(`${roomId}:${Date.now()}`).toString(
+          "base64",
+        );
+        const fileUrl = `https://dhwaniastro.com/v2/uploads/call-recordings/${newFileName}?token=${fileToken}`;
+
+        // Find session by roomId (optional)
+        let sessionId = null;
+        if (roomId) {
+          const session = await prisma.session.findFirst({
+            where: { roomId: roomId },
+            select: { id: true },
+          });
+          if (session) {
+            sessionId = session.id;
+            console.log("✅ Found session:", sessionId);
+          }
+        }
+
+        // Save to database using Prisma - MATCHES YOUR SCHEMA
+        console.log("Astrologer ID received:", astroId);
+        console.log("User ID received:", userId);
+        const recordingData = await prisma.callRecording.create({
           data: {
-            userId,
-            rechargePackId: pack.id,
-            razorpayOrderId: order.id,
-            amount: pack.price,
-            coins: pack.coins,
-            status: "CREATED",
+            roomId: roomId,
+            sessionId: sessionId, // This is a field in your model
+            userId: userId || context.user.id,
+            astrologerId: astroId,
+            astrologerName: astroName || "",
+            fileName: newFileName,
+            fileUrl: fileUrl,
+            filePath: uploadPath,
+            fileSize: fileSize,
+            duration: parseInt(duration) || 0,
+            callType: callType || "audio",
+            timestamp: new Date().toISOString(),
+            status: "active",
+            isAdminOnly: true,
+            uploadedBy: context.user.id || context.user.email || "unknown",
+            uploadedAt: new Date(),
+            metadata: {
+              userAgent: context.user?.userAgent || null,
+              ipAddress: context.user?.ipAddress || null,
+              originalFilename: filename,
+              mimeType: mimetype,
+            },
           },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                mobile: true,
+              },
+            },
+            astrologer: {
+              select: {
+                id: true,
+                name: true,
+                displayName: true,
+              },
+            },
+            session: {
+              select: {
+                id: true,
+                status: true,
+                type: true,
+              },
+            },
+          },
+        });
+
+        console.log("📊 Recording saved to database:", {
+          id: recordingData.id,
+          roomId: recordingData.roomId,
+          sessionId: recordingData.sessionId,
+          duration: recordingData.duration,
+          fileSize: `${(fileSize / 1024 / 1024).toFixed(2)} MB`,
         });
 
         return {
           success: true,
-          orderId: order.id,
-          amount: order.amount,
-          currency: order.currency,
+          message: "Call recording uploaded successfully (Admin only access)",
+          recording: {
+            id: recordingData.id,
+            roomId: recordingData.roomId,
+            astroId: recordingData.astrologerId,
+            astroName: recordingData.astrologerName,
+            userId: recordingData.userId,
+            duration: recordingData.duration,
+            callType: recordingData.callType,
+            recordingUrl: recordingData.fileUrl,
+            createdAt: recordingData.createdAt.toISOString(),
+            updatedAt: recordingData.updatedAt.toISOString(),
+          },
+          fileUrl: fileUrl,
         };
       } catch (error) {
-        console.error("createRazorpayOrder error:", error);
-        throw new Error(error.message || "Failed to create order");
+        console.error("❌ uploadCallRecording error:", error);
+        return {
+          success: false,
+          message: error.message || "Failed to upload call recording",
+          recording: null,
+          fileUrl: null,
+        };
       }
     },
+
+  createOrder: async (_, { input }, context) => {
+  try {
+    // ======================
+    // AUTH CHECK
+    // ======================
+    if (!context.user) {
+      throw new Error("Unauthorized");
+    }
+
+    const userId = context.user.id;
+    const { rechargePackId, coupan_code } = input;
+
+    // ======================
+    // VALIDATE RECHARGE PACK
+    // ======================
+    const pack = await prisma.rechargePack.findUnique({
+      where: {
+        id: rechargePackId,
+      },
+    });
+
+    if (!pack) {
+      throw new Error("Recharge pack not found");
+    }
+
+    // ======================
+    // DEFAULT VALUES
+    // ======================
+    let coupon = null;
+    let discount = 0;
+    let finalAmount = pack.price;
+
+    // ======================
+    // APPLY COUPON (OPTIONAL)
+    // ======================
+    if (coupan_code && coupan_code.trim() !== "") {
+      coupon = await prisma.coupon.findUnique({
+        where: {
+          code: coupan_code.trim(),
+        },
+        include: {
+          rechargePacks: true,
+        },
+      });
+
+      if (!coupon) {
+        throw new Error("Invalid coupon code");
+      }
+
+      const now = new Date();
+
+      // Coupon Active
+      if (!coupon.status) {
+        throw new Error("Coupon is inactive");
+      }
+
+      // Coupon Start Date
+      if (coupon.startDate > now) {
+        throw new Error("Coupon is not active yet");
+      }
+
+      // Coupon Expiry
+      if (coupon.endDate < now) {
+        throw new Error("Coupon has expired");
+      }
+
+      // Redeem Limit
+      if (
+        coupon.redeemLimit &&
+        coupon.usedCount >= coupon.redeemLimit
+      ) {
+        throw new Error("Coupon redemption limit exceeded");
+      }
+
+      // Minimum Order Amount
+      if (
+        coupon.minOrderAmount &&
+        pack.price < coupon.minOrderAmount
+      ) {
+        throw new Error(
+          `Minimum recharge amount should be ₹${coupon.minOrderAmount}`
+        );
+      }
+
+      // Applicable Recharge Pack
+      if (
+        coupon.rechargePacks.length > 0 &&
+        !coupon.rechargePacks.some((p) => p.id === pack.id)
+      ) {
+        throw new Error(
+          "Coupon is not applicable for this recharge pack"
+        );
+      }
+
+      // ======================
+      // CALCULATE DISCOUNT
+      // ======================
+      if (coupon.type === "PERCENTAGE") {
+        discount =
+          (pack.price * (coupon.percentage || 0)) / 100;
+
+        if (
+          coupon.maxDiscount &&
+          discount > coupon.maxDiscount
+        ) {
+          discount = coupon.maxDiscount;
+        }
+      } else if (coupon.type === "FLAT") {
+        discount = coupon.flatAmount || 0;
+      }
+
+      // Discount cannot exceed price
+      discount = Math.min(discount, pack.price);
+
+      finalAmount = pack.price - discount;
+    }
+
+    // ======================
+    // CREATE RAZORPAY ORDER
+    // ======================
+    const receiptId = uuidv4();
+
+    const order = await razorpay.orders.create({
+      amount: Math.round(finalAmount * 100), // paise
+      currency: "INR",
+      receipt: receiptId,
+      notes: {
+        userId,
+        rechargePackId: pack.id,
+        coins: pack.coins,
+        couponCode: coupon?.code || "",
+        discount: discount.toString(),
+      },
+    });
+
+    // ======================
+    // SAVE PAYMENT ORDER
+    // ======================
+    await prisma.paymentOrder.create({
+      data: {
+        userId,
+        rechargePackId: pack.id,
+        couponId: coupon?.id || null,
+        razorpayOrderId: order.id,
+
+        originalAmount: pack.price,
+        discount: discount,
+        amount: finalAmount,
+
+        coins: pack.coins,
+        status: "CREATED",
+      },
+    });
+
+    return {
+      success: true,
+      orderId: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      originalAmount: pack.price,
+      discount,
+      finalAmount,
+    };
+  } catch (error) {
+    console.error("createOrder error:", error);
+    throw new Error(error.message || "Failed to create order");
+  }
+},
 
     createHealingOrder: async (_, { bookingId }, context) => {
       try {
