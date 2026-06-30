@@ -473,9 +473,10 @@ module.exports = gql`
   #-------------------end recent intake response-----------------------
   #------------------start code for razorpay order---------------------
 
-  input CreateOrderInput {
-    rechargePackId: String!
-  }
+ input CreateOrderInput {
+  rechargePackId: String!
+  coupan_code: String
+}
 
   type CreateOrderResponse {
     success: Boolean!
