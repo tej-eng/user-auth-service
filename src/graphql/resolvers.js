@@ -3076,14 +3076,11 @@ module.exports = {
     });
 
     return {
-      success: true,
-      orderId: order.id,
-      amount: order.amount,
-      currency: order.currency,
-      originalAmount: pack.price,
-      discount,
-      finalAmount,
-    };
+  success: true,
+  orderId: order.id,
+  amount: order.amount,
+  currency: order.currency,
+};
   } catch (error) {
     console.error("createOrder error:", error);
     throw new Error(error.message || "Failed to create order");
