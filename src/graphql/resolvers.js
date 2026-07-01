@@ -3018,13 +3018,18 @@ module.exports = {
             if (coupon.maxDiscount && discount > coupon.maxDiscount) {
               discount = coupon.maxDiscount;
             }
-
+            console.log("--------discount 11111-----:",discount)
             discount = Math.min(discount, pack.price);
+            console.log("--------discount 22222-----:",discount)
 
             finalAmount = pack.price - discount;
+            console.log("--------discount 333333-----:",finalAmount)
 
             // GST on discounted amount (if your business logic requires it)
             finalAmount += (finalAmount * 18) / 100;
+
+            console.log("--------discount 44444444 after GST-----:",finalAmount)
+
           } else if (coupon.type === "CASHBACK") {
             // Customer pays full amount
             finalAmount = pack.price;
@@ -3049,7 +3054,7 @@ module.exports = {
         // ======================
         // CREATE RAZORPAY ORDER
         // ======================
-
+            
         const notes = {
           userId,
           rechargePackId: pack.id,
