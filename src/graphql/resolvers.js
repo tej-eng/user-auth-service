@@ -3018,7 +3018,8 @@ module.exports = {
       // ======================
       // CALCULATE DISCOUNT
       // ======================
-      if (coupon.type === "PERCENTAGE") {
+      if (coupon.type === "DISCOUNT") {
+        
         discount =
           (pack.price * (coupon.percentage || 0)) / 100;
 
