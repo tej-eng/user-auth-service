@@ -1073,6 +1073,11 @@ enum CouponVisibility {
 
     currency: String!
   }
+  
+  input CreateHealingOrderInput {
+  bookingId: ID!
+  couponCode: String
+}
 
   type ConfirmWalletBookingResponse {
     success: Boolean!
@@ -1367,7 +1372,7 @@ enum CmsStatus {
 
     updateBookingAstrologer(bookingId: ID!, astrologerId: ID!): ServiceBooking!
 
-    createHealingOrder(bookingId: ID!): CreateHealingOrderResponse!
+    createHealingOrder(input: CreateHealingOrderInput!): CreateHealingOrderResponse!
 
     confirmWalletBooking(
       bookingId: ID!

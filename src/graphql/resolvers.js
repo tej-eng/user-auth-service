@@ -3018,17 +3018,10 @@ module.exports = {
             if (coupon.maxDiscount && discount > coupon.maxDiscount) {
               discount = coupon.maxDiscount;
             }
-            console.log("--------discount 11111-----:",discount)
             discount = Math.min(discount, pack.price);
-            console.log("--------discount 22222-----:",discount)
-
             finalAmount = pack.price - discount;
-            console.log("--------discount 333333-----:",finalAmount)
-
             // GST on discounted amount (if your business logic requires it)
             finalAmount += (finalAmount * 18) / 100;
-
-            console.log("--------discount 44444444 after GST-----:",finalAmount)
 
           } else if (coupon.type === "CASHBACK") {
             // Customer pays full amount
@@ -3109,92 +3102,193 @@ module.exports = {
       }
     },
 
-    createHealingOrder: async (_, { bookingId }, context) => {
-      try {
-        // ======================
-        // AUTH CHECK
-        // ======================
-        if (!context.user) {
-          throw new Error("Unauthorized");
-        }
+createHealingOrder: async (_, { input }, context) => {
+  try {
+    if (!context.user) {
+      throw new Error("Unauthorized");
+    }
 
-        const userId = context.user.id;
+    const userId = context.user.id;
+    const { bookingId, couponCode } = input;
 
-        // ======================
-        // FIND BOOKING
-        // ======================
-        const booking = await prisma.serviceBooking.findUnique({
-          where: {
-            id: bookingId,
-          },
-        });
+    const booking = await prisma.serviceBooking.findUnique({
+      where: {
+        id: bookingId,
+      },
+    });
 
-        if (!booking) {
-          throw new Error("Booking not found");
-        }
+    if (!booking) {
+      throw new Error("Booking not found");
+    }
 
-        if (booking.amount == null) {
-          throw new Error("Booking amount not found");
-        }
+    if (booking.amount == null) {
+      throw new Error("Booking amount not found");
+    }
 
-        const totalAmount = Number(booking.amount);
+    const totalAmount = Number(booking.amount);
 
-        // Full amount paid via Razorpay
-        const walletAmount = 0;
-        const payableAmount = totalAmount;
+    let coupon = null;
+    let discount = 0;
+    let cashback = 0;
 
-        // ======================
-        // CREATE RAZORPAY ORDER
-        // ======================
-        const receiptId = uuidv4();
+    let payableAmount = totalAmount;
 
-        const order = await razorpay.orders.create({
-          amount: totalAmount * 100,
-          currency: "INR",
-          receipt: receiptId,
-          notes: {
-            bookingId: booking.id,
-            serviceId: booking.serviceId,
-            astrologerId: booking.astrologerId,
-            userId,
-          },
-        });
+    // =====================================
+    // APPLY COUPON
+    // =====================================
 
-        const razorpayOrderId = order.id;
+    if (couponCode && couponCode.trim() !== "") {
+      coupon = await prisma.coupon.findUnique({
+        where: {
+          code: couponCode.trim(),
+        },
+      });
 
-        // ======================
-        // SAVE ORDER IN DB
-        // ======================
-        await prisma.servicePaymentOrder.create({
-          data: {
-            userId,
-            bookingId: booking.id,
-            razorpayOrderId,
-
-            totalAmount,
-            walletAmount,
-            payableAmount,
-
-            status: "CREATED",
-          },
-        });
-
-        return {
-          success: true,
-          orderId: razorpayOrderId,
-          currency: "INR",
-          bookingId: booking.id,
-
-          totalAmount,
-          walletAmount,
-          payableAmount,
-        };
-      } catch (error) {
-        console.error("createHealingOrder error:", error);
-
-        throw new Error(error.message || "Failed to create healing order");
+      if (!coupon) {
+        throw new Error("Invalid coupon");
       }
-    },
+
+      const now = new Date();
+
+      if (!coupon.status)
+        throw new Error("Coupon inactive");
+
+      if (coupon.startDate > now)
+        throw new Error("Coupon not started");
+
+      if (coupon.endDate < now)
+        throw new Error("Coupon expired");
+
+      if (
+        coupon.redeemLimit &&
+        coupon.usedCount >= coupon.redeemLimit
+      ) {
+        throw new Error("Coupon exhausted");
+      }
+
+      if (
+        coupon.minOrderAmount &&
+        totalAmount < coupon.minOrderAmount
+      ) {
+        throw new Error(
+          `Minimum amount should be ₹${coupon.minOrderAmount}`
+        );
+      }
+
+      //--------------------------------------
+      // DISCOUNT
+      //--------------------------------------
+
+      if (coupon.type === "DISCOUNT") {
+
+        discount =
+          (totalAmount * (coupon.percentage || 0)) / 100;
+
+        if (
+          coupon.maxDiscount &&
+          discount > coupon.maxDiscount
+        ) {
+          discount = coupon.maxDiscount;
+        }
+
+        discount = Math.min(discount, totalAmount);
+
+        payableAmount = totalAmount - discount;
+      }
+
+      //--------------------------------------
+      // CASHBACK
+      //--------------------------------------
+
+      if (coupon.type === "CASHBACK") {
+
+        payableAmount = totalAmount;
+
+        cashback =
+          (totalAmount * (coupon.percentage || 0)) / 100;
+
+        if (
+          coupon.maxDiscount &&
+          cashback > coupon.maxDiscount
+        ) {
+          cashback = coupon.maxDiscount;
+        }
+      }
+    }
+
+    //--------------------------------------
+    // CREATE RAZORPAY ORDER
+    //--------------------------------------
+
+    const receiptId = uuidv4();
+
+    const order = await razorpay.orders.create({
+      amount: Math.round(payableAmount * 100),
+      currency: "INR",
+      receipt: receiptId,
+
+      notes: {
+        bookingId: booking.id,
+        serviceId: booking.serviceId,
+        astrologerId: booking.astrologerId,
+        userId,
+
+        serviceType: "SERVICE",
+
+        couponCode: coupon?.code || "",
+        couponType: coupon?.type || "",
+
+        discount: discount.toString(),
+        cashback: cashback.toString(),
+      },
+    });
+
+    //--------------------------------------
+    // SAVE ORDER
+    //--------------------------------------
+
+    await prisma.servicePaymentOrder.create({
+      data: {
+        userId,
+        bookingId: booking.id,
+
+        razorpayOrderId: order.id,
+
+        totalAmount,
+
+        walletAmount: 0,
+
+        payableAmount,
+
+        couponId: coupon?.id || null,
+
+        discount,
+
+        cashback,
+
+        status: "CREATED",
+      },
+    });
+
+    return {
+      success: true,
+      orderId: order.id,
+      currency: "INR",
+
+      bookingId: booking.id,
+
+      totalAmount,
+      payableAmount,
+    };
+
+  } catch (error) {
+    console.error("createHealingOrder error:", error);
+
+    throw new Error(
+      error.message || "Failed to create healing order"
+    );
+  }
+},
 
     // new astrologer
     // new astrologer
