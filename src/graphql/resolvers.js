@@ -2921,178 +2921,181 @@ module.exports = {
       }
     },
 
-  createOrder: async (_, { input }, context) => {
-  try {
-    // ======================
-    // AUTH CHECK
-    // ======================
-    if (!context.user) {
-      throw new Error("Unauthorized");
-    }
-
-    const userId = context.user.id;
-    const { rechargePackId, coupan_code } = input;
-
-    // ======================
-    // VALIDATE RECHARGE PACK
-    // ======================
-    const pack = await prisma.rechargePack.findUnique({
-      where: {
-        id: rechargePackId,
-      },
-    });
-
-    if (!pack) {
-      throw new Error("Recharge pack not found");
-    }
-
-    // ======================
-    // DEFAULT VALUES
-    // ======================
-    let coupon = null;
-    let discount = 0;
-    let finalAmount = pack.price;
-
-    // ======================
-    // APPLY COUPON (OPTIONAL)
-    // ======================
-    if (coupan_code && coupan_code.trim() !== "") {
-      coupon = await prisma.coupon.findUnique({
-        where: {
-          code: coupan_code.trim(),
-        },
-        include: {
-          rechargePacks: true,
-        },
-      });
-
-      if (!coupon) {
-        throw new Error("Invalid coupon code");
-      }
-
-      const now = new Date();
-
-      // Coupon Active
-      if (!coupon.status) {
-        throw new Error("Coupon is inactive");
-      }
-
-      // Coupon Start Date
-      if (coupon.startDate > now) {
-        throw new Error("Coupon is not active yet");
-      }
-
-      // Coupon Expiry
-      if (coupon.endDate < now) {
-        throw new Error("Coupon has expired");
-      }
-
-      // Redeem Limit
-      if (
-        coupon.redeemLimit &&
-        coupon.usedCount >= coupon.redeemLimit
-      ) {
-        throw new Error("Coupon redemption limit exceeded");
-      }
-
-      // Minimum Order Amount
-      if (
-        coupon.minOrderAmount &&
-        pack.price < coupon.minOrderAmount
-      ) {
-        throw new Error(
-          `Minimum recharge amount should be ₹${coupon.minOrderAmount}`
-        );
-      }
-
-      // Applicable Recharge Pack
-      if (
-        coupon.rechargePacks.length > 0 &&
-        !coupon.rechargePacks.some((p) => p.id === pack.id)
-      ) {
-        throw new Error(
-          "Coupon is not applicable for this recharge pack"
-        );
-      }
-
-      // ======================
-      // CALCULATE DISCOUNT
-      // ======================
-      if (coupon.type === "DISCOUNT") {
-        
-        discount =
-          (pack.price * (coupon.percentage || 0)) / 100;
-
-        if (
-          coupon.maxDiscount &&
-          discount > coupon.maxDiscount
-        ) {
-          discount = coupon.maxDiscount;
+    createOrder: async (_, { input }, context) => {
+      try {
+        // ======================
+        // AUTH CHECK
+        // ======================
+        if (!context.user) {
+          throw new Error("Unauthorized");
         }
-        finalAmount = pack.price - discount;
-        finalAmount=finalAmount+finalAmount*18/100;
 
-      } else if (coupon.type === "FLAT") {
-        discount = coupon.flatAmount || 0;
-        finalAmount = pack.price - discount;
+        const userId = context.user.id;
+        const { rechargePackId, coupan_code } = input;
+
+        // ======================
+        // VALIDATE RECHARGE PACK
+        // ======================
+        const pack = await prisma.rechargePack.findUnique({
+          where: {
+            id: rechargePackId,
+          },
+        });
+
+        if (!pack) {
+          throw new Error("Recharge pack not found");
+        }
+
+        // ======================
+        // DEFAULT VALUES
+        // ======================
+        let coupon = null;
+        let discount = 0;
+        let cashback = 0;
+        let finalAmount = pack.price;
+
+        // ======================
+        // APPLY COUPON (OPTIONAL)
+        // ======================
+        if (coupan_code && coupan_code.trim() !== "") {
+          coupon = await prisma.coupon.findUnique({
+            where: {
+              code: coupan_code.trim(),
+            },
+            include: {
+              rechargePacks: true,
+            },
+          });
+
+          if (!coupon) {
+            throw new Error("Invalid coupon code");
+          }
+
+          const now = new Date();
+
+          // Coupon Active
+          if (!coupon.status) {
+            throw new Error("Coupon is inactive");
+          }
+
+          // Coupon Start Date
+          if (coupon.startDate > now) {
+            throw new Error("Coupon is not active yet");
+          }
+
+          // Coupon Expiry
+          if (coupon.endDate < now) {
+            throw new Error("Coupon has expired");
+          }
+
+          // Redeem Limit
+          if (coupon.redeemLimit && coupon.usedCount >= coupon.redeemLimit) {
+            throw new Error("Coupon redemption limit exceeded");
+          }
+
+          // Minimum Order Amount
+          if (coupon.minOrderAmount && pack.price < coupon.minOrderAmount) {
+            throw new Error(
+              `Minimum recharge amount should be ₹${coupon.minOrderAmount}`,
+            );
+          }
+
+          // Applicable Recharge Pack
+          if (
+            coupon.rechargePacks.length > 0 &&
+            !coupon.rechargePacks.some((p) => p.id === pack.id)
+          ) {
+            throw new Error("Coupon is not applicable for this recharge pack");
+          }
+
+          // ======================
+          // CALCULATE DISCOUNT
+          // ======================
+          if (coupon.type === "DISCOUNT") {
+            // Percentage discount
+            discount = (pack.price * (coupon.percentage || 0)) / 100;
+
+            if (coupon.maxDiscount && discount > coupon.maxDiscount) {
+              discount = coupon.maxDiscount;
+            }
+
+            discount = Math.min(discount, pack.price);
+
+            finalAmount = pack.price - discount;
+
+            // GST on discounted amount (if your business logic requires it)
+            finalAmount += (finalAmount * 18) / 100;
+          } else if (coupon.type === "CASHBACK") {
+            // Customer pays full amount
+            finalAmount = pack.price;
+
+            // GST on full amount
+            finalAmount += (finalAmount * 18) / 100;
+
+            // Cashback amount to be credited later
+            cashback = (pack.price * (coupon.percentage || 0)) / 100;
+
+            if (coupon.maxDiscount && cashback > coupon.maxDiscount) {
+              cashback = coupon.maxDiscount;
+            }
+
+            cashback = Math.min(cashback, pack.price);
+          }
+
+          // Discount cannot exceed price
+          console.log("Discount:", discount);
+          console.log("Cashback:", cashback);
+          console.log("Final Amount:", finalAmount);
+        }
+
+        // ======================
+        // CREATE RAZORPAY ORDER
+        // ======================
+        const receiptId = uuidv4();
+        console.log("-------finalAmount------:", finalAmount);
+        const order = await razorpay.orders.create({
+          amount: Math.round(finalAmount * 100), // paise
+          currency: "INR",
+          receipt: receiptId,
+          notes: {
+            userId,
+            rechargePackId: pack.id,
+            coins: pack.coins,
+            couponCode: coupon?.code || "",
+            discount: discount.toString(),
+          },
+        });
+
+        // ======================
+        // SAVE PAYMENT ORDER
+        // ======================
+        await prisma.paymentOrder.create({
+          data: {
+            userId,
+            rechargePackId: pack.id,
+            couponId: coupon?.id || null,
+            razorpayOrderId: order.id,
+
+            originalAmount: pack.price,
+            discount: discount,
+            amount: finalAmount,
+
+            coins: pack.coins,
+            status: "CREATED",
+          },
+        });
+
+        return {
+          success: true,
+          orderId: order.id,
+          amount: order.amount,
+          currency: order.currency,
+        };
+      } catch (error) {
+        console.error("createOrder error:", error);
+        throw new Error(error.message || "Failed to create order");
       }
-
-      // Discount cannot exceed price
-      discount = Math.min(discount, pack.price);
-      console.log("discount-----------: ",discount);
-      console.log("pack price-----------: ",pack.price);
-
-      //finalAmount = pack.price - discount;
-    }
-
-    // ======================
-    // CREATE RAZORPAY ORDER
-    // ======================
-    const receiptId = uuidv4();
-    console.log("-------finalAmount------:",finalAmount);
-    const order = await razorpay.orders.create({
-      amount: Math.round(finalAmount * 100), // paise
-      currency: "INR",
-      receipt: receiptId,
-      notes: {
-        userId,
-        rechargePackId: pack.id,
-        coins: pack.coins,
-        couponCode: coupon?.code || "",
-        discount: discount.toString(),
-      },
-    });
-
-    // ======================
-    // SAVE PAYMENT ORDER
-    // ======================
-    await prisma.paymentOrder.create({
-      data: {
-        userId,
-        rechargePackId: pack.id,
-        couponId: coupon?.id || null,
-        razorpayOrderId: order.id,
-
-        originalAmount: pack.price,
-        discount: discount,
-        amount: finalAmount,
-
-        coins: pack.coins,
-        status: "CREATED",
-      },
-    });
-
-    return {
-  success: true,
-  orderId: order.id,
-  amount: order.amount,
-  currency: order.currency,
-};
-  } catch (error) {
-    console.error("createOrder error:", error);
-    throw new Error(error.message || "Failed to create order");
-  }
-},
+    },
 
     createHealingOrder: async (_, { bookingId }, context) => {
       try {
