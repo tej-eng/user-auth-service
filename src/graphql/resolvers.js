@@ -3063,7 +3063,7 @@ module.exports = {
             coins: pack.coins,
             couponCode: coupon?.code || "",
             discount: discount.toString(),
-            type:coupon.type
+            type:coupon?.type ?? "NORMAL",
           },
         });
 
