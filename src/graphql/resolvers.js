@@ -3033,13 +3033,13 @@ module.exports = {
             finalAmount += (finalAmount * 18) / 100;
 
             // Cashback amount to be credited later
-            cashback = (pack.price * (coupon.percentage || 0)) / 100;
+            // cashback = (pack.price * (coupon.percentage || 0)) / 100;
 
-            if (coupon.maxDiscount && cashback > coupon.maxDiscount) {
-              cashback = coupon.maxDiscount;
-            }
+            // if (coupon.maxDiscount && cashback > coupon.maxDiscount) {
+            //   cashback = coupon.maxDiscount;
+            // }
 
-            cashback = Math.min(cashback, pack.price);
+            // cashback = Math.min(cashback, pack.price);
           }
 
           // Discount cannot exceed price
