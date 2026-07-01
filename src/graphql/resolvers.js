@@ -3033,37 +3033,44 @@ module.exports = {
             finalAmount += (finalAmount * 18) / 100;
 
             // Cashback amount to be credited later
-            // cashback = (pack.price * (coupon.percentage || 0)) / 100;
+            cashback = (pack.price * (coupon.percentage || 0)) / 100;
 
-            // if (coupon.maxDiscount && cashback > coupon.maxDiscount) {
-            //   cashback = coupon.maxDiscount;
-            // }
+            if (coupon.maxDiscount && cashback > coupon.maxDiscount) {
+              cashback = coupon.maxDiscount;
+            }
 
-            // cashback = Math.min(cashback, pack.price);
+            cashback = Math.min(cashback, pack.price);
           }
-         
-        }else{
-        //-----NORMAL RECHARGE WITHOUT COUPAN
-        finalAmount += (finalAmount * 18) / 100;
+        } else {
+          //-----NORMAL RECHARGE WITHOUT COUPAN
+          finalAmount += (finalAmount * 18) / 100;
         }
 
         // ======================
         // CREATE RAZORPAY ORDER
         // ======================
+
+        const notes = {
+          userId,
+          rechargePackId: pack.id,
+          coins: pack.coins,
+          couponCode: coupon?.code || "",
+          type: coupon?.type || "NORMAL",
+        };
+
+        if (coupon?.type === "DISCOUNT") {
+          notes.discount = discount.toString();
+        }
+
+        if (coupon?.type === "CASHBACK") {
+          notes.cashback = cashback.toString();
+        }
         const receiptId = uuidv4();
-        console.log("-------finalAmount------:", finalAmount);
         const order = await razorpay.orders.create({
           amount: Math.round(finalAmount * 100), // paise
           currency: "INR",
           receipt: receiptId,
-          notes: {
-            userId,
-            rechargePackId: pack.id,
-            coins: pack.coins,
-            couponCode: coupon?.code || "",
-            discount: discount.toString(),
-            type:coupon?.type ?? "NORMAL",
-          },
+          notes,
         });
 
         // ======================
