@@ -3042,9 +3042,10 @@ module.exports = {
             // cashback = Math.min(cashback, pack.price);
           }
          
-        }
+        }else{
         //-----NORMAL RECHARGE WITHOUT COUPAN
         finalAmount += (finalAmount * 18) / 100;
+        }
 
         // ======================
         // CREATE RAZORPAY ORDER
