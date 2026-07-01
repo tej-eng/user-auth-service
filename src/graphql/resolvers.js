@@ -3040,7 +3040,9 @@ module.exports = {
             // }
 
             // cashback = Math.min(cashback, pack.price);
-          }else{
+          }
+          else{
+            console.log("comming in else part when nnnnnn-------------");
              finalAmount += (finalAmount * 18) / 100;
           }
 
