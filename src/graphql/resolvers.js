@@ -3034,6 +3034,8 @@ module.exports = {
 
       // Discount cannot exceed price
       discount = Math.min(discount, pack.price);
+      console.log("discount-----------: ",discount);
+      console.log("pack price-----------: ",pack.price);
 
       finalAmount = pack.price - discount;
     }
@@ -3042,7 +3044,7 @@ module.exports = {
     // CREATE RAZORPAY ORDER
     // ======================
     const receiptId = uuidv4();
-
+    console.log("-------finalAmount------:",finalAmount);
     const order = await razorpay.orders.create({
       amount: Math.round(finalAmount * 100), // paise
       currency: "INR",
