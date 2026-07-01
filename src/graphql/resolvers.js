@@ -3041,16 +3041,10 @@ module.exports = {
 
             // cashback = Math.min(cashback, pack.price);
           }
-          if(!coupan_code && rechargePackId){
-            console.log("comming in else part when nnnnnn-------------");
-             finalAmount += (finalAmount * 18) / 100;
-          }
-
-          // Discount cannot exceed price
-          console.log("Discount:", discount);
-          console.log("Cashback:", cashback);
-          console.log("Final Amount:", finalAmount);
+         
         }
+        //-----NORMAL RECHARGE WITHOUT COUPAN
+        finalAmount += (finalAmount * 18) / 100;
 
         // ======================
         // CREATE RAZORPAY ORDER
