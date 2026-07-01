@@ -3040,6 +3040,8 @@ module.exports = {
             // }
 
             // cashback = Math.min(cashback, pack.price);
+          }else{
+             finalAmount += (finalAmount * 18) / 100;
           }
 
           // Discount cannot exceed price
