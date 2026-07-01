@@ -3029,8 +3029,12 @@ module.exports = {
         ) {
           discount = coupon.maxDiscount;
         }
+        finalAmount = pack.price - discount;
+        finalAmount=finalAmount+finalAmount*18/100;
+
       } else if (coupon.type === "FLAT") {
         discount = coupon.flatAmount || 0;
+        finalAmount = pack.price - discount;
       }
 
       // Discount cannot exceed price
@@ -3038,7 +3042,7 @@ module.exports = {
       console.log("discount-----------: ",discount);
       console.log("pack price-----------: ",pack.price);
 
-      finalAmount = pack.price - discount;
+      //finalAmount = pack.price - discount;
     }
 
     // ======================
