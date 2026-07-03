@@ -490,12 +490,8 @@ module.exports = gql`
   type SessionRemedy {
   id: ID!
   sessionId: String!
-  remedy: String
-  title: String
-  description: String
-  image: String
-  createdAt: String
-  updatedAt: String
+  remedyText: String!
+  createdAt: String!
 }
  
   #---------------END--------------
