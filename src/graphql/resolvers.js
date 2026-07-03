@@ -2696,48 +2696,68 @@ module.exports = {
       }
     },
     uploadImage: async (_, { file }, context) => {
-      try {
-        if (!context.user) {
-          throw new Error("Unauthorized");
-        }
-        const { createReadStream, filename, mimetype } = await file;
+  try {
+    if (!context.user) {
+      throw new Error("Unauthorized");
+    }
 
-        // Validate image
-        if (!mimetype.startsWith("image/")) {
-          throw new Error("Only image files are allowed");
-        }
+    const { createReadStream, filename, mimetype } = await file;
 
-        // Generate unique filename
-        const ext = filename.split(".").pop();
-        const newFileName = `${Date.now()}-${Math.random()
-          .toString(36)
-          .substring(7)}.${ext}`;
+    // Validate image
+    if (!mimetype.startsWith("image/")) {
+      throw new Error("Only image files are allowed");
+    }
 
-        const uploadPath = path.join(__dirname, "..", "uploads", newFileName);
-        console.log("Saving file toAAAAAAAAAAAAAAA:", uploadPath);
+    // Generate unique filename
+    const ext = path.extname(filename);
+    const newFileName = `${Date.now()}-${Math.random()
+      .toString(36)
+      .substring(2, 8)}${ext}`;
 
-        // Save file
-        await new Promise((resolve, reject) => {
-          const stream = createReadStream();
-          const out = fs.createWriteStream(uploadPath);
+    // Upload directory from .env
+    const uploadDir =
+      process.env.UPLOAD_DIR || path.join(__dirname, "..", "uploads");
 
-          stream.pipe(out);
-          out.on("finish", resolve);
-          out.on("error", reject);
-        });
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
 
-        // Return URL (adjust domain)
-        const fileUrl = `https://dhwaniastro.com/v2/uploads/${newFileName}`;
+    const uploadPath = path.join(uploadDir, newFileName);
 
-        return {
-          url: fileUrl,
-          filename: newFileName,
-        };
-      } catch (error) {
-        console.error("uploadImage error:", error);
-        throw new Error(error.message || "Upload failed");
-      }
-    },
+    console.log("Upload Directory :", uploadDir);
+    console.log("Saving File      :", uploadPath);
+
+    // Save file
+    await new Promise((resolve, reject) => {
+      const stream = createReadStream();
+      const out = fs.createWriteStream(uploadPath);
+
+      stream.pipe(out);
+
+      out.on("finish", resolve);
+      out.on("error", reject);
+      stream.on("error", reject);
+    });
+
+    // Public URL from .env
+    const baseUrl =
+      process.env.UPLOAD_BASE_URL ||
+      "https://dhwaniastro.com/chat/uploads";
+
+    const fileUrl = `${baseUrl}/${newFileName}`;
+
+    console.log("Public URL :", fileUrl);
+
+    return {
+      url: fileUrl,
+      filename: newFileName,
+    };
+  } catch (error) {
+    console.error("uploadImage error:", error);
+    throw new Error(error.message || "Upload failed");
+  }
+},
 
     // In your resolvers file
 
@@ -3022,7 +3042,6 @@ module.exports = {
             finalAmount = pack.price - discount;
             // GST on discounted amount (if your business logic requires it)
             finalAmount += (finalAmount * 18) / 100;
-
           } else if (coupon.type === "CASHBACK") {
             // Customer pays full amount
             finalAmount = pack.price;
@@ -3047,7 +3066,7 @@ module.exports = {
         // ======================
         // CREATE RAZORPAY ORDER
         // ======================
-            
+
         const notes = {
           userId,
           rechargePackId: pack.id,
@@ -3102,193 +3121,171 @@ module.exports = {
       }
     },
 
-createHealingOrder: async (_, { input }, context) => {
-  try {
-    if (!context.user) {
-      throw new Error("Unauthorized");
-    }
-
-    const userId = context.user.id;
-    const { bookingId, couponCode } = input;
-
-    const booking = await prisma.serviceBooking.findUnique({
-      where: {
-        id: bookingId,
-      },
-    });
-
-    if (!booking) {
-      throw new Error("Booking not found");
-    }
-
-    if (booking.amount == null) {
-      throw new Error("Booking amount not found");
-    }
-
-    const totalAmount = Number(booking.amount);
-
-    let coupon = null;
-    let discount = 0;
-    let cashback = 0;
-
-    let payableAmount = totalAmount;
-
-    // =====================================
-    // APPLY COUPON
-    // =====================================
-
-    if (couponCode && couponCode.trim() !== "") {
-      coupon = await prisma.coupon.findUnique({
-        where: {
-          code: couponCode.trim(),
-        },
-      });
-
-      if (!coupon) {
-        throw new Error("Invalid coupon");
-      }
-
-      const now = new Date();
-
-      if (!coupon.status)
-        throw new Error("Coupon inactive");
-
-      if (coupon.startDate > now)
-        throw new Error("Coupon not started");
-
-      if (coupon.endDate < now)
-        throw new Error("Coupon expired");
-
-      if (
-        coupon.redeemLimit &&
-        coupon.usedCount >= coupon.redeemLimit
-      ) {
-        throw new Error("Coupon exhausted");
-      }
-
-      if (
-        coupon.minOrderAmount &&
-        totalAmount < coupon.minOrderAmount
-      ) {
-        throw new Error(
-          `Minimum amount should be ₹${coupon.minOrderAmount}`
-        );
-      }
-
-      //--------------------------------------
-      // DISCOUNT
-      //--------------------------------------
-
-      if (coupon.type === "DISCOUNT") {
-
-        discount =
-          (totalAmount * (coupon.percentage || 0)) / 100;
-
-        if (
-          coupon.maxDiscount &&
-          discount > coupon.maxDiscount
-        ) {
-          discount = coupon.maxDiscount;
+    createHealingOrder: async (_, { input }, context) => {
+      try {
+        if (!context.user) {
+          throw new Error("Unauthorized");
         }
 
-        discount = Math.min(discount, totalAmount);
+        const userId = context.user.id;
+        const { bookingId, couponCode } = input;
 
-        payableAmount = totalAmount - discount;
-      }
+        const booking = await prisma.serviceBooking.findUnique({
+          where: {
+            id: bookingId,
+          },
+        });
 
-      //--------------------------------------
-      // CASHBACK
-      //--------------------------------------
-
-      if (coupon.type === "CASHBACK") {
-
-        payableAmount = totalAmount;
-
-        cashback =
-          (totalAmount * (coupon.percentage || 0)) / 100;
-
-        if (
-          coupon.maxDiscount &&
-          cashback > coupon.maxDiscount
-        ) {
-          cashback = coupon.maxDiscount;
+        if (!booking) {
+          throw new Error("Booking not found");
         }
+
+        if (booking.amount == null) {
+          throw new Error("Booking amount not found");
+        }
+
+        const totalAmount = Number(booking.amount);
+
+        let coupon = null;
+        let discount = 0;
+        let cashback = 0;
+
+        let payableAmount = totalAmount;
+
+        // =====================================
+        // APPLY COUPON
+        // =====================================
+
+        if (couponCode && couponCode.trim() !== "") {
+          coupon = await prisma.coupon.findUnique({
+            where: {
+              code: couponCode.trim(),
+            },
+          });
+
+          if (!coupon) {
+            throw new Error("Invalid coupon");
+          }
+
+          const now = new Date();
+
+          if (!coupon.status) throw new Error("Coupon inactive");
+
+          if (coupon.startDate > now) throw new Error("Coupon not started");
+
+          if (coupon.endDate < now) throw new Error("Coupon expired");
+
+          if (coupon.redeemLimit && coupon.usedCount >= coupon.redeemLimit) {
+            throw new Error("Coupon exhausted");
+          }
+
+          if (coupon.minOrderAmount && totalAmount < coupon.minOrderAmount) {
+            throw new Error(
+              `Minimum amount should be ₹${coupon.minOrderAmount}`,
+            );
+          }
+
+          //--------------------------------------
+          // DISCOUNT
+          //--------------------------------------
+
+          if (coupon.type === "DISCOUNT") {
+            discount = (totalAmount * (coupon.percentage || 0)) / 100;
+
+            if (coupon.maxDiscount && discount > coupon.maxDiscount) {
+              discount = coupon.maxDiscount;
+            }
+
+            discount = Math.min(discount, totalAmount);
+
+            payableAmount = totalAmount - discount;
+          }
+
+          //--------------------------------------
+          // CASHBACK
+          //--------------------------------------
+
+          if (coupon.type === "CASHBACK") {
+            payableAmount = totalAmount;
+
+            cashback = (totalAmount * (coupon.percentage || 0)) / 100;
+
+            if (coupon.maxDiscount && cashback > coupon.maxDiscount) {
+              cashback = coupon.maxDiscount;
+            }
+          }
+        }
+
+        //--------------------------------------
+        // CREATE RAZORPAY ORDER
+        //--------------------------------------
+
+        const receiptId = uuidv4();
+
+        const order = await razorpay.orders.create({
+          amount: Math.round(payableAmount * 100),
+          currency: "INR",
+          receipt: receiptId,
+
+          notes: {
+            bookingId: booking.id,
+            serviceId: booking.serviceId,
+            astrologerId: booking.astrologerId,
+            userId,
+
+            serviceType: "SERVICE",
+
+            couponCode: coupon?.code || "",
+            couponType: coupon?.type || "",
+
+            discount: discount.toString(),
+            cashback: cashback.toString(),
+          },
+        });
+
+        //--------------------------------------
+        // SAVE ORDER
+        //--------------------------------------
+
+        await prisma.servicePaymentOrder.create({
+          data: {
+            userId,
+            bookingId: booking.id,
+
+            razorpayOrderId: order.id,
+
+            totalAmount,
+
+            walletAmount: 0,
+
+            payableAmount,
+
+            couponId: coupon?.id || null,
+
+            discount,
+
+            cashback,
+
+            status: "CREATED",
+          },
+        });
+
+        return {
+          success: true,
+          orderId: order.id,
+          currency: "INR",
+
+          bookingId: booking.id,
+
+          totalAmount,
+          payableAmount,
+        };
+      } catch (error) {
+        console.error("createHealingOrder error:", error);
+
+        throw new Error(error.message || "Failed to create healing order");
       }
-    }
-
-    //--------------------------------------
-    // CREATE RAZORPAY ORDER
-    //--------------------------------------
-
-    const receiptId = uuidv4();
-
-    const order = await razorpay.orders.create({
-      amount: Math.round(payableAmount * 100),
-      currency: "INR",
-      receipt: receiptId,
-
-      notes: {
-        bookingId: booking.id,
-        serviceId: booking.serviceId,
-        astrologerId: booking.astrologerId,
-        userId,
-
-        serviceType: "SERVICE",
-
-        couponCode: coupon?.code || "",
-        couponType: coupon?.type || "",
-
-        discount: discount.toString(),
-        cashback: cashback.toString(),
-      },
-    });
-
-    //--------------------------------------
-    // SAVE ORDER
-    //--------------------------------------
-
-    await prisma.servicePaymentOrder.create({
-      data: {
-        userId,
-        bookingId: booking.id,
-
-        razorpayOrderId: order.id,
-
-        totalAmount,
-
-        walletAmount: 0,
-
-        payableAmount,
-
-        couponId: coupon?.id || null,
-
-        discount,
-
-        cashback,
-
-        status: "CREATED",
-      },
-    });
-
-    return {
-      success: true,
-      orderId: order.id,
-      currency: "INR",
-
-      bookingId: booking.id,
-
-      totalAmount,
-      payableAmount,
-    };
-
-  } catch (error) {
-    console.error("createHealingOrder error:", error);
-
-    throw new Error(
-      error.message || "Failed to create healing order"
-    );
-  }
-},
+    },
 
     // new astrologer
     // new astrologer

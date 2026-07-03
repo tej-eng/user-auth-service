@@ -3,15 +3,22 @@ services:
     build: .
     container_name: user-auth-service
     restart: always
+
     env_file:
       - .env
+
     ports:
       - "8007:8007"
+
+    volumes:
+      # Shared chat uploads directory
+      - /var/www/chat-uploads:/shared/chat-uploads
+
     networks:
       - dhwaniastro-net
 
-    mem_limit: 50m       
-    memswap_limit: 50m    
+    mem_limit: 50m
+    memswap_limit: 50m
 
 networks:
   dhwaniastro-net:
