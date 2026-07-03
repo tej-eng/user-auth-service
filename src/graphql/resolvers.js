@@ -1361,7 +1361,7 @@ module.exports = {
           sender: msg.sender,
 
           replyTo: msg.replyTo,
-          time,
+          time: msg.time,
 
           createdAt: msg.createdAt ? msg.createdAt.toISOString() : null,
         }));
