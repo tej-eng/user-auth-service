@@ -486,6 +486,19 @@ module.exports = gql`
   }
   #--------------------end code for razorpay order-----------------------
   #------------------start code for astrologer application---------------
+  #-------START CODE FOR VIEW REMEDY IN CHAT HISTORY-----
+  type SessionRemedy {
+  id: ID!
+  sessionId: String!
+  remedy: String
+  title: String
+  description: String
+  image: String
+  createdAt: String
+  updatedAt: String
+}
+ 
+  #---------------END--------------
   enum ApplicationStatus {
     PENDING
     APPROVED
@@ -1341,6 +1354,8 @@ enum CmsStatus {
     getUpcomingLives(page: Int, limit: Int): UpcomingLivesResponse
 
     joinLive(channelName: String!): LiveJoinResponse!
+
+     getSessionRemedies(sessionId: String!): [SessionRemedy!]!
   }
 
   type Mutation {

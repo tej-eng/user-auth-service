@@ -1783,6 +1783,29 @@ module.exports = {
       }
     },
 
+    getSessionRemedies: async (_, { sessionId }, context) => {
+  try {
+    const { user } = context;
+
+    if (!user) {
+      throw new Error("Unauthorized");
+    }
+
+    const remedies = await prisma.sessionRemedy.findMany({
+      where: {
+        sessionId,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return remedies;
+  } catch (error) {
+    throw new Error(error.message);
+  }
+},
+
     getCategories: async () => {
       try {
         const categories = await prisma.category.findMany({
