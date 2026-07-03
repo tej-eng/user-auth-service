@@ -1783,7 +1783,7 @@ module.exports = {
       }
     },
 
-   getSessionRemedies: async (_, { sessionId }, context) => {
+  getSessionRemedies: async (_, { sessionId }, context) => {
   try {
     const { user } = context;
 
@@ -1791,7 +1791,7 @@ module.exports = {
       throw new Error("Unauthorized");
     }
 
-    const remedies = await prisma.sessionRemedy.findMany({
+    return await prisma.sessionRemedy.findMany({
       where: {
         sessionId,
       },
@@ -1799,17 +1799,6 @@ module.exports = {
         createdAt: "desc",
       },
     });
-
-    return remedies.map((item) => ({
-      id: item.id,
-      sessionId: item.sessionId,
-      remedy: item.remedyText,
-      title: null,
-      description: null,
-      image: null,
-      createdAt: item.createdAt.toISOString(),
-      updatedAt: null,
-    }));
   } catch (error) {
     throw new Error(error.message);
   }

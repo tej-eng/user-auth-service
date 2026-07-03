@@ -491,7 +491,7 @@ module.exports = gql`
   id: ID!
   sessionId: String!
   remedyText: String!
-  createdAt: String!
+  createdAt: String
 }
  
   #---------------END--------------
