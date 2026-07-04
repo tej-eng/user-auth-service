@@ -2952,12 +2952,183 @@ module.exports = {
           fileUrl: fileUrl,
         };
       } catch (error) {
-        console.error("❌ uploadCallRecording error:", error);
+        console.error("uploadCallRecording error:", error);
         return {
           success: false,
           message: error.message || "Failed to upload call recording",
           recording: null,
           fileUrl: null,
+        };
+      }
+    },
+
+    verifyServiceCoupon: async (_, { input }, context) => {
+      try {
+        // Authentication check
+        if (!context.user) {
+          throw new Error("Unauthorized: Please login to apply coupon");
+        }
+
+        const userId = context.user.id;
+        const { bookingId, couponCode } = input;
+
+        // Validate booking
+        const booking = await prisma.serviceBooking.findUnique({
+          where: { id: bookingId },
+          include: {
+            service: true,
+            astrologer: true,
+          },
+        });
+
+        if (!booking) {
+          throw new Error("Booking not found");
+        }
+
+        // Check if booking belongs to user
+        if (booking.userId !== userId) {
+          throw new Error(
+            "You are not authorized to apply coupon on this booking",
+          );
+        }
+
+        // Check if booking is already paid
+        if (booking.status === "PAID" || booking.status === "COMPLETED") {
+          throw new Error("Cannot apply coupon on already paid booking");
+        }
+
+        // Calculate total amount with GST
+        const originalAmount = Number(booking.amount);
+        const gstAmount = (originalAmount * 18) / 100;
+        const totalAmount = originalAmount + gstAmount;
+
+        // Validate coupon
+        const coupon = await prisma.coupon.findUnique({
+          where: {
+            code: couponCode.trim().toUpperCase(),
+          },
+        });
+
+        if (!coupon) {
+          throw new Error("Invalid coupon code");
+        }
+
+        // Check coupon status
+        if (!coupon.status) {
+          throw new Error("Coupon is currently inactive");
+        }
+
+        // Check coupon validity dates
+        const now = new Date();
+        if (coupon.startDate > now) {
+          throw new Error(
+            `Coupon is not active yet. Valid from ${coupon.startDate.toLocaleDateString()}`,
+          );
+        }
+
+        if (coupon.endDate < now) {
+          throw new Error(
+            `Coupon has expired on ${coupon.endDate.toLocaleDateString()}`,
+          );
+        }
+
+        // Check redeem limit
+        if (coupon.redeemLimit && coupon.usedCount >= coupon.redeemLimit) {
+          throw new Error("Coupon redemption limit has been reached");
+        }
+
+        // Check minimum order amount
+        if (coupon.minOrderAmount && totalAmount < coupon.minOrderAmount) {
+          throw new Error(
+            `Minimum order amount of ₹${coupon.minOrderAmount} is required for this coupon`,
+          );
+        }
+
+        // Check if coupon is applicable for service
+        if (
+          coupon.applicable &&
+          coupon.applicable !== "SERVICE" &&
+          coupon.applicable !== "BOTH"
+        ) {
+          throw new Error("This coupon is not applicable for services");
+        }
+
+        // Check if user has already used this coupon (for paid bookings only)
+        const alreadyUsed = await prisma.servicePaymentOrder.findFirst({
+          where: {
+            userId: userId,
+            couponId: coupon.id,
+            status: "PAID",
+          },
+        });
+
+        if (alreadyUsed) {
+          throw new Error(
+            "You have already used this coupon for a previous booking",
+          );
+        }
+
+        // Calculate discount
+        let discount = 0;
+        let cashback = 0;
+        let payableAmount = totalAmount;
+
+        if (coupon.type === "FLAT") {
+          discount = coupon.flatAmount || 0;
+          discount = Math.min(discount, totalAmount);
+          payableAmount = totalAmount - discount;
+        } else if (coupon.type === "DISCOUNT") {
+          discount = (totalAmount * (coupon.percentage || 0)) / 100;
+
+          if (coupon.maxDiscount && discount > coupon.maxDiscount) {
+            discount = coupon.maxDiscount;
+          }
+
+          discount = Math.min(discount, totalAmount);
+          payableAmount = totalAmount - discount;
+        } else if (coupon.type === "CASHBACK") {
+          cashback = (totalAmount * (coupon.percentage || 0)) / 100;
+
+          if (coupon.maxDiscount && cashback > coupon.maxDiscount) {
+            cashback = coupon.maxDiscount;
+          }
+
+          // For cashback, total amount remains same but cashback is calculated
+          payableAmount = totalAmount;
+        }
+
+        // Format response
+        return {
+          success: true,
+          message: "Coupon verified successfully",
+          coupon: {
+            ...coupon,
+            // Convert Decimal to number if using Prisma Decimal
+            flatAmount: coupon.flatAmount ? Number(coupon.flatAmount) : null,
+            maxDiscount: coupon.maxDiscount ? Number(coupon.maxDiscount) : null,
+            minOrderAmount: coupon.minOrderAmount
+              ? Number(coupon.minOrderAmount)
+              : null,
+          },
+          totalAmount: totalAmount,
+          discount: discount,
+          cashback: cashback,
+          payableAmount: Math.round(payableAmount * 100) / 100,
+          gstAmount: gstAmount,
+          originalAmount: originalAmount,
+        };
+      } catch (error) {
+        console.error("Coupon verification error:", error);
+        return {
+          success: false,
+          message: error.message || "Failed to verify coupon",
+          coupon: null,
+          totalAmount: 0,
+          discount: 0,
+          cashback: 0,
+          payableAmount: 0,
+          gstAmount: 0,
+          originalAmount: 0,
         };
       }
     },
@@ -3221,7 +3392,7 @@ module.exports = {
             discount = Math.min(discount, totalAmount);
 
             payableAmount = totalAmount - discount;
-            console.log("---------DISCOUNT payableAmount---:",payableAmount);
+            console.log("---------DISCOUNT payableAmount---:", payableAmount);
           }
 
           //--------------------------------------
@@ -3235,7 +3406,6 @@ module.exports = {
 
             if (coupon.maxDiscount && cashback > coupon.maxDiscount) {
               cashback = coupon.maxDiscount;
-              console.log("cashback-----------:",cashback);
             }
           }
         }
@@ -3243,8 +3413,7 @@ module.exports = {
         //--------------------------------------
         // CREATE RAZORPAY ORDER
         //--------------------------------------
-        
-        console.log("-------payableAmount--------",payableAmount);
+
         const receiptId = uuidv4();
 
         const order = await razorpay.orders.create({
@@ -3283,9 +3452,7 @@ module.exports = {
             status: "CREATED",
           },
         });
-        console.log("totalAmount---------------------:", totalAmount);
-        console.log("totalAmount---------------------:", payableAmount);
-        
+
         return {
           success: true,
           orderId: order.id,

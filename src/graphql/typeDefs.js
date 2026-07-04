@@ -93,7 +93,7 @@ module.exports = gql`
     isChatActive: Boolean
     isCallActive: Boolean
     isLiveActive: Boolean
-    
+
     tags: String
     vtags: String
 
@@ -101,8 +101,6 @@ module.exports = gql`
 
     reviews: [Review]
   }
-
- 
 
   input AstrologerSearchInput {
     query: String # Search by name / skills / language
@@ -473,10 +471,10 @@ module.exports = gql`
   #-------------------end recent intake response-----------------------
   #------------------start code for razorpay order---------------------
 
- input CreateOrderInput {
-  rechargePackId: String!
-  coupan_code: String
-}
+  input CreateOrderInput {
+    rechargePackId: String!
+    coupan_code: String
+  }
 
   type CreateOrderResponse {
     success: Boolean!
@@ -488,12 +486,12 @@ module.exports = gql`
   #------------------start code for astrologer application---------------
   #-------START CODE FOR VIEW REMEDY IN CHAT HISTORY-----
   type SessionRemedy {
-  id: ID!
-  sessionId: String!
-  remedyText: String!
-  createdAt: String
-}
- 
+    id: ID!
+    sessionId: String!
+    remedyText: String!
+    createdAt: String
+  }
+
   #---------------END--------------
   enum ApplicationStatus {
     PENDING
@@ -848,7 +846,7 @@ module.exports = gql`
     description: String
     longText: String
     price: Float
- astrologerMappings: [ServiceAstrologer!]
+    astrologerMappings: [ServiceAstrologer!]
     category: Category
   }
 
@@ -1012,42 +1010,42 @@ module.exports = gql`
     createdAt: String!
     updatedAt: String!
   }
-    enum CouponType {
-  CASHBACK
-  DISCOUNT
-}
+  enum CouponType {
+    CASHBACK
+    DISCOUNT
+  }
 
-enum CouponVisibility {
-  VISIBLE
-  HIDDEN
-}
-    type Coupon {
-  id: ID!
-  code: String!
-  description: String
-  type: CouponType!
-  visibility: CouponVisibility!
-  couponCount: Int!
-  applicable: String
-  status: Boolean!
+  enum CouponVisibility {
+    VISIBLE
+    HIDDEN
+  }
+  type Coupon {
+    id: ID!
+    code: String!
+    description: String
+    type: CouponType!
+    visibility: CouponVisibility!
+    couponCount: Int!
+    applicable: String
+    status: Boolean!
 
-  percentage: Float
-  flatAmount: Float
-  maxDiscount: Float
-  minOrderAmount: Float
+    percentage: Float
+    flatAmount: Float
+    maxDiscount: Float
+    minOrderAmount: Float
 
-  redeemLimit: Int
-  usedCount: Int
+    redeemLimit: Int
+    usedCount: Int
 
-  startDate: String!
-  endDate: String!
+    startDate: String!
+    endDate: String!
 
-  createdAt: String!
-  updatedAt: String!
-}
+    createdAt: String!
+    updatedAt: String!
+  }
   input CreateServiceBookingInput {
     serviceId: ID!
- astrologerId: ID
+    astrologerId: ID
     name: String!
     email: String!
     phone: String!
@@ -1060,7 +1058,7 @@ enum CouponVisibility {
 
     concern: String
   }
-      type ServiceAstrologer {
+  type ServiceAstrologer {
     id: ID!
     price: Float!
 
@@ -1068,7 +1066,26 @@ enum CouponVisibility {
   }
 
   #------END CODE FOR FOLLOWERS AND FOLLOWING----------------
+  #------START VERIFY COUPON---
+  #------END COUPON----------------------------------------
+  input VerifyServiceCouponInput {
+    bookingId: ID!
+    couponCode: String!
+  }
+
+  type VerifyServiceCouponResponse {
+    success: Boolean!
+    message: String
+    coupon: Coupon
+    totalAmount: Float!
+    discount: Float!
+    cashback: Float!
+    payableAmount: Float!
+    gstAmount: Float
+    originalAmount: Float
+  }
   #-----START CODE FOR CREATE ORDER FOR HEALING SERVICES---
+
   type CreateHealingOrderResponse {
     success: Boolean!
     orderId: String
@@ -1082,11 +1099,11 @@ enum CouponVisibility {
 
     currency: String!
   }
-  
+
   input CreateHealingOrderInput {
-  bookingId: ID!
-  couponCode: String
-}
+    bookingId: ID!
+    couponCode: String
+  }
 
   type ConfirmWalletBookingResponse {
     success: Boolean!
@@ -1144,14 +1161,12 @@ enum CouponVisibility {
     currentPage: Int!
     totalPages: Int!
   }
-    type SessionRemedyResponse {
-  id: ID!
-  remedyText: String!
-  createdAt: String!
-  astrologerName: String
-}
-
-
+  type SessionRemedyResponse {
+    id: ID!
+    remedyText: String!
+    createdAt: String!
+    astrologerName: String
+  }
 
   type LiveStream {
     id: String!
@@ -1165,17 +1180,17 @@ enum CouponVisibility {
 
     astrologer: Astrologer
   }
-enum CmsStatus {
-  DRAFT
-  PUBLISHED
-}
+  enum CmsStatus {
+    DRAFT
+    PUBLISHED
+  }
   type LiveJoinResponse {
     token: String!
     uid: Int!
     appId: String!
     channelName: String!
   }
-      type PrivacyPage {
+  type PrivacyPage {
     id: ID
 
     pageType: String
@@ -1195,7 +1210,7 @@ enum CmsStatus {
     createdAt: String
     updatedAt: String
   }
-      type RefundPolicyPage {
+  type RefundPolicyPage {
     id: ID
 
     pageType: String
@@ -1215,7 +1230,7 @@ enum CmsStatus {
     createdAt: String
     updatedAt: String
   }
-      type DisclaimerPage {
+  type DisclaimerPage {
     id: ID
 
     pageType: String
@@ -1238,32 +1253,31 @@ enum CmsStatus {
 
   #-------END CODE FOR LIVESTREAMING------------
 
-
   #-----------------START CODE FOR CALL RECORDING----
   type CallRecording {
-  id: ID!
-  roomId: String!
-  astroId: String!
-  astroName: String!
-  userId: String!
-  duration: Int!
-  callType: String!
-  recordingUrl: String!
-  createdAt: String!
-  updatedAt: String!
-}
+    id: ID!
+    roomId: String!
+    astroId: String!
+    astroName: String!
+    userId: String!
+    duration: Int!
+    callType: String!
+    recordingUrl: String!
+    createdAt: String!
+    updatedAt: String!
+  }
 
   type UploadCallRecordingResponse {
-  success: Boolean!
-  message: String!
-  recording: CallRecording
-  fileUrl: String
-}
+    success: Boolean!
+    message: String!
+    recording: CallRecording
+    fileUrl: String
+  }
   #-------------END CALL RECORDING---
   type Query {
- getServiceBooking(bookingId: ID!): ServiceBooking
+    getServiceBooking(bookingId: ID!): ServiceBooking
     getCoupons: [Coupon!]!
-   getSessionRemedy(sessionId: ID!): SessionRemedyResponse
+    getSessionRemedy(sessionId: ID!): SessionRemedyResponse
     getCategories: [Category!]!
     getCategory(slug: String!): Category
     getServices: [Service!]!
@@ -1331,7 +1345,7 @@ enum CmsStatus {
       page: Int = 1
       limit: Int = 10
     ): FollowedAstrologersResponse!
-   
+
     getServiceBookings: [ServiceBooking!]!
     getMyServiceBookings(
       page: Int = 1
@@ -1351,7 +1365,7 @@ enum CmsStatus {
 
     joinLive(channelName: String!): LiveJoinResponse!
 
-     getSessionRemedies(sessionId: String!): [SessionRemedy!]!
+    getSessionRemedies(sessionId: String!): [SessionRemedy!]!
   }
 
   type Mutation {
@@ -1383,7 +1397,9 @@ enum CmsStatus {
 
     updateBookingAstrologer(bookingId: ID!, astrologerId: ID!): ServiceBooking!
 
-    createHealingOrder(input: CreateHealingOrderInput!): CreateHealingOrderResponse!
+    createHealingOrder(
+      input: CreateHealingOrderInput!
+    ): CreateHealingOrderResponse!
 
     confirmWalletBooking(
       bookingId: ID!
@@ -1395,14 +1411,18 @@ enum CmsStatus {
 
     endLive(streamId: String!): Boolean!
 
-      uploadCallRecording(
-    recording: Upload!
-    roomId: String!
-    astroId: String!
-    astroName: String!
-    userId: String!
-    duration: Int!
-    callType: String!
-  ): UploadCallRecordingResponse!
+    uploadCallRecording(
+      recording: Upload!
+      roomId: String!
+      astroId: String!
+      astroName: String!
+      userId: String!
+      duration: Int!
+      callType: String!
+    ): UploadCallRecordingResponse!
+
+    verifyServiceCoupon(
+      input: VerifyServiceCouponInput!
+    ): VerifyServiceCouponResponse!
   }
 `;
