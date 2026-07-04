@@ -1783,26 +1783,26 @@ module.exports = {
       }
     },
 
-  getSessionRemedies: async (_, { sessionId }, context) => {
-  try {
-    const { user } = context;
+    getSessionRemedies: async (_, { sessionId }, context) => {
+      try {
+        const { user } = context;
 
-    if (!user) {
-      throw new Error("Unauthorized");
-    }
+        if (!user) {
+          throw new Error("Unauthorized");
+        }
 
-    return await prisma.sessionRemedy.findMany({
-      where: {
-        sessionId,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-  } catch (error) {
-    throw new Error(error.message);
-  }
-},
+        return await prisma.sessionRemedy.findMany({
+          where: {
+            sessionId,
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        });
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    },
 
     getCategories: async () => {
       try {
@@ -2718,68 +2718,67 @@ module.exports = {
       }
     },
     uploadImage: async (_, { file }, context) => {
-  try {
-    if (!context.user) {
-      throw new Error("Unauthorized");
-    }
+      try {
+        if (!context.user) {
+          throw new Error("Unauthorized");
+        }
 
-    const { createReadStream, filename, mimetype } = await file;
+        const { createReadStream, filename, mimetype } = await file;
 
-    // Validate image
-    if (!mimetype.startsWith("image/")) {
-      throw new Error("Only image files are allowed");
-    }
+        // Validate image
+        if (!mimetype.startsWith("image/")) {
+          throw new Error("Only image files are allowed");
+        }
 
-    // Generate unique filename
-    const ext = path.extname(filename);
-    const newFileName = `${Date.now()}-${Math.random()
-      .toString(36)
-      .substring(2, 8)}${ext}`;
+        // Generate unique filename
+        const ext = path.extname(filename);
+        const newFileName = `${Date.now()}-${Math.random()
+          .toString(36)
+          .substring(2, 8)}${ext}`;
 
-    // Upload directory from .env
-    const uploadDir =
-      process.env.UPLOAD_DIR || path.join(__dirname, "..", "uploads");
+        // Upload directory from .env
+        const uploadDir =
+          process.env.UPLOAD_DIR || path.join(__dirname, "..", "uploads");
 
-    // Create directory if it doesn't exist
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
+        // Create directory if it doesn't exist
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
 
-    const uploadPath = path.join(uploadDir, newFileName);
+        const uploadPath = path.join(uploadDir, newFileName);
 
-    console.log("Upload Directory :", uploadDir);
-    console.log("Saving File      :", uploadPath);
+        console.log("Upload Directory :", uploadDir);
+        console.log("Saving File      :", uploadPath);
 
-    // Save file
-    await new Promise((resolve, reject) => {
-      const stream = createReadStream();
-      const out = fs.createWriteStream(uploadPath);
+        // Save file
+        await new Promise((resolve, reject) => {
+          const stream = createReadStream();
+          const out = fs.createWriteStream(uploadPath);
 
-      stream.pipe(out);
+          stream.pipe(out);
 
-      out.on("finish", resolve);
-      out.on("error", reject);
-      stream.on("error", reject);
-    });
+          out.on("finish", resolve);
+          out.on("error", reject);
+          stream.on("error", reject);
+        });
 
-    // Public URL from .env
-    const baseUrl =
-      process.env.UPLOAD_BASE_URL ||
-      "https://dhwaniastro.com/chat/uploads";
+        // Public URL from .env
+        const baseUrl =
+          process.env.UPLOAD_BASE_URL || "https://dhwaniastro.com/chat/uploads";
 
-    const fileUrl = `${baseUrl}/${newFileName}`;
+        const fileUrl = `${baseUrl}/${newFileName}`;
 
-    console.log("Public URL :", fileUrl);
+        console.log("Public URL :", fileUrl);
 
-    return {
-      url: fileUrl,
-      filename: newFileName,
-    };
-  } catch (error) {
-    console.error("uploadImage error:", error);
-    throw new Error(error.message || "Upload failed");
-  }
-},
+        return {
+          url: fileUrl,
+          filename: newFileName,
+        };
+      } catch (error) {
+        console.error("uploadImage error:", error);
+        throw new Error(error.message || "Upload failed");
+      }
+    },
 
     // In your resolvers file
 
@@ -3151,7 +3150,7 @@ module.exports = {
 
         const userId = context.user.id;
         const { bookingId, couponCode } = input;
-        console.log(bookingId,"------check booking idddddd----",couponCode);
+        console.log(bookingId, "------check booking idddddd----", couponCode);
 
         const booking = await prisma.serviceBooking.findUnique({
           where: {
@@ -3274,25 +3273,14 @@ module.exports = {
           data: {
             userId,
             bookingId: booking.id,
-
             razorpayOrderId: order.id,
-
             totalAmount,
-
             walletAmount: 0,
-
             payableAmount,
-
-            couponId: coupon?.id || null,
-
-            discount,
-
-            cashback,
-
             status: "CREATED",
           },
         });
-        console.log("totalAmount---------------------:",totalAmount);
+        console.log("totalAmount---------------------:", totalAmount);
         return {
           success: true,
           orderId: order.id,
