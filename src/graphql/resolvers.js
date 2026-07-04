@@ -3221,6 +3221,7 @@ module.exports = {
             discount = Math.min(discount, totalAmount);
 
             payableAmount = totalAmount - discount;
+            console.log("---------DISCOUNT payableAmount---:",payableAmount);
           }
 
           //--------------------------------------
@@ -3234,6 +3235,7 @@ module.exports = {
 
             if (coupon.maxDiscount && cashback > coupon.maxDiscount) {
               cashback = coupon.maxDiscount;
+              console.log("cashback-----------:",cashback);
             }
           }
         }
@@ -3241,7 +3243,8 @@ module.exports = {
         //--------------------------------------
         // CREATE RAZORPAY ORDER
         //--------------------------------------
-
+        
+        console.log("-------payableAmount--------",payableAmount);
         const receiptId = uuidv4();
 
         const order = await razorpay.orders.create({
@@ -3281,6 +3284,8 @@ module.exports = {
           },
         });
         console.log("totalAmount---------------------:", totalAmount);
+        console.log("totalAmount---------------------:", payableAmount);
+        
         return {
           success: true,
           orderId: order.id,
