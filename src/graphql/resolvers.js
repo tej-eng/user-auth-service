@@ -3151,6 +3151,7 @@ module.exports = {
 
         const userId = context.user.id;
         const { bookingId, couponCode } = input;
+        console.log(bookingId,"------check booking idddddd----",couponCode);
 
         const booking = await prisma.serviceBooking.findUnique({
           where: {
@@ -3291,7 +3292,7 @@ module.exports = {
             status: "CREATED",
           },
         });
-
+        console.log("totalAmount---------------------:",totalAmount);
         return {
           success: true,
           orderId: order.id,
