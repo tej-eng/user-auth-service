@@ -94,7 +94,7 @@ module.exports = gql`
     isCallActive: Boolean
     isLiveActive: Boolean
  isEligibleChat: Boolean @default(false)
-  isEligibleCall : Boolean @default(false)
+  isEligibleCall: Boolean @default(false)
   isEligibleVideo: Boolean @default(false)
   isEligibleAudio: Boolean @default(false)
     tags: String
