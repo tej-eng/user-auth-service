@@ -126,80 +126,80 @@ module.exports = {
         throw new Error(error.message || "Failed to fetch user profile");
       }
     },
-    getAstrologerReviews: async (
+   getAstrologerReviews: async (
   _,
   { astrologerId, page = 1, limit = 10 },
-  { prisma }
+  context,
 ) => {
-  try {
-    const safePage = Math.max(page, 1);
-    const safeLimit = Math.min(limit, 20);
+      try {
+        const safePage = Math.max(page, 1);
+        const safeLimit = Math.min(limit, 20);
 
-    const skip = (safePage - 1) * safeLimit;
+        const skip = (safePage - 1) * safeLimit;
 
-    const where = {
-      astrologerId,
-      isFlagged: false,
-    };
+        const where = {
+          astrologerId,
+          isFlagged: false,
+        };
 
-    const [reviews, totalCount, aggregate] = await Promise.all([
-      prisma.review.findMany({
-        where,
+        const [reviews, totalCount, aggregate] = await Promise.all([
+          prisma.review.findMany({
+            where,
 
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
             },
-          },
-        },
 
-        orderBy: {
-          createdAt: "desc",
-        },
+            orderBy: {
+              createdAt: "desc",
+            },
 
-        skip,
-        take: safeLimit,
-      }),
+            skip,
+            take: safeLimit,
+          }),
 
-      prisma.review.count({
-        where,
-      }),
+          prisma.review.count({
+            where,
+          }),
 
-      prisma.review.aggregate({
-        where,
+          prisma.review.aggregate({
+            where,
 
-        _avg: {
-          rating: true,
-        },
-      }),
-    ]);
+            _avg: {
+              rating: true,
+            },
+          }),
+        ]);
 
-    return {
-      data: reviews.map((review) => ({
-        id: review.id,
-        userId: review.user?.id,
-        userName: review.user?.name || review.userName,
-        rating: review.rating,
-        comment: review.comment,
-        reply: review.reply,
-        createdAt: review.createdAt,
-      })),
+        return {
+          data: reviews.map((review) => ({
+            id: review.id,
+            userId: review.user?.id,
+            userName: review.user?.name || review.userName,
+            rating: review.rating,
+            comment: review.comment,
+            reply: review.reply,
+            createdAt: review.createdAt,
+          })),
 
-      totalCount,
+          totalCount,
 
-      currentPage: safePage,
+          currentPage: safePage,
 
-      totalPages: Math.ceil(totalCount / safeLimit),
+          totalPages: Math.ceil(totalCount / safeLimit),
 
-     averageRating: aggregate?._avg?.rating ?? 0,
-    };
-  }catch (error) {
-  console.error(error);
-  throw new Error(error.message);
-}
-},
+          averageRating: aggregate?._avg?.rating ?? 0,
+        };
+      } catch (error) {
+        console.error(error);
+        throw new Error(error.message);
+      }
+    },
     getUserWalletTransactions: async (_, { filter }, context) => {
       try {
         if (!context.user) throw new Error("Unauthorized");
@@ -651,15 +651,15 @@ module.exports = {
       };
 
       if (user?.id) {
-const hasRecharge = await prisma.payment.findFirst({
-  where: {
-    userId: user.id,
-    status: "SUCCESS",
-  },
-  select: {
-    id: true,
-  },
-});
+        const hasRecharge = await prisma.payment.findFirst({
+          where: {
+            userId: user.id,
+            status: "SUCCESS",
+          },
+          select: {
+            id: true,
+          },
+        });
 
         if (hasRecharge) {
           where.hideAfterFirstRecharge = false;
