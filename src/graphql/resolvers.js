@@ -193,11 +193,12 @@ module.exports = {
 
       totalPages: Math.ceil(totalCount / safeLimit),
 
-      averageRating: aggregate._avg.rating || 0,
+     averageRating: aggregate?._avg?.rating ?? 0,
     };
-  } catch (error) {
-    throw new Error("Failed to fetch astrologer reviews");
-  }
+  }catch (error) {
+  console.error(error);
+  throw new Error(error.message);
+}
 },
     getUserWalletTransactions: async (_, { filter }, context) => {
       try {
