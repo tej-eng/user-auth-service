@@ -567,9 +567,36 @@ module.exports = {
     },
 
     getRechargePacks: async (_, __, context) => {
+      const {user } = context;
+
+      let where = {
+        isActive: true,
+      };
+
+      if (user?.id) {
+        const hasRecharge = await prisma.payment.findFirst({
+          where: {
+            userId: user.id,
+            status: "SUCCESS",
+            rechargePackId: {
+              not: null,
+            },
+          },
+          select: {
+            id: true,
+          },
+        });
+
+        if (hasRecharge) {
+          where.hideAfterFirstRecharge = false;
+        }
+      }
+
       const packs = await prisma.rechargePack.findMany({
-        where: { isActive: true },
-        orderBy: { price: "asc" },
+        where,
+        orderBy: {
+          price: "asc",
+        },
       });
 
       return {

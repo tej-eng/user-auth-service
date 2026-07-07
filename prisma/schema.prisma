@@ -280,7 +280,10 @@ model Astrologer {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
+ isEligibleChat  Boolean @default(false)
+  isEligibleCall  Boolean @default(false)
+  isEligibleVideo Boolean @default(false)
+  isEligibleAudio Boolean @default(false)
   isCallActive  Boolean @default(false)
   isChatActive  Boolean @default(false)
   isLiveActive  Boolean @default(false)
@@ -311,7 +314,7 @@ model Astrologer {
   serviceMappings   ServiceAstrologer[]
   liveStreams       LiveStream[]
   callRecordings CallRecording[]
-
+isDeleted Boolean @default(false)
   @@index([rating])
   @@index([experience])
 }
@@ -661,7 +664,7 @@ model RechargePack {
   paymentOrders PaymentOrder[]
   transactions  WalletTransaction[]
   coupons       Coupon[]            @relation("CouponToRechargePack")
-
+ hideAfterFirstRecharge Boolean @default(false)
   @@index([isActive])
   @@index([price])
   @@index([coins])
@@ -720,7 +723,7 @@ model WalletTransaction {
   coins       Int
   amount      Float?
   description String?
-
+ updatedBalance Float?
   createdAt DateTime @default(now())
 
   //  PREVENT duplicate credit from same payment
@@ -896,7 +899,7 @@ model Message {
 
   senderId   String
   receiverId String?
-
+time String?
   message String
   image   String?
   sender  String
@@ -905,7 +908,7 @@ model Message {
 
   sessionId String?
   session   Session? @relation(fields: [sessionId], references: [id])
-  time String?
+
   createdAt DateTime @default(now())
 
   @@index([roomId])
