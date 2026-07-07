@@ -126,6 +126,79 @@ module.exports = {
         throw new Error(error.message || "Failed to fetch user profile");
       }
     },
+    getAstrologerReviews: async (
+  _,
+  { astrologerId, page = 1, limit = 10 },
+  { prisma }
+) => {
+  try {
+    const safePage = Math.max(page, 1);
+    const safeLimit = Math.min(limit, 20);
+
+    const skip = (safePage - 1) * safeLimit;
+
+    const where = {
+      astrologerId,
+      isFlagged: false,
+    };
+
+    const [reviews, totalCount, aggregate] = await Promise.all([
+      prisma.review.findMany({
+        where,
+
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+
+        orderBy: {
+          createdAt: "desc",
+        },
+
+        skip,
+        take: safeLimit,
+      }),
+
+      prisma.review.count({
+        where,
+      }),
+
+      prisma.review.aggregate({
+        where,
+
+        _avg: {
+          rating: true,
+        },
+      }),
+    ]);
+
+    return {
+      data: reviews.map((review) => ({
+        id: review.id,
+        userId: review.user?.id,
+        userName: review.user?.name || review.userName,
+        rating: review.rating,
+        comment: review.comment,
+        reply: review.reply,
+        createdAt: review.createdAt,
+      })),
+
+      totalCount,
+
+      currentPage: safePage,
+
+      totalPages: Math.ceil(totalCount / safeLimit),
+
+      averageRating: aggregate._avg.rating || 0,
+    };
+  } catch (error) {
+    throw new Error("Failed to fetch astrologer reviews");
+  }
+},
     getUserWalletTransactions: async (_, { filter }, context) => {
       try {
         if (!context.user) throw new Error("Unauthorized");
@@ -318,7 +391,10 @@ module.exports = {
             isChatActive: astro.isChatActive,
             isCallActive: astro.isCallActive,
             isLiveActive: astro.isLiveActive,
-
+            isEligibleChat: astro.isEligibleChat,
+            isEligibleCall: astro.isEligibleCall,
+            isEligibleVideo: astro.isEligibleVideo,
+            isEligibleAudio: astro.isEligibleAudio,
             activeOffer: specialOffer
               ? {
                   id: specialOffer.id,
@@ -567,7 +643,7 @@ module.exports = {
     },
 
     getRechargePacks: async (_, __, context) => {
-      const {user } = context;
+      const { user } = context;
 
       let where = {
         isActive: true,

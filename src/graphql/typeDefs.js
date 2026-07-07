@@ -93,7 +93,10 @@ module.exports = gql`
     isChatActive: Boolean
     isCallActive: Boolean
     isLiveActive: Boolean
-
+ isEligibleChat  Boolean @default(false)
+  isEligibleCall  Boolean @default(false)
+  isEligibleVideo Boolean @default(false)
+  isEligibleAudio Boolean @default(false)
     tags: String
     vtags: String
 
@@ -629,7 +632,22 @@ module.exports = gql`
     skills: [String]
     languages: [String]
   }
-
+    type AstrologerReview {
+  id: ID!
+  userId: ID
+  userName: String
+  rating: Int!
+  comment: String
+  reply: String
+  createdAt: String!
+}
+type AstrologerReviewResponse {
+  data: [AstrologerReview!]!
+  totalCount: Int!
+  currentPage: Int!
+  totalPages: Int!
+  averageRating: Float!
+}
   #--------------------End code for chat history-----------------------
 
   #------------------start code for call history-----------------------
@@ -1366,6 +1384,11 @@ module.exports = gql`
     joinLive(channelName: String!): LiveJoinResponse!
 
     getSessionRemedies(sessionId: String!): [SessionRemedy!]!
+      getAstrologerReviews(
+    astrologerId: ID!
+    page: Int
+    limit: Int
+  ): AstrologerReviewResponse!
   }
 
   type Mutation {
