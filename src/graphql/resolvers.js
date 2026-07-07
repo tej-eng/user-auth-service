@@ -650,18 +650,15 @@ module.exports = {
       };
 
       if (user?.id) {
-        const hasRecharge = await prisma.payment.findFirst({
-          where: {
-            userId: user.id,
-            status: "SUCCESS",
-            rechargePackId: {
-              not: null,
-            },
-          },
-          select: {
-            id: true,
-          },
-        });
+const hasRecharge = await prisma.payment.findFirst({
+  where: {
+    userId: user.id,
+    status: "SUCCESS",
+  },
+  select: {
+    id: true,
+  },
+});
 
         if (hasRecharge) {
           where.hideAfterFirstRecharge = false;
