@@ -126,11 +126,122 @@ module.exports = {
         throw new Error(error.message || "Failed to fetch user profile");
       }
     },
-   getAstrologerReviews: async (
-  _,
-  { astrologerId, page = 1, limit = 10 },
-  context,
-) => {
+  getUserDashboard: async (_, __, context) => {
+  try {
+    if (!context.user) {
+      throw new Error("Unauthorized");
+    }
+
+    const userId = context.user.id;
+
+    const [
+      user,
+      totalCalls,
+      totalChats,
+      totalReviews,
+      totalFollowing,
+      totalBookings,
+    ] = await Promise.all([
+      prisma.user.findUnique({
+        where: {
+          id: userId,
+        },
+
+        include: {
+          wallet: true,
+
+          payments: {
+            where: {
+              status: "SUCCESS",
+            },
+
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+        },
+      }),
+
+      prisma.session.count({
+        where: {
+          userId,
+          type: "CALL",
+        },
+      }),
+
+      prisma.session.count({
+        where: {
+          userId,
+          type: "CHAT",
+        },
+      }),
+
+      prisma.review.count({
+        where: {
+          userId,
+        },
+      }),
+
+      prisma.astrologerFollow.count({
+        where: {
+          userId,
+        },
+      }),
+
+      prisma.serviceBooking.count({
+        where: {
+          userId,
+        },
+      }),
+    ]);
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const totalRecharge = user.payments.reduce(
+      (sum, payment) => sum + (payment.amount || 0),
+      0
+    );
+
+    const lastRecharge = user.payments[0];
+
+    return {
+      ...user,
+
+      stats: {
+        walletBalance: user.wallet?.balanceCoins || 0,
+
+        totalRecharge,
+
+        totalRechargeCount: user.payments.length,
+
+        totalCalls,
+
+        totalChats,
+
+        totalReviews,
+
+        totalFollowing,
+
+        totalBookings,
+
+        lastRechargeAmount:
+          lastRecharge?.amount || 0,
+
+        lastRechargeDate:
+          lastRecharge?.createdAt?.toISOString() || null,
+      },
+    };
+  } catch (err) {
+    throw new Error(err.message);
+  }
+},
+    getAstrologerReviews: async (
+      _,
+      { astrologerId, page = 1, limit = 10 },
+      context,
+    ) => {
       try {
         const safePage = Math.max(page, 1);
         const safeLimit = Math.min(limit, 20);
