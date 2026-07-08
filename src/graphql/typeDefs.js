@@ -21,6 +21,8 @@ module.exports = gql`
     createdAt: String
     updatedAt: String
     user_status: Int
+    wallet: UserWallet
+stats: UserDashboardStats
   }
 
   type AuthPayload {
@@ -432,7 +434,18 @@ isEligibleAudio: Boolean
 
     status: SessionStatus
   }
-
+type UserDashboardStats {
+  walletBalance: Int
+  totalRecharge: Float
+  totalRechargeCount: Int
+  totalCalls: Int
+  totalChats: Int
+  totalReviews: Int
+  totalFollowing: Int
+  totalBookings: Int
+  lastRechargeAmount: Float
+  lastRechargeDate: String
+}
   type ChatSessionResponse {
     data: [ChatSession]
     totalCount: Int
@@ -1323,7 +1336,7 @@ type AstrologerReviewResponse {
     getUserChatHistory(
       filter: UserChatHistoryFilterInput
     ): UserChatHistoryResponse
-
+getUserDashboard: User
     getUserSessions(filter: SessionFilterInput): ChatSessionResponse
     getChatMessages(roomId: String!): [ChatMessage]
     recentIntakes: RecentIntakeResponse
