@@ -2506,6 +2506,12 @@ module.exports = {
     // intake for chat
 
     createIntake: async (_, { input }, context) => {
+        console.log("========== CREATE INTAKE ==========");
+  console.log("context.user =>", context.user);
+
+  if (!context.user) {
+    throw new Error("Unauthorized");
+  }
       const userId = context.user.id;
 
       // Generate Room ID
