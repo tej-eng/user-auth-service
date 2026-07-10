@@ -4,6 +4,7 @@ const { generateOtp } = require("../utils/otp");
 const { generateAccessToken, generateRefreshToken } = require("../config/jwt");
 const jwt = require("jsonwebtoken");
 const { connectMongo, getDb } = require("../config/mongo");
+const { sendOTP } = require("./smsService");
 
 const OTP_EXPIRE = 300; // 5 minutes
 const OTP_LIMIT = 3; // 3 per 10 min
@@ -61,6 +62,11 @@ const sendOTPService = async (countryCode, mobile) => {
 
     // Store OTP
     await redis.set(`otp:${phoneKey}`, otp, "EX", OTP_EXPIRE);
+    await sendOTP({
+  countryCode,
+  mobile,
+  otp,
+});
 
     // Log event
     await logEvent("OTP_GENERATED", phoneKey, { otp });
