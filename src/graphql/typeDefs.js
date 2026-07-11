@@ -1304,8 +1304,25 @@ type AstrologerReviewResponse {
     recording: CallRecording
     fileUrl: String
   }
+    type Skill {
+  id: ID!
+  name: String!
+}
+
+type Problem {
+  id: ID!
+  name: String!
+}
+  type AstrologerCategory {
+  id: ID!
+  name: String!
+  type: String!
+}
   #-------------END CALL RECORDING---
   type Query {
+    getAstrologerCategories: [AstrologerCategory!]!
+  getActiveSkills: [Skill!]!
+  getActiveProblems: [Problem!]!
     getServiceBooking(bookingId: ID!): ServiceBooking
     getCoupons: [Coupon!]!
     getSessionRemedy(sessionId: ID!): SessionRemedyResponse

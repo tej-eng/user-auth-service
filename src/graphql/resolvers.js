@@ -787,7 +787,69 @@ module.exports = {
         totalCount: packs.length,
       };
     },
+getActiveSkills: async () => {
+  return prisma.skill.findMany({
+    where: {
+      isActive: true,
+    },
+    orderBy: {
+      sortOrder: "asc",
+    },
+    select: {
+      id: true,
+      name: true,
+    },
+  });
+},
+getActiveProblems: async () => {
+  return prisma.problem.findMany({
+    where: {
+      isActive: true,
+    },
+    orderBy: {
+      sortOrder: "asc",
+    },
+    select: {
+      id: true,
+      name: true,
+    },
+  });
+},
+getAstrologerCategories: async () => {
+  const [skills, problems] = await Promise.all([
+    prisma.skill.findMany({
+      where: {
+        isActive: true,
+      },
+      orderBy: {
+        sortOrder: "asc",
+      },
+    }),
 
+    prisma.problem.findMany({
+      where: {
+        isActive: true,
+      },
+      orderBy: {
+        sortOrder: "asc",
+      },
+    }),
+  ]);
+
+  return [
+    ...skills.map((item) => ({
+      id: item.id,
+      name: item.name,
+      type: "SKILL",
+    })),
+
+    ...problems.map((item) => ({
+      id: item.id,
+      name: item.name,
+      type: "PROBLEM",
+    })),
+  ];
+},
     getRechargePackById: async (_, { id }, context) => {
       if (!context.user) {
         throw new Error("Unauthorized");
