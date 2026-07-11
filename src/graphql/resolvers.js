@@ -400,6 +400,7 @@ module.exports = {
         const {
           query,
           sortField,
+          category,
           sortOrder,
           limit = 10,
           page = 1,
@@ -553,6 +554,7 @@ module.exports = {
           query,
           sortField,
           sortOrder,
+          category,
           limit = 10,
           page = 1,
           type,
@@ -590,12 +592,33 @@ module.exports = {
                 },
               },
               {
+                problems: {
+                  has: query,
+                },
+              },
+              {
                 languages: {
                   has: query,
                 },
               },
             ],
           }),
+
+          ...(category &&
+            category !== "all" && {
+              OR: [
+                {
+                  skills: {
+                    has: category,
+                  },
+                },
+                {
+                  problems: {
+                    has: category,
+                  },
+                },
+              ],
+            }),
         };
 
         const [astrologers, totalCount, pricingConfig, usage] =
@@ -658,6 +681,7 @@ module.exports = {
             experience: astro.experience,
             rating: astro.rating,
             skills: astro.skills,
+            problems: astro.problems,
             languages: astro.languages,
             isBusy: astro.isBusy,
             isOnline: astro.isOnline,
@@ -728,7 +752,7 @@ module.exports = {
                 price: finalPrice,
 
                 originalPrice: p.price,
-                  offerPrice: p.offerPrice ?? null,
+                offerPrice: p.offerPrice ?? null,
                 appliedOffer,
 
                 commissionPercent: p.commissionPercent,
@@ -787,69 +811,69 @@ module.exports = {
         totalCount: packs.length,
       };
     },
-getActiveSkills: async () => {
-  return prisma.skill.findMany({
-    where: {
-      isActive: true,
+    getActiveSkills: async () => {
+      return prisma.skill.findMany({
+        where: {
+          isActive: true,
+        },
+        orderBy: {
+          sortOrder: "asc",
+        },
+        select: {
+          id: true,
+          name: true,
+        },
+      });
     },
-    orderBy: {
-      sortOrder: "asc",
+    getActiveProblems: async () => {
+      return prisma.problem.findMany({
+        where: {
+          isActive: true,
+        },
+        orderBy: {
+          sortOrder: "asc",
+        },
+        select: {
+          id: true,
+          name: true,
+        },
+      });
     },
-    select: {
-      id: true,
-      name: true,
-    },
-  });
-},
-getActiveProblems: async () => {
-  return prisma.problem.findMany({
-    where: {
-      isActive: true,
-    },
-    orderBy: {
-      sortOrder: "asc",
-    },
-    select: {
-      id: true,
-      name: true,
-    },
-  });
-},
-getAstrologerCategories: async () => {
-  const [skills, problems] = await Promise.all([
-    prisma.skill.findMany({
-      where: {
-        isActive: true,
-      },
-      orderBy: {
-        sortOrder: "asc",
-      },
-    }),
+    getAstrologerCategories: async () => {
+      const [skills, problems] = await Promise.all([
+        prisma.skill.findMany({
+          where: {
+            isActive: true,
+          },
+          orderBy: {
+            sortOrder: "asc",
+          },
+        }),
 
-    prisma.problem.findMany({
-      where: {
-        isActive: true,
-      },
-      orderBy: {
-        sortOrder: "asc",
-      },
-    }),
-  ]);
+        prisma.problem.findMany({
+          where: {
+            isActive: true,
+          },
+          orderBy: {
+            sortOrder: "asc",
+          },
+        }),
+      ]);
 
-  return [
-    ...skills.map((item) => ({
-      id: item.id,
-      name: item.name,
-      type: "SKILL",
-    })),
+      return [
+        ...skills.map((item) => ({
+          id: item.id,
+          name: item.name,
+          type: "SKILL",
+        })),
 
-    ...problems.map((item) => ({
-      id: item.id,
-      name: item.name,
-      type: "PROBLEM",
-    })),
-  ];
-},
+        ...problems.map((item) => ({
+          id: item.id,
+          name: item.name,
+          type: "PROBLEM",
+        })),
+      ];
+    },
     getRechargePackById: async (_, { id }, context) => {
       if (!context.user) {
         throw new Error("Unauthorized");
