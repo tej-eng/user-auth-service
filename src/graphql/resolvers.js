@@ -728,7 +728,7 @@ module.exports = {
                 price: finalPrice,
 
                 originalPrice: p.price,
-                offerPrice: p.offerPrice ? finalPrice : null,
+                offerPrice: p.offerPrice ? offerPrice : null,
                 appliedOffer,
 
                 commissionPercent: p.commissionPercent,
