@@ -126,117 +126,115 @@ module.exports = {
         throw new Error(error.message || "Failed to fetch user profile");
       }
     },
-  getUserDashboard: async (_, __, context) => {
-  try {
-    if (!context.user) {
-      throw new Error("Unauthorized");
-    }
+    getUserDashboard: async (_, __, context) => {
+      try {
+        if (!context.user) {
+          throw new Error("Unauthorized");
+        }
 
-    const userId = context.user.id;
+        const userId = context.user.id;
 
-    const [
-      user,
-      totalCalls,
-      totalChats,
-      totalReviews,
-      totalFollowing,
-      totalBookings,
-    ] = await Promise.all([
-      prisma.user.findUnique({
-        where: {
-          id: userId,
-        },
-
-        include: {
-          wallet: true,
-
-          payments: {
+        const [
+          user,
+          totalCalls,
+          totalChats,
+          totalReviews,
+          totalFollowing,
+          totalBookings,
+        ] = await Promise.all([
+          prisma.user.findUnique({
             where: {
-              status: "SUCCESS",
+              id: userId,
             },
 
-            orderBy: {
-              createdAt: "desc",
+            include: {
+              wallet: true,
+
+              payments: {
+                where: {
+                  status: "SUCCESS",
+                },
+
+                orderBy: {
+                  createdAt: "desc",
+                },
+              },
             },
+          }),
+
+          prisma.session.count({
+            where: {
+              userId,
+              type: "CALL",
+            },
+          }),
+
+          prisma.session.count({
+            where: {
+              userId,
+              type: "CHAT",
+            },
+          }),
+
+          prisma.review.count({
+            where: {
+              userId,
+            },
+          }),
+
+          prisma.astrologerFollow.count({
+            where: {
+              userId,
+            },
+          }),
+
+          prisma.serviceBooking.count({
+            where: {
+              userId,
+            },
+          }),
+        ]);
+
+        if (!user) {
+          throw new Error("User not found");
+        }
+
+        const totalRecharge = user.payments.reduce(
+          (sum, payment) => sum + (payment.amount || 0),
+          0,
+        );
+
+        const lastRecharge = user.payments[0];
+
+        return {
+          ...user,
+
+          stats: {
+            walletBalance: user.wallet?.balanceCoins || 0,
+
+            totalRecharge,
+
+            totalRechargeCount: user.payments.length,
+
+            totalCalls,
+
+            totalChats,
+
+            totalReviews,
+
+            totalFollowing,
+
+            totalBookings,
+
+            lastRechargeAmount: lastRecharge?.amount || 0,
+
+            lastRechargeDate: lastRecharge?.createdAt?.toISOString() || null,
           },
-        },
-      }),
-
-      prisma.session.count({
-        where: {
-          userId,
-          type: "CALL",
-        },
-      }),
-
-      prisma.session.count({
-        where: {
-          userId,
-          type: "CHAT",
-        },
-      }),
-
-      prisma.review.count({
-        where: {
-          userId,
-        },
-      }),
-
-      prisma.astrologerFollow.count({
-        where: {
-          userId,
-        },
-      }),
-
-      prisma.serviceBooking.count({
-        where: {
-          userId,
-        },
-      }),
-    ]);
-
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    const totalRecharge = user.payments.reduce(
-      (sum, payment) => sum + (payment.amount || 0),
-      0
-    );
-
-    const lastRecharge = user.payments[0];
-
-    return {
-      ...user,
-
-      stats: {
-        walletBalance: user.wallet?.balanceCoins || 0,
-
-        totalRecharge,
-
-        totalRechargeCount: user.payments.length,
-
-        totalCalls,
-
-        totalChats,
-
-        totalReviews,
-
-        totalFollowing,
-
-        totalBookings,
-
-        lastRechargeAmount:
-          lastRecharge?.amount || 0,
-
-        lastRechargeDate:
-          lastRecharge?.createdAt?.toISOString() || null,
-      },
-    };
-  } catch (err) {
-    throw new Error(err.message);
-  }
-},
+        };
+      } catch (err) {
+        throw new Error(err.message);
+      }
+    },
     getAstrologerReviews: async (
       _,
       { astrologerId, page = 1, limit = 10 },
@@ -730,10 +728,7 @@ module.exports = {
                 price: finalPrice,
 
                 originalPrice: p.price,
-offerPrice:
-    finalPrice < p.price
-      ? finalPrice
-      : null,
+                offerPrice: p.offerPrice ? finalPrice : null,
                 appliedOffer,
 
                 commissionPercent: p.commissionPercent,
@@ -2509,12 +2504,12 @@ offerPrice:
     // intake for chat
 
     createIntake: async (_, { input }, context) => {
-        console.log("========== CREATE INTAKE ==========");
-  console.log("context.user =>", context.user);
+      console.log("========== CREATE INTAKE ==========");
+      console.log("context.user =>", context.user);
 
-  if (!context.user) {
-    throw new Error("Unauthorized");
-  }
+      if (!context.user) {
+        throw new Error("Unauthorized");
+      }
       const userId = context.user.id;
 
       // Generate Room ID
