@@ -114,6 +114,7 @@ isEligibleAudio: Boolean
     limit: Int # Items per page
     page: Int # Page number
     type: PricingType
+    category: String 
   }
 
   enum SortField {
