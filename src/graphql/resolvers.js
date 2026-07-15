@@ -784,19 +784,39 @@ module.exports = {
       };
 
       if (user?.id) {
-        const hasRecharge = await prisma.payment.findFirst({
+        // User ke successful recharge packs nikalo
+        const userPayments = await prisma.payment.findMany({
           where: {
             userId: user.id,
             status: "SUCCESS",
+            rechargePackId: {
+              not: null,
+            },
           },
           select: {
-            id: true,
+            rechargePackId: true,
           },
         });
 
-        if (hasRecharge) {
-          where.hideAfterFirstRecharge = false;
-        }
+        const purchasedPackIds = userPayments.map(
+          (payment) => payment.rechargePackId,
+        );
+
+        where = {
+          isActive: true,
+          NOT: {
+            AND: [
+              {
+                hideAfterFirstRecharge: true,
+              },
+              {
+                id: {
+                  in: purchasedPackIds,
+                },
+              },
+            ],
+          },
+        };
       }
 
       const packs = await prisma.rechargePack.findMany({
