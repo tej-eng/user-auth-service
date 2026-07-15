@@ -776,61 +776,58 @@ module.exports = {
       }
     },
 
-    getRechargePacks: async (_, __, context) => {
-      const { user } = context;
+  getRechargePacks: async (_, __, context) => {
+  const { user } = context;
 
-      let where = {
-        isActive: true,
-      };
+  let where = {
+    isActive: true,
+  };
 
-      if (user?.id) {
-        // User ke successful recharge packs nikalo
-        const userPayments = await prisma.payment.findMany({
-          where: {
-            userId: user.id,
-            status: "SUCCESS",
-            rechargePackId: {
-              not: null,
+  if (user?.id) {
+    // User ne kaun-kaun se packs purchase kiye hain
+    const userPayments = await prisma.payment.findMany({
+      where: {
+        userId: user.id,
+        status: "SUCCESS",
+      },
+      select: {
+        rechargePackId: true,
+      },
+    });
+
+    const purchasedPackIds = userPayments.map(
+      (payment) => payment.rechargePackId
+    );
+
+    where = {
+      isActive: true,
+      NOT: {
+        AND: [
+          {
+            hideAfterFirstRecharge: true,
+          },
+          {
+            id: {
+              in: purchasedPackIds,
             },
           },
-          select: {
-            rechargePackId: true,
-          },
-        });
+        ],
+      },
+    };
+  }
 
-        const purchasedPackIds = userPayments.map(
-          (payment) => payment.rechargePackId,
-        );
-
-        where = {
-          isActive: true,
-          NOT: {
-            AND: [
-              {
-                hideAfterFirstRecharge: true,
-              },
-              {
-                id: {
-                  in: purchasedPackIds,
-                },
-              },
-            ],
-          },
-        };
-      }
-
-      const packs = await prisma.rechargePack.findMany({
-        where,
-        orderBy: {
-          price: "asc",
-        },
-      });
-
-      return {
-        data: packs,
-        totalCount: packs.length,
-      };
+  const packs = await prisma.rechargePack.findMany({
+    where,
+    orderBy: {
+      price: "asc",
     },
+  });
+
+  return {
+    data: packs,
+    totalCount: packs.length,
+  };
+},
     getActiveSkills: async () => {
       return prisma.skill.findMany({
         where: {
