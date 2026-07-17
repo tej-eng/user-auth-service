@@ -2360,6 +2360,7 @@ module.exports = {
     },
     getUpcomingLives: async (_, { page = 1, limit = 10 }) => {
       try {
+        console.log("comming getUpcomingLives-------------");
         const skip = (page - 1) * limit;
 
         const where = {
@@ -2411,6 +2412,7 @@ module.exports = {
     },
 
     joinLive: async (_, { channelName }, { user }) => {
+      console.log("comming in joinLive ");
       if (!user) {
         throw new Error("Unauthorized");
       }
@@ -4180,6 +4182,7 @@ module.exports = {
     },
     startLive: async (_, { title }, { user }) => {
       try {
+        console.log("comming    startLive-------------");
         if (!user) {
           throw new Error("Unauthorized");
         }
