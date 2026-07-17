@@ -2412,37 +2412,77 @@ module.exports = {
     },
 
     joinLive: async (_, { channelName }, { user }) => {
-      console.log("comming in joinLive ");
-      if (!user) {
-        throw new Error("Unauthorized");
-      }
+  try {
+    console.log("========== JOIN LIVE ==========");
+    console.log("Request received at:", new Date().toISOString());
+    console.log("Channel Name:", channelName);
+    console.log("Authenticated User:", user);
 
-      const stream = await prisma.liveStream.findFirst({
-        where: {
-          channelName,
-          status: "LIVE",
-        },
-      });
+    // Check authentication
+    if (!user) {
+      console.error("❌ Unauthorized request");
+      throw new Error("Unauthorized");
+    }
 
-      if (!stream) {
-        throw new Error("Live stream not found");
-      }
+    // Find active live stream
+    const stream = await prisma.liveStream.findFirst({
+      where: {
+        channelName,
+        status: "LIVE",
+      },
+    });
 
-      const uid = Math.floor(Math.random() * 100000);
+    console.log("Live Stream:", stream);
 
-      const token = generateRtcToken({
+    if (!stream) {
+      console.error(`❌ No LIVE stream found for channel: ${channelName}`);
+      throw new Error("Live stream not found");
+    }
+
+    // Generate UID
+    const uid = Math.floor(Math.random() * 100000);
+    console.log("Generated UID:", uid);
+
+    // Generate Agora Token
+    let token;
+
+    try {
+      token = generateRtcToken({
         channelName,
         uid,
         role: "subscriber",
       });
 
-      return {
-        token,
-        uid,
-        appId: process.env.AGORA_APP_ID || "3a1816ebf7bf47b094c7540e2cf2aac0",
-        channelName,
-      };
-    },
+      console.log("Agora Token Generated Successfully");
+    } catch (tokenError) {
+      console.error("❌ Error generating Agora token:", tokenError);
+      throw new Error("Failed to generate Agora token");
+    }
+
+    const response = {
+      token,
+      uid,
+      appId:
+        process.env.AGORA_APP_ID ||
+        "3a1816ebf7bf47b094c7540e2cf2aac0",
+      channelName,
+    };
+
+    console.log("Returning Response:", response);
+    console.log("========== JOIN LIVE SUCCESS ==========");
+
+    return response;
+  } catch (error) {
+    console.error("========== JOIN LIVE ERROR ==========");
+    console.error("Message:", error.message);
+    console.error("Stack:", error.stack);
+    console.error("Channel:", channelName);
+    console.error("User:", user);
+    console.error("=====================================");
+
+    throw new Error(error.message || "Failed to join live stream");
+  }
+},
     getCoupons: async () => {
       try {
         return await prisma.coupon.findMany({
