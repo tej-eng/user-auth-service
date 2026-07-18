@@ -22,7 +22,7 @@ module.exports = gql`
     updatedAt: String
     user_status: Int
     wallet: UserWallet
-stats: UserDashboardStats
+    stats: UserDashboardStats
   }
 
   type AuthPayload {
@@ -95,10 +95,10 @@ stats: UserDashboardStats
     isChatActive: Boolean
     isCallActive: Boolean
     isLiveActive: Boolean
-isEligibleChat: Boolean
-isEligibleCall: Boolean
-isEligibleVideo: Boolean
-isEligibleAudio: Boolean
+    isEligibleChat: Boolean
+    isEligibleCall: Boolean
+    isEligibleVideo: Boolean
+    isEligibleAudio: Boolean
     tags: String
     vtags: String
 
@@ -114,7 +114,7 @@ isEligibleAudio: Boolean
     limit: Int # Items per page
     page: Int # Page number
     type: PricingType
-    category: String 
+    category: String
   }
 
   enum SortField {
@@ -435,18 +435,18 @@ isEligibleAudio: Boolean
 
     status: SessionStatus
   }
-type UserDashboardStats {
-  walletBalance: Int
-  totalRecharge: Float
-  totalRechargeCount: Int
-  totalCalls: Int
-  totalChats: Int
-  totalReviews: Int
-  totalFollowing: Int
-  totalBookings: Int
-  lastRechargeAmount: Float
-  lastRechargeDate: String
-}
+  type UserDashboardStats {
+    walletBalance: Int
+    totalRecharge: Float
+    totalRechargeCount: Int
+    totalCalls: Int
+    totalChats: Int
+    totalReviews: Int
+    totalFollowing: Int
+    totalBookings: Int
+    lastRechargeAmount: Float
+    lastRechargeDate: String
+  }
   type ChatSessionResponse {
     data: [ChatSession]
     totalCount: Int
@@ -646,22 +646,22 @@ type UserDashboardStats {
     skills: [String]
     languages: [String]
   }
-    type AstrologerReview {
-  id: ID!
-  userId: ID
-  userName: String
-  rating: Int!
-  comment: String
-  reply: String
-  createdAt: String!
-}
-type AstrologerReviewResponse {
-  data: [AstrologerReview!]!
-  totalCount: Int!
-  currentPage: Int!
-  totalPages: Int!
-  averageRating: Float!
-}
+  type AstrologerReview {
+    id: ID!
+    userId: ID
+    userName: String
+    rating: Int!
+    comment: String
+    reply: String
+    createdAt: String!
+  }
+  type AstrologerReviewResponse {
+    data: [AstrologerReview!]!
+    totalCount: Int!
+    currentPage: Int!
+    totalPages: Int!
+    averageRating: Float!
+  }
   #--------------------End code for chat history-----------------------
 
   #------------------start code for call history-----------------------
@@ -1217,10 +1217,15 @@ type AstrologerReviewResponse {
     PUBLISHED
   }
   type LiveJoinResponse {
-    token: String!
+    rtcToken: String!
     uid: Int!
     appId: String!
     channelName: String!
+
+    chatUserId: String!
+    chatToken: String!
+    chatRoomId: String!
+    chatAppKey: String!
   }
   type PrivacyPage {
     id: ID
@@ -1305,25 +1310,25 @@ type AstrologerReviewResponse {
     recording: CallRecording
     fileUrl: String
   }
-    type Skill {
-  id: ID!
-  name: String!
-}
+  type Skill {
+    id: ID!
+    name: String!
+  }
 
-type Problem {
-  id: ID!
-  name: String!
-}
+  type Problem {
+    id: ID!
+    name: String!
+  }
   type AstrologerCategory {
-  id: ID!
-  name: String!
-  type: String!
-}
+    id: ID!
+    name: String!
+    type: String!
+  }
   #-------------END CALL RECORDING---
   type Query {
     getAstrologerCategories: [AstrologerCategory!]!
-  getActiveSkills: [Skill!]!
-  getActiveProblems: [Problem!]!
+    getActiveSkills: [Skill!]!
+    getActiveProblems: [Problem!]!
     getServiceBooking(bookingId: ID!): ServiceBooking
     getCoupons: [Coupon!]!
     getSessionRemedy(sessionId: ID!): SessionRemedyResponse
@@ -1354,7 +1359,7 @@ type Problem {
     getUserChatHistory(
       filter: UserChatHistoryFilterInput
     ): UserChatHistoryResponse
-getUserDashboard: User
+    getUserDashboard: User
     getUserSessions(filter: SessionFilterInput): ChatSessionResponse
     getChatMessages(roomId: String!): [ChatMessage]
     recentIntakes: RecentIntakeResponse
@@ -1415,11 +1420,11 @@ getUserDashboard: User
     joinLive(channelName: String!): LiveJoinResponse!
 
     getSessionRemedies(sessionId: String!): [SessionRemedy!]!
-      getAstrologerReviews(
-    astrologerId: ID!
-    page: Int
-    limit: Int
-  ): AstrologerReviewResponse!
+    getAstrologerReviews(
+      astrologerId: ID!
+      page: Int
+      limit: Int
+    ): AstrologerReviewResponse!
   }
 
   type Mutation {

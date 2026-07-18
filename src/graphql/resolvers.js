@@ -18,7 +18,11 @@ const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
-const { generateRtcToken } = require("../utils/agoraToken");
+const {
+  generateRtcToken,
+  createAgoraChatUser,
+  generateChatToken,
+} = require("../utils/agoraToken");
 // Helper to log events in MongoDB
 async function logEvent({ userId, action, details }) {
   try {
@@ -2411,20 +2415,17 @@ module.exports = {
       }
     },
 
-    joinLive: async (_, { channelName }, { user }) => {
+  joinLive: async (_, { channelName }, { user }) => {
   try {
     console.log("========== JOIN LIVE ==========");
-    console.log("Request received at:", new Date().toISOString());
-    console.log("Channel Name:", channelName);
-    console.log("Authenticated User:", user);
+    console.log("Channel:", channelName);
+    console.log("User:", user);
 
-    // Check authentication
     if (!user) {
-      console.error("❌ Unauthorized request");
       throw new Error("Unauthorized");
     }
 
-    // Find active live stream
+    // Find active live
     const stream = await prisma.liveStream.findFirst({
       where: {
         channelName,
@@ -2432,53 +2433,60 @@ module.exports = {
       },
     });
 
-    console.log("Live Stream:", stream);
-
     if (!stream) {
-      console.error(`❌ No LIVE stream found for channel: ${channelName}`);
       throw new Error("Live stream not found");
     }
 
-    // Generate UID
-    const uid = Math.floor(Math.random() * 100000);
-    console.log("Generated UID:", uid);
-
-    // Generate Agora Token
-    let token;
-
-    try {
-      token = generateRtcToken({
-        channelName,
-        uid,
-        role: "subscriber",
-      });
-
-      console.log("Agora Token Generated Successfully");
-    } catch (tokenError) {
-      console.error("❌ Error generating Agora token:", tokenError);
-      throw new Error("Failed to generate Agora token");
+    // Make sure chat room exists
+    if (!stream.chatRoomId) {
+      throw new Error("Chat room not found for this live stream");
     }
 
-    const response = {
-      token,
-      uid,
-      appId:
-        process.env.AGORA_APP_ID ||
-        "3a1816ebf7bf47b094c7540e2cf2aac0",
+    // Generate RTC UID
+    const uid = Math.floor(Math.random() * 1000000);
+
+    // RTC Token
+    const rtcToken = generateRtcToken({
       channelName,
+      uid,
+      role: "subscriber",
+    });
+
+    console.log("RTC Token Generated");
+
+    // Agora Chat username
+    const chatUserId = `user_${user.id}`;
+
+    // Create chat user if not exists
+    await createAgoraChatUser(chatUserId);
+
+    console.log("Chat User Ready");
+
+    // Generate chat token
+    const chatToken = await generateChatToken(chatUserId);
+
+    console.log("Chat Token Generated");
+
+    const response = {
+      rtcToken,
+      uid,
+      appId: process.env.AGORA_APP_ID,
+      channelName,
+
+      chatUserId,
+      chatToken,
+      chatRoomId: stream.chatRoomId,
+      chatAppKey: process.env.AGORA_CHAT_APP_KEY,
     };
 
-    console.log("Returning Response:", response);
+    console.log("Join Live Response:", response);
     console.log("========== JOIN LIVE SUCCESS ==========");
 
     return response;
   } catch (error) {
     console.error("========== JOIN LIVE ERROR ==========");
-    console.error("Message:", error.message);
-    console.error("Stack:", error.stack);
-    console.error("Channel:", channelName);
-    console.error("User:", user);
-    console.error("=====================================");
+    console.error(error.response?.data || error);
+    console.error("====================================");
 
     throw new Error(error.message || "Failed to join live stream");
   }
