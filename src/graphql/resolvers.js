@@ -2823,12 +2823,12 @@ module.exports = {
       // ----------------------------------------------------
       // ASTROLOGER OFFER PRICE
       // ----------------------------------------------------
-      else if (pricing.offerPrice && Number(pricing.offerPrice) >= 0) {
-        pricePerMin = Number(pricing.offerPrice);
-         console.log("OFFER price --------",pricePerMin);
+      // else if (pricing.offerPrice && Number(pricing.offerPrice) >= 0) {
+      //   pricePerMin = Number(pricing.offerPrice);
+      //    console.log("OFFER price --------",pricePerMin);
 
-        appliedOffer = "ASTROLOGER_OFFER_PRICE";
-      }
+      //   appliedOffer = "ASTROLOGER_OFFER_PRICE";
+      // }
 
       // ----------------------------------------------------
       // NORMAL PRICE
