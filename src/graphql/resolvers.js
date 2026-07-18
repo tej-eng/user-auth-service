@@ -2772,6 +2772,7 @@ module.exports = {
             : Number(pricingConfig.firstChatPrice);
 
         appliedOffer = "FIRST_TIME_OFFER";
+         console.log("FIRST_TIME_OFFER price --------",pricePerMin);
       }
 
       // ----------------------------------------------------
@@ -2786,6 +2787,8 @@ module.exports = {
             ? Number(pricingConfig.secondCallPrice)
             : Number(pricingConfig.secondChatPrice);
 
+            console.log("SECOND price --------",pricePerMin);
+
         appliedOffer = "SECOND_TIME_OFFER";
       }
 
@@ -2797,6 +2800,8 @@ module.exports = {
           requestType === "CALL"
             ? Number(pricingConfig.globalCallPrice)
             : Number(pricingConfig.globalChatPrice);
+
+          console.log("GLOBAL price --------",pricePerMin);
 
         appliedOffer = "GLOBAL_OFFER";
       }
@@ -2810,7 +2815,7 @@ module.exports = {
         Number(activeOffer.offer.price) >= 0
       ) {
         pricePerMin = Number(activeOffer.offer.price);
-
+        console.log("SPECIAL price --------",pricePerMin);
         appliedOffer =
           activeOffer.offer.offerName || "ASTROLOGER_SPECIAL_OFFER";
       }
@@ -2820,6 +2825,7 @@ module.exports = {
       // ----------------------------------------------------
       else if (pricing.offerPrice && Number(pricing.offerPrice) >= 0) {
         pricePerMin = Number(pricing.offerPrice);
+         console.log("OFFER price --------",pricePerMin);
 
         appliedOffer = "ASTROLOGER_OFFER_PRICE";
       }
@@ -2829,6 +2835,7 @@ module.exports = {
       // ----------------------------------------------------
       else {
         pricePerMin = Number(pricing.price);
+        console.log("NORMAL price --------",pricePerMin);
 
         appliedOffer = "NORMAL";
       }
