@@ -780,58 +780,58 @@ module.exports = {
       }
     },
 
-  getRechargePacks: async (_, __, context) => {
-  const { user } = context;
+    getRechargePacks: async (_, __, context) => {
+      const { user } = context;
 
-  let where = {
-    isActive: true,
-  };
+      let where = {
+        isActive: true,
+      };
 
-  if (user?.id) {
-    // User ne kaun-kaun se packs purchase kiye hain
-    const userPayments = await prisma.payment.findMany({
-      where: {
-        userId: user.id,
-        status: "SUCCESS",
-      },
-      select: {
-        rechargePackId: true,
-      },
-    });
-
-    const purchasedPackIds = userPayments.map(
-      (payment) => payment.rechargePackId
-    );
-
-    where = {
-      isActive: true,
-      NOT: {
-        AND: [
-          {
-            hideAfterFirstRecharge: true,
+      if (user?.id) {
+        // User ne kaun-kaun se packs purchase kiye hain
+        const userPayments = await prisma.payment.findMany({
+          where: {
+            userId: user.id,
+            status: "SUCCESS",
           },
-          {
-            id: {
-              in: purchasedPackIds,
-            },
+          select: {
+            rechargePackId: true,
           },
-        ],
-      },
-    };
-  }
+        });
 
-  const packs = await prisma.rechargePack.findMany({
-    where,
-    orderBy: {
-      price: "asc",
+        const purchasedPackIds = userPayments.map(
+          (payment) => payment.rechargePackId,
+        );
+
+        where = {
+          isActive: true,
+          NOT: {
+            AND: [
+              {
+                hideAfterFirstRecharge: true,
+              },
+              {
+                id: {
+                  in: purchasedPackIds,
+                },
+              },
+            ],
+          },
+        };
+      }
+
+      const packs = await prisma.rechargePack.findMany({
+        where,
+        orderBy: {
+          price: "asc",
+        },
+      });
+
+      return {
+        data: packs,
+        totalCount: packs.length,
+      };
     },
-  });
-
-  return {
-    data: packs,
-    totalCount: packs.length,
-  };
-},
     getActiveSkills: async () => {
       return prisma.skill.findMany({
         where: {
@@ -932,13 +932,150 @@ module.exports = {
 
       return user;
     },
-    getAstrologerById: async (_, { id }) => {
-      return await prisma.astrologer.findUnique({
-        where: { id },
-        include: {
-          pricing: true,
-        },
-      });
+    getAstrologerById: async (_, { id }, context) => {
+      try {
+        if (!context.user) {
+          throw new Error("Unauthorized");
+        }
+
+        const userId = context.user.id;
+
+        const [astro, pricingConfig, usage, activeOffer] = await Promise.all([
+          prisma.astrologer.findUnique({
+            where: { id },
+            include: {
+              pricing: {
+                where: {
+                  isActive: true,
+                },
+              },
+              reviews: {
+                orderBy: {
+                  createdAt: "desc",
+                },
+              },
+            },
+          }),
+
+          prisma.pricingConfig.findFirst(),
+
+          prisma.userOfferUsage.findUnique({
+            where: {
+              userId,
+            },
+          }),
+
+          prisma.astrologerOffer.findFirst({
+            where: {
+              astrologerId: id,
+              isActive: true,
+            },
+            include: {
+              offer: true,
+            },
+          }),
+        ]);
+
+        if (!astro) {
+          throw new Error("Astrologer not found");
+        }
+
+        const specialOffer = activeOffer?.offer ?? null;
+
+        return {
+          id: astro.id,
+          name: astro.name,
+          displayName: astro.displayName,
+          profilePic: astro.profilePic,
+          about: astro.about,
+
+          experience: astro.experience,
+          rating: astro.rating,
+
+          languages: astro.languages,
+          skills: astro.skills,
+          problems: astro.problems,
+
+          isBusy: astro.isBusy,
+          isOnline: astro.isOnline,
+          isChatActive: astro.isChatActive,
+          isCallActive: astro.isCallActive,
+          isLiveActive: astro.isLiveActive,
+
+          activeOffer: specialOffer
+            ? {
+                id: specialOffer.id,
+                offerName: specialOffer.offerName,
+                price: specialOffer.price,
+                description: specialOffer.description,
+              }
+            : null,
+
+          pricing: astro.pricing.map((p) => {
+            let finalPrice = p.price;
+            let appliedOffer = null;
+
+            // 1. Special Offer
+            if (specialOffer) {
+              finalPrice = specialOffer.price;
+              appliedOffer = specialOffer.offerName;
+            }
+
+            // 2. First Offer
+            else if (pricingConfig?.isFirstOfferEnabled && !usage?.usedFirst) {
+              finalPrice =
+                p.type === "CHAT"
+                  ? pricingConfig.firstChatPrice
+                  : pricingConfig.firstCallPrice;
+
+              appliedOffer = "FIRST_TIME_OFFER";
+            }
+
+            // 3. Second Offer
+            else if (
+              pricingConfig?.isSecondOfferEnabled &&
+              usage?.usedFirst &&
+              !usage?.usedSecond
+            ) {
+              finalPrice =
+                p.type === "CHAT"
+                  ? pricingConfig.secondChatPrice
+                  : pricingConfig.secondCallPrice;
+
+              appliedOffer = "SECOND_TIME_OFFER";
+            }
+
+            // 4. Global Offer
+            else if (pricingConfig?.isGlobalOfferEnabled) {
+              finalPrice =
+                p.type === "CHAT"
+                  ? pricingConfig.globalChatPrice
+                  : pricingConfig.globalCallPrice;
+
+              appliedOffer = "GLOBAL_OFFER";
+            }
+
+            return {
+              id: p.id,
+              type: p.type,
+
+              price: finalPrice,
+              originalPrice: p.price,
+              offerPrice: p.offerPrice ?? null,
+
+              commissionPercent: p.commissionPercent,
+              appliedOffer,
+
+              isActive: p.isActive,
+            };
+          }),
+
+          reviews: astro.reviews,
+        };
+      } catch (error) {
+        console.error(error);
+        throw new Error(error.message);
+      }
     },
     getUserChatHistory: async (_, { filter = {} }, context) => {
       try {
@@ -2415,82 +2552,82 @@ module.exports = {
       }
     },
 
-  joinLive: async (_, { channelName }, { user }) => {
-  try {
-    console.log("========== JOIN LIVE ==========");
-    console.log("Channel:", channelName);
-    console.log("User:", user);
+    joinLive: async (_, { channelName }, { user }) => {
+      try {
+        console.log("========== JOIN LIVE ==========");
+        console.log("Channel:", channelName);
+        console.log("User:", user);
 
-    if (!user) {
-      throw new Error("Unauthorized");
-    }
+        if (!user) {
+          throw new Error("Unauthorized");
+        }
 
-    // Find active live
-    const stream = await prisma.liveStream.findFirst({
-      where: {
-        channelName,
-        status: "LIVE",
-      },
-    });
+        // Find active live
+        const stream = await prisma.liveStream.findFirst({
+          where: {
+            channelName,
+            status: "LIVE",
+          },
+        });
 
-    if (!stream) {
-      throw new Error("Live stream not found");
-    }
+        if (!stream) {
+          throw new Error("Live stream not found");
+        }
 
-    // Make sure chat room exists
-    if (!stream.chatRoomId) {
-      throw new Error("Chat room not found for this live stream");
-    }
+        // Make sure chat room exists
+        if (!stream.chatRoomId) {
+          throw new Error("Chat room not found for this live stream");
+        }
 
-    // Generate RTC UID
-    const uid = Math.floor(Math.random() * 1000000);
+        // Generate RTC UID
+        const uid = Math.floor(Math.random() * 1000000);
 
-    // RTC Token
-    const rtcToken = generateRtcToken({
-      channelName,
-      uid,
-      role: "subscriber",
-    });
+        // RTC Token
+        const rtcToken = generateRtcToken({
+          channelName,
+          uid,
+          role: "subscriber",
+        });
 
-    console.log("RTC Token Generated");
+        console.log("RTC Token Generated");
 
-    // Agora Chat username
-    const chatUserId = `user_${user.id}`;
+        // Agora Chat username
+        const chatUserId = `user_${user.id}`;
 
-    // Create chat user if not exists
-    await createAgoraChatUser(chatUserId);
+        // Create chat user if not exists
+        await createAgoraChatUser(chatUserId);
 
-    console.log("Chat User Ready");
+        console.log("Chat User Ready");
 
-    // Generate chat token
-    const chatToken = await generateChatToken(chatUserId);
+        // Generate chat token
+        const chatToken = await generateChatToken(chatUserId);
 
-    console.log("Chat Token Generated");
+        console.log("Chat Token Generated");
 
-    const response = {
-      rtcToken,
-      uid,
-      appId: process.env.AGORA_APP_ID,
-      channelName,
+        const response = {
+          rtcToken,
+          uid,
+          appId: process.env.AGORA_APP_ID,
+          channelName,
 
-      chatUserId,
-      chatToken,
-      chatRoomId: stream.chatRoomId,
-      chatAppKey: process.env.AGORA_CHAT_APP_KEY,
-    };
+          chatUserId,
+          chatToken,
+          chatRoomId: stream.chatRoomId,
+          chatAppKey: process.env.AGORA_CHAT_APP_KEY,
+        };
 
-    console.log("Join Live Response:", response);
-    console.log("========== JOIN LIVE SUCCESS ==========");
+        console.log("Join Live Response:", response);
+        console.log("========== JOIN LIVE SUCCESS ==========");
 
-    return response;
-  } catch (error) {
-    console.error("========== JOIN LIVE ERROR ==========");
-    console.error(error.response?.data || error);
-    console.error("====================================");
+        return response;
+      } catch (error) {
+        console.error("========== JOIN LIVE ERROR ==========");
+        console.error(error.response?.data || error);
+        console.error("====================================");
 
-    throw new Error(error.message || "Failed to join live stream");
-  }
-},
+        throw new Error(error.message || "Failed to join live stream");
+      }
+    },
     getCoupons: async () => {
       try {
         return await prisma.coupon.findMany({
@@ -2780,7 +2917,7 @@ module.exports = {
             : Number(pricingConfig.firstChatPrice);
 
         appliedOffer = "FIRST_TIME_OFFER";
-         console.log("FIRST_TIME_OFFER price --------",pricePerMin);
+        console.log("FIRST_TIME_OFFER price --------", pricePerMin);
       }
 
       // ----------------------------------------------------
@@ -2795,7 +2932,7 @@ module.exports = {
             ? Number(pricingConfig.secondCallPrice)
             : Number(pricingConfig.secondChatPrice);
 
-            console.log("SECOND price --------",pricePerMin);
+        console.log("SECOND price --------", pricePerMin);
 
         appliedOffer = "SECOND_TIME_OFFER";
       }
@@ -2809,7 +2946,7 @@ module.exports = {
             ? Number(pricingConfig.globalCallPrice)
             : Number(pricingConfig.globalChatPrice);
 
-          console.log("GLOBAL price --------",pricePerMin);
+        console.log("GLOBAL price --------", pricePerMin);
 
         appliedOffer = "GLOBAL_OFFER";
       }
@@ -2823,7 +2960,7 @@ module.exports = {
         Number(activeOffer.offer.price) >= 0
       ) {
         pricePerMin = Number(activeOffer.offer.price);
-        console.log("SPECIAL price --------",pricePerMin);
+        console.log("SPECIAL price --------", pricePerMin);
         appliedOffer =
           activeOffer.offer.offerName || "ASTROLOGER_SPECIAL_OFFER";
       }
@@ -2843,7 +2980,7 @@ module.exports = {
       // ----------------------------------------------------
       else {
         pricePerMin = Number(pricing.price);
-        console.log("NORMAL price --------",pricePerMin);
+        console.log("NORMAL price --------", pricePerMin);
 
         appliedOffer = "NORMAL";
       }
