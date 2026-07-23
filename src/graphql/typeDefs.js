@@ -1425,6 +1425,7 @@ module.exports = gql`
       page: Int
       limit: Int
     ): AstrologerReviewResponse!
+     getSimilarAstrologers(astrologerId: ID!): [Astrologer!]!
   }
 
   type Mutation {
