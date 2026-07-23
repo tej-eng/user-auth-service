@@ -2499,6 +2499,161 @@ module.exports = {
 
       return data;
     },
+    getSimilarAstrologers: async (_, { astrologerId }, context) => {
+  try {
+    if (!context.user) {
+      throw new Error("Unauthorized");
+    }
+
+    const userId = context.user.id;
+
+    const currentAstro = await prisma.astrologer.findUnique({
+      where: {
+        id: astrologerId,
+      },
+      select: {
+        skills: true,
+      },
+    });
+
+    if (!currentAstro) {
+      throw new Error("Astrologer not found");
+    }
+
+    const skills = currentAstro.skills || [];
+
+    let astrologers = await prisma.astrologer.findMany({
+      where: {
+        id: {
+          not: astrologerId,
+        },
+        skills: {
+          hasSome: skills,
+        },
+      },
+      include: {
+        pricing: {
+          where: {
+            isActive: true,
+          },
+        },
+      },
+      take: 6,
+    });
+
+    if (astrologers.length < 6) {
+      const existingIds = [
+        astrologerId,
+        ...astrologers.map((i) => i.id),
+      ];
+
+      const randomAstros = await prisma.astrologer.findMany({
+        where: {
+          id: {
+            notIn: existingIds,
+          },
+        },
+        include: {
+          pricing: {
+            where: {
+              isActive: true,
+            },
+          },
+        },
+        take: 6 - astrologers.length,
+      });
+
+      astrologers = [...astrologers, ...randomAstros];
+    }
+
+    const pricingConfig = await prisma.pricingConfig.findFirst();
+
+    const usage = await prisma.userOfferUsage.findUnique({
+      where: {
+        userId,
+      },
+    });
+
+    const result = [];
+
+    for (const astro of astrologers) {
+      const activeOffer = await prisma.astrologerOffer.findFirst({
+        where: {
+          astrologerId: astro.id,
+          isActive: true,
+        },
+        include: {
+          offer: true,
+        },
+      });
+
+      const specialOffer = activeOffer?.offer ?? null;
+
+      result.push({
+        ...astro,
+
+        activeOffer: specialOffer
+          ? {
+              id: specialOffer.id,
+              offerName: specialOffer.offerName,
+              price: specialOffer.price,
+              description: specialOffer.description,
+            }
+          : null,
+
+        pricing: astro.pricing.map((p) => {
+          let finalPrice = p.price;
+          let appliedOffer = null;
+
+          if (specialOffer) {
+            finalPrice = specialOffer.price;
+            appliedOffer = specialOffer.offerName;
+          } else if (
+            pricingConfig?.isFirstOfferEnabled &&
+            !usage?.usedFirst
+          ) {
+            finalPrice =
+              p.type === "CHAT"
+                ? pricingConfig.firstChatPrice
+                : pricingConfig.firstCallPrice;
+
+            appliedOffer = "FIRST_TIME_OFFER";
+          } else if (
+            pricingConfig?.isSecondOfferEnabled &&
+            usage?.usedFirst &&
+            !usage?.usedSecond
+          ) {
+            finalPrice =
+              p.type === "CHAT"
+                ? pricingConfig.secondChatPrice
+                : pricingConfig.secondCallPrice;
+
+            appliedOffer = "SECOND_TIME_OFFER";
+          } else if (pricingConfig?.isGlobalOfferEnabled) {
+            finalPrice =
+              p.type === "CHAT"
+                ? pricingConfig.globalChatPrice
+                : pricingConfig.globalCallPrice;
+
+            appliedOffer = "GLOBAL_OFFER";
+          }
+
+          return {
+            ...p,
+            price: finalPrice,
+            originalPrice: p.price,
+            appliedOffer,
+          };
+        }),
+      });
+    }
+
+    return result;
+  } catch (error) {
+    console.error(error);
+    throw new Error(error.message);
+  }
+},
     getUpcomingLives: async (_, { page = 1, limit = 10 }) => {
       try {
         console.log("comming getUpcomingLives-------------");
