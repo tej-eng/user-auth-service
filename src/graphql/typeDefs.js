@@ -1135,6 +1135,7 @@ module.exports = gql`
   input CreateHealingOrderInput {
     bookingId: ID!
     couponCode: String
+    amount: Float!
   }
 
   type ConfirmWalletBookingResponse {
