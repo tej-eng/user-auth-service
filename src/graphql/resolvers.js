@@ -3988,7 +3988,7 @@ module.exports = {
         }
 
         const userId = context.user.id;
-        const { bookingId, couponCode } = input;
+       const { bookingId, couponCode, amount } = input;
         console.log(bookingId, "------check booking idddddd----", couponCode);
 
         const booking = await prisma.serviceBooking.findUnique({
@@ -4001,11 +4001,11 @@ module.exports = {
           throw new Error("Booking not found");
         }
 
-        if (booking.amount == null) {
-          throw new Error("Booking amount not found");
-        }
+ const totalAmount = Number(amount);
 
-        const totalAmount = Number(booking.amount);
+if (!totalAmount || totalAmount <= 0) {
+  throw new Error("Invalid amount");
+}
 
         let coupon = null;
         let discount = 0;
@@ -4077,10 +4077,6 @@ module.exports = {
             }
           }
         }
-
-        //--------------------------------------
-        // CREATE RAZORPAY ORDER
-        //--------------------------------------
 
         const receiptId = uuidv4();
 
