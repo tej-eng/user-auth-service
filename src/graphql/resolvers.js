@@ -682,7 +682,7 @@ module.exports = {
             id: astro.id,
             profilePic: astro.profilePic,
             name: astro.name,
-            dname: astro.displayName,
+            displayName: astro.displayName,
             experience: astro.experience,
             rating: astro.rating,
             skills: astro.skills,
