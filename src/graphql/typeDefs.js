@@ -619,9 +619,9 @@ module.exports = gql`
 
     ratePerMin: Int
 
-    coinsDeducted: Int
-    coinsEarned: Int
-    commission: Int
+    coinsDeducted: Float
+    coinsEarned: Float
+    commission: Float
 
     user: ChatUser
     astrologer: ChatAstrologer
@@ -702,9 +702,9 @@ module.exports = gql`
 
     ratePerMin: Int
 
-    coinsDeducted: Int
-    coinsEarned: Int
-    commission: Int
+    coinsDeducted: Float
+    coinsEarned: Float
+    commission: Float
 
     user: ChatUser
     astrologer: ChatAstrologer
