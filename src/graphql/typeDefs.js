@@ -596,9 +596,9 @@ module.exports = gql`
   }
 
   type ChatHistorySummary {
-    totalCoinsDeducted: Int!
-    totalCoinsEarned: Int!
-    totalCommission: Int!
+    totalCoinsDeducted: Float!
+    totalCoinsEarned: Float!
+    totalCommission: Float!
     totalRecords: Int!
   }
 
