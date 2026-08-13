@@ -316,6 +316,7 @@ model Astrologer {
   callRecordings CallRecording[]
   isDeleted Boolean @default(false)
   payouts AstrologerPayout[] 
+  tax AstrologerTax?
   @@index([rating])
   @@index([experience])
 }
@@ -700,7 +701,7 @@ model AstrologerWallet {
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
   transactions   WalletTransaction[]
-
+  lastPaidAmount   Float @default(0) 
   @@index([astrologerId])
 }
 
@@ -774,9 +775,9 @@ model Session {
   ratePerMin  Int
   durationSec Int @default(0)
 
-  coinsDeducted Int       @default(0)
-  coinsEarned   Int       @default(0)
-  commission    Int       @default(0)
+  coinsDeducted Float @default(0)
+coinsEarned   Float @default(0)
+commission    Float @default(0)
   source        String?
   by        String?
   review        Review?
@@ -804,35 +805,63 @@ model Session {
 }
 
 model Payment {
+
   id String @id @default(uuid())
 
   userId String
-  user   User   @relation(fields: [userId], references: [id])
+  user User @relation(fields:[userId],references:[id])
 
   rechargePackId String
-  rechargePack   RechargePack @relation(fields: [rechargePackId], references: [id])
+  rechargePack RechargePack @relation(fields:[rechargePackId],references:[id])
 
-  paymentOrderId String       @unique
-  paymentOrder   PaymentOrder @relation(fields: [paymentOrderId], references: [id])
+  paymentOrderId String @unique
+  paymentOrder PaymentOrder @relation(fields:[paymentOrderId],references:[id])
 
   amount Float
-  coins  Int
+  coins Int
 
   provider PaymentProvider
 
-  razorpayOrderId   String
+  razorpayOrderId String
   razorpayPaymentId String @unique
 
   status PaymentStatus
 
+  //--------------------------------
+  invoiceNo String? @unique
+
+  taxableAmount Float?
+
+  gstRate Float?
+
+  cgst Float?
+
+  sgst Float?
+
+  igst Float?
+
+  totalTax Float?
+
+  totalAmount Float?
+  pgChargeRate Float?
+  pgCharge Float?
+  pgIgst Float?
+  pgTotal Float?
+  receivableAmount Float?
+
+  //--------------------------------
+
+  country String?
+  state String?
+  city String?
+
+  //--------------------------------
+
+  platform String?
+
   createdAt DateTime @default(now())
 
-  // ADD THIS
   walletTransactions WalletTransaction[]
-
-  @@index([userId])
-  @@index([status])
-  @@index([razorpayOrderId])
 }
 
 model PaymentOrder {
@@ -1663,17 +1692,26 @@ model AstrologerPayout {
 
   totalRevenue Float
 
-  earning Float
-
+  commissionPercent Float
   commission Float
 
-  commissionGST Float
+  earning Float
+
+  pgChargeRate Float
+  pgCharge Float
+
+  gstRate Float
 
   igst Float?
   cgst Float?
   sgst Float?
 
-  tds Float
+  pgTotal Float
+
+  grossAmount Float
+
+  tdsPercent Float
+  tdsAmount Float
 
   lastPaidAmount Float?
 
@@ -1692,22 +1730,18 @@ model AstrologerPayout {
 
 
 model AstrologerTax {
+  id String @id @default(uuid())
 
-   id String @id @default(uuid())
+  astrologerId String @unique
+  astrologer Astrologer @relation(fields: [astrologerId], references: [id], onDelete: Cascade)
 
-   astrologerId String @unique
+  gstNumber String?
+  state String
+  panNumber String
 
-   gstNumber String?
-
-   state String
-
-   panNumber String
-
-   tdsPercent Float
-
-   gstPercent Float
+  tdsPercent Float
+  gstPercent Float
 }
-
 
 model AstrologerPayoutSession {
 
