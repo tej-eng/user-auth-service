@@ -3185,9 +3185,13 @@ module.exports = {
         chatTime = Math.floor(walletBalance / pricePerMin);
       }
 
-      // if (chatTime <= 0) {
-      //   throw new Error("Insufficient balance");
-      // }
+      if (chatTime <= 0 ) {
+        throw new Error("Insufficient balance");
+      }
+
+       if (chatTime < 5) {
+        throw new Error("balance must be minimum 5 minutes");
+      }
 
       const intake = await prisma.intake.create({
         data: {
