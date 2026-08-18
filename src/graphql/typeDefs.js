@@ -914,11 +914,16 @@ module.exports = gql`
   }
 
   type SendGiftResponse {
-    success: Boolean!
-    message: String!
-    userBalance: Float
-    astrologerBalance: Float
-  }
+  success: Boolean!
+  message: String!
+  userBalance: Float
+  astrologerBalance: Float
+
+  giftPrice: Float
+  commissionPercent: Float
+  astrologerEarning: Float
+  platformEarning: Float
+}
 
   #-----END CODE FOR SEND GIFT TO ASTROLOGER---------------
   #----START code forsendgift history ----
