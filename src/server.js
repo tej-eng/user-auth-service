@@ -56,18 +56,14 @@ app.use(graphqlUploadExpress({ maxFileSize: 10000000, maxFiles: 1 }));
     "/graphql",
     expressMiddleware(server, {
  context: async ({ req, res }) => {
-  console.log("Cookies:", req.cookies);
-  console.log("Cookie Header:", req.headers.cookie);
 
   const token = req.cookies?.accessToken;
-  console.log("Token:", token);
 
   let user = null;
 
   if (token) {
     try {
       user = verifyAccessToken(token);
-      console.log("User:", user);
     } catch (e) {
       console.log("JWT Error:", e.message);
     }
