@@ -2971,7 +2971,6 @@ module.exports = {
     // intake for chat
 
     createIntake: async (_, { input }, context) => {
-      console.log("========== CREATE INTAKE ==========");
       console.log("context.user =>", context.user);
 
       if (!context.user) {
@@ -2981,7 +2980,6 @@ module.exports = {
 
       // Generate Room ID
       const roomId = uuidv4();
-      console.log("source---------------", input);
       // Get User Wallet
       const user = await prisma.user.findUnique({
         where: { id: userId },
@@ -3180,7 +3178,7 @@ module.exports = {
       // Calculate Chat/Call Time
       let chatTime = 0;
       if (pricePerMin == 0) {
-        chatTime = 5;
+        chatTime = 3;
       } else {
         chatTime = Math.floor(walletBalance / pricePerMin);
       }
@@ -3189,7 +3187,7 @@ module.exports = {
         throw new Error("Insufficient balance");
       }
 
-       if (chatTime < 5) {
+       if (chatTime < 5 && pricePerMin !=0) {
         throw new Error("balance must be minimum 5 minutes");
       }
 
@@ -3381,7 +3379,7 @@ module.exports = {
             userName: user?.name || null,
             astroName: astrologer?.name || null,
 
-            isFlagged: false,
+            isFlagged: true,
           },
         });
 
