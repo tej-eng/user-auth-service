@@ -81,7 +81,6 @@ module.exports = {
       }
     },
     getUserWallet: async (_, __, context) => {
-      console.log("Fetching wallet for user_id:", context.user.id);
       try {
         if (!context.user) {
           throw new Error("Unauthorized");
@@ -2495,12 +2494,7 @@ module.exports = {
       };
     },
     blogCategories: async () => {
-      console.log("blogCategories called");
-
       const data = await prisma.blogCategory.findMany();
-
-      console.log(data);
-
       return data;
     },
     getSimilarAstrologers: async (_, { astrologerId }, context) => {
@@ -2657,7 +2651,6 @@ module.exports = {
     },
     getUpcomingLives: async (_, { page = 1, limit = 10 }) => {
       try {
-        console.log("comming getUpcomingLives-------------");
         const skip = (page - 1) * limit;
 
         const where = {
@@ -2710,10 +2703,6 @@ module.exports = {
 
     joinLive: async (_, { channelName }, { user }) => {
       try {
-        console.log("========== JOIN LIVE ==========");
-        console.log("Channel:", channelName);
-        console.log("User:", user);
-
         if (!user) {
           throw new Error("Unauthorized");
         }
@@ -2745,20 +2734,14 @@ module.exports = {
           role: "subscriber",
         });
 
-        console.log("RTC Token Generated");
-
         // Agora Chat username
         const chatUserId = `user_${user.id}`;
 
         // Create chat user if not exists
         await createAgoraChatUser(chatUserId);
 
-        console.log("Chat User Ready");
-
         // Generate chat token
         const chatToken = await generateChatToken(chatUserId);
-
-        console.log("Chat Token Generated");
 
         const response = {
           rtcToken,
@@ -2772,15 +2755,10 @@ module.exports = {
           chatAppKey: process.env.AGORA_CHAT_APP_KEY,
         };
 
-        console.log("Join Live Response:", response);
-        console.log("========== JOIN LIVE SUCCESS ==========");
 
         return response;
       } catch (error) {
-        console.error("========== JOIN LIVE ERROR ==========");
         console.error(error.response?.data || error);
-        console.error("====================================");
-
         throw new Error(error.message || "Failed to join live stream");
       }
     },
@@ -2931,17 +2909,11 @@ module.exports = {
         throw new Error("Unauthorized. Please login.");
       }
 
-      console.log("========== UPDATE PROFILE ==========");
-      console.log("CONTEXT USER:", context.user);
-      console.log("CONTEXT USER ID:", context.user.id);
-
       const dbUser = await prisma.user.findUnique({
         where: {
           id: context.user.id,
         },
       });
-
-      console.log("DB USER:", dbUser);
 
       if (!dbUser) {
         throw new Error(
@@ -2974,8 +2946,6 @@ module.exports = {
     // intake for chat
 
     createIntake: async (_, { input }, context) => {
-      console.log("context.user =>", context.user);
-
       if (!context.user) {
         throw new Error("Unauthorized");
       }
@@ -3447,9 +3417,6 @@ module.exports = {
 
         const uploadPath = path.join(uploadDir, newFileName);
 
-        console.log("Upload Directory :", uploadDir);
-        console.log("Saving File      :", uploadPath);
-
         // Save file
         await new Promise((resolve, reject) => {
           const stream = createReadStream();
@@ -3468,7 +3435,6 @@ module.exports = {
 
         const fileUrl = `${baseUrl}/${newFileName}`;
 
-        console.log("Public URL :", fileUrl);
 
         return {
           url: fileUrl,
@@ -3492,11 +3458,6 @@ module.exports = {
         if (!context.user) {
           throw new Error("Unauthorized - Please login to upload recordings");
         }
-
-        console.log("🎙 Starting call recording upload...");
-        console.log("Uploaded by:", context.user.email || context.user.id);
-        console.log("Room ID:", roomId);
-
         const { createReadStream, filename, mimetype } = await recording;
 
         // Validate file type - allow audio files only
@@ -3531,11 +3492,9 @@ module.exports = {
         );
         if (!fs.existsSync(uploadDir)) {
           fs.mkdirSync(uploadDir, { recursive: true, mode: 0o750 });
-          console.log("📁 Created upload directory:", uploadDir);
         }
 
         const uploadPath = path.join(uploadDir, newFileName);
-        console.log("💾 Saving recording to:", uploadPath);
 
         // Save file asynchronously
         await new Promise((resolve, reject) => {
@@ -3548,7 +3507,6 @@ module.exports = {
           stream.on("error", reject);
         });
 
-        console.log("✅ Recording saved successfully:", newFileName);
 
         // Get file size
         const stats = fs.statSync(uploadPath);
@@ -3569,13 +3527,10 @@ module.exports = {
           });
           if (session) {
             sessionId = session.id;
-            console.log("✅ Found session:", sessionId);
           }
         }
 
         // Save to database using Prisma - MATCHES YOUR SCHEMA
-        console.log("Astrologer ID received:", astroId);
-        console.log("User ID received:", userId);
         const recordingData = await prisma.callRecording.create({
           data: {
             roomId: roomId,
@@ -3624,14 +3579,6 @@ module.exports = {
               },
             },
           },
-        });
-
-        console.log("📊 Recording saved to database:", {
-          id: recordingData.id,
-          roomId: recordingData.roomId,
-          sessionId: recordingData.sessionId,
-          duration: recordingData.duration,
-          fileSize: `${(fileSize / 1024 / 1024).toFixed(2)} MB`,
         });
 
         return {
@@ -4021,8 +3968,6 @@ module.exports = {
 
         const userId = context.user.id;
         const { bookingId, couponCode, amount } = input;
-        console.log(bookingId, "------check booking idddddd----", couponCode);
-
         const booking = await prisma.serviceBooking.findUnique({
           where: {
             id: bookingId,
@@ -4092,7 +4037,6 @@ module.exports = {
             discount = Math.min(discount, totalAmount);
 
             payableAmount = totalAmount - discount;
-            console.log("---------DISCOUNT payableAmount---:", payableAmount);
           }
 
           //--------------------------------------
@@ -4455,12 +4399,6 @@ module.exports = {
     const platformEarning = Number(
       (giftPrice - astrologerEarning).toFixed(2)
     );
-
-    console.log("Gift Price:", giftPrice);
-    console.log("Gift Commission %:", commissionPercent);
-    console.log("Astrologer Earning:", astrologerEarning);
-    console.log("Platform Earning:", platformEarning);
-
     // --------------------------------------------------
     // Transaction
     // --------------------------------------------------
@@ -4571,7 +4509,6 @@ module.exports = {
   }
 },
     followAstrologer: async (_, { astrologerId }, context) => {
-      console.log("followAstrologer called with astrologerId:", astrologerId);
       try {
         const { user } = context;
 
@@ -4584,7 +4521,6 @@ module.exports = {
             id: astrologerId,
           },
         });
-        console.log("Astrologer found:", astrologer);
         if (!astrologer) {
           throw new Error("Astrologer not found");
         }
@@ -4775,7 +4711,6 @@ module.exports = {
     },
     startLive: async (_, { title }, { user }) => {
       try {
-        console.log("comming    startLive-------------");
         if (!user) {
           throw new Error("Unauthorized");
         }
