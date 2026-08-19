@@ -10,11 +10,11 @@ const redis = new Redis({
 });
 
 redis.on("connect", () => {
-  console.log("Redis Connected ✅");
+  console.log("Redis Connected ");
 });
 
 redis.on("ready", () => {
-  console.log("Redis Ready ✅");
+  console.log("Redis Ready ");
 });
 
 redis.on("error", (err) => {
