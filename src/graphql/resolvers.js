@@ -951,6 +951,9 @@ module.exports = {
                 },
               },
               reviews: {
+                where: {
+                isFlagged: true,
+              },
                 orderBy: {
                   createdAt: "desc",
                 },
