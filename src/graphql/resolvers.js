@@ -93,7 +93,7 @@ module.exports = {
         });
 
         if (!wallet) {
-          throw new Error("Insufficient balance.Please Recharge your wallet.");
+          throw new Error("Wallet not found");
         }
         return wallet;
       } catch (error) {
@@ -2960,7 +2960,7 @@ module.exports = {
       });
 
       if (!user || !user.wallet) {
-        throw new Error("Wallet not found");
+        throw new Error("Insufficient balance.Please Recharge your wallet.");
       }
 
       const walletBalance = user.wallet.balanceCoins || 0;
