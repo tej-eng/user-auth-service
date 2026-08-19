@@ -93,7 +93,7 @@ module.exports = {
         });
 
         if (!wallet) {
-          throw new Error("Wallet not found");
+          throw new Error("Insufficient balance.Please Recharge your wallet.");
         }
         return wallet;
       } catch (error) {
