@@ -430,8 +430,8 @@ module.exports = gql`
     ratePerSecond: Float
 
     totalCharge: Float
-    coinsEarned: Int
-    commission: Int
+    coinsEarned: Float
+    commission: Float
 
     status: SessionStatus
   }
