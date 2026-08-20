@@ -1904,6 +1904,7 @@ module.exports = {
 
         //  Transform response
         const formatted = sessions.map((s) => {
+          console.log("commin in astrologer details-----------------",s);
           const ratePerSecond = s.ratePerMin / 60;
 
           return {
