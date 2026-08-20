@@ -17,8 +17,8 @@ services:
     networks:
       - dhwaniastro-net
 
-    mem_limit: 50m
-    memswap_limit: 50m
+    mem_limit: 512m
+    memswap_limit: 512m
 
 networks:
   dhwaniastro-net:
