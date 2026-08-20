@@ -1889,7 +1889,7 @@ module.exports = {
                 select: { name: true },
               },
               astrologer: {
-                select: { name: true, profilePic: true },
+                select: { name: true,displayName:true, profilePic: true },
               },
             },
             orderBy: {
@@ -1904,7 +1904,6 @@ module.exports = {
 
         //  Transform response
         const formatted = sessions.map((s) => {
-          console.log("commin in astrologer details-----------------",s);
           const ratePerSecond = s.ratePerMin / 60;
 
           return {
