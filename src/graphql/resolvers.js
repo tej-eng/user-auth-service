@@ -545,286 +545,41 @@ module.exports = {
     },
 
     //-----this api call for with auth--
-    // getAstrologerListForUser: async (_, { searchInput }, context) => {
-    //   try {
-    //     if (!context.user) {
-    //       throw new Error("Unauthorized");
-    //     }
-
-    //     const userId = context.user.id;
-
-    //     const {
-    //       query,
-    //       sortField,
-    //       sortOrder,
-    //       category,
-    //       limit = 10,
-    //       page = 1,
-    //       type,
-    //     } = searchInput || {};
-
-    //     const skip = (page - 1) * limit;
-
-    //     let orderBy = { createdAt: "desc" };
-
-    //     if (sortField) {
-    //       const sortMap = {
-    //         EXPERIENCE: "experience",
-    //         RATING: "rating",
-    //       };
-
-    //       if (sortMap[sortField]) {
-    //         orderBy = {
-    //           [sortMap[sortField]]: sortOrder === "ASC" ? "asc" : "desc",
-    //         };
-    //       }
-    //     }
-
-    //     const where = {
-    //       ...(query && {
-    //         OR: [
-    //           {
-    //             name: {
-    //               contains: query,
-    //               mode: "insensitive",
-    //             },
-    //           },
-    //           {
-    //             skills: {
-    //               has: query,
-    //             },
-    //           },
-    //           {
-    //             problems: {
-    //               has: query,
-    //             },
-    //           },
-    //           {
-    //             languages: {
-    //               has: query,
-    //             },
-    //           },
-    //         ],
-    //       }),
-
-    //       ...(category &&
-    //         category !== "all" && {
-    //           OR: [
-    //             {
-    //               skills: {
-    //                 has: category,
-    //               },
-    //             },
-    //             {
-    //               problems: {
-    //                 has: category,
-    //               },
-    //             },
-    //           ],
-    //         }),
-    //     };
-
-    //     const [astrologers, totalCount, pricingConfig, usage] =
-    //       await Promise.all([
-    //         prisma.astrologer.findMany({
-    //           where,
-    //           orderBy,
-    //           skip,
-    //           take: limit,
-    //           include: {
-    //             pricing: {
-    //               where: {
-    //                 isActive: true,
-    //                 ...(type && { type }),
-    //               },
-    //             },
-    //           },
-    //         }),
-
-    //         prisma.astrologer.count({
-    //           where,
-    //         }),
-
-    //         prisma.pricingConfig.findFirst(),
-
-    //         prisma.userOfferUsage.findUnique({
-    //           where: {
-    //             userId,
-    //           },
-    //         }),
-    //       ]);
-
-    //     const astrologerIds = astrologers.map((a) => a.id);
-
-    //     const activeOffers = await prisma.astrologerOffer.findMany({
-    //       where: {
-    //         astrologerId: {
-    //           in: astrologerIds,
-    //         },
-    //         isActive: true,
-    //       },
-    //       include: {
-    //         offer: true,
-    //       },
-    //     });
-
-    //     const offerMap = {};
-
-    //     activeOffers.forEach((item) => {
-    //       offerMap[item.astrologerId] = item.offer;
-    //     });
-
-    //     const data = astrologers.map((astro) => {
-    //       const specialOffer = offerMap[astro.id];
-
-    //       return {
-    //         id: astro.id,
-    //         profilePic: astro.profilePic,
-    //         name: astro.name,
-    //         displayName: astro.displayName,
-    //         experience: astro.experience,
-    //         rating: astro.rating,
-    //         skills: astro.skills,
-    //         problems: astro.problems,
-    //         languages: astro.languages,
-    //         isBusy: astro.isBusy,
-    //         isOnline: astro.isOnline,
-    //         isChatActive: astro.isChatActive,
-    //         isCallActive: astro.isCallActive,
-    //         isLiveActive: astro.isLiveActive,
-
-    //         activeOffer: specialOffer
-    //           ? {
-    //               id: specialOffer.id,
-    //               offerName: specialOffer.offerName,
-    //               price: specialOffer.price,
-    //               description: specialOffer.description,
-    //             }
-    //           : null,
-
-    //         pricing: astro.pricing.map((p) => {
-    //           let finalPrice = p.price;
-    //           let appliedOffer = null;
-
-    //           // 1. Special Offer
-    //           if (specialOffer) {
-    //             finalPrice = specialOffer.price;
-
-    //             appliedOffer = specialOffer.offerName;
-    //           }
-
-    //           // 2. First Offer
-    //           else if (
-    //             pricingConfig?.isFirstOfferEnabled &&
-    //             !usage?.usedFirst
-    //           ) {
-    //             finalPrice =
-    //               p.type === "CHAT"
-    //                 ? pricingConfig.firstChatPrice
-    //                 : pricingConfig.firstCallPrice;
-
-    //             appliedOffer = "FIRST_TIME_OFFER";
-    //           }
-
-    //           // 3. Second Offer
-    //           else if (
-    //             pricingConfig?.isSecondOfferEnabled &&
-    //             usage?.usedFirst &&
-    //             !usage?.usedSecond
-    //           ) {
-    //             finalPrice =
-    //               p.type === "CHAT"
-    //                 ? pricingConfig.secondChatPrice
-    //                 : pricingConfig.secondCallPrice;
-
-    //             appliedOffer = "SECOND_TIME_OFFER";
-    //           }
-
-    //           // 4. Global Offer
-    //           else if (pricingConfig?.isGlobalOfferEnabled) {
-    //             finalPrice =
-    //               p.type === "CHAT"
-    //                 ? pricingConfig.globalChatPrice
-    //                 : pricingConfig.globalCallPrice;
-
-    //             appliedOffer = "GLOBAL_OFFER";
-    //           }
-
-    //           return {
-    //             type: p.type,
-
-    //             price: finalPrice,
-
-    //             originalPrice: p.price,
-    //             offerPrice: p.offerPrice ?? null,
-    //             appliedOffer,
-
-    //             commissionPercent: p.commissionPercent,
-
-    //             isActive: p.isActive,
-    //           };
-    //         }),
-    //       };
-    //     });
-
-    //     return {
-    //       data,
-    //       totalCount,
-    //       currentPage: page,
-    //       totalPages: Math.ceil(totalCount / limit),
-    //     };
-    //   } catch (error) {
-    //     console.error(error);
-
-    //     throw new Error(error.message);
-    //   }
-    // },
-
     getAstrologerListForUser: async (_, { searchInput }, context) => {
   const requestId = `ASTRO-LIST-${Date.now()}-${Math.random()
     .toString(36)
     .substring(2, 8)}`;
 
-  console.log("\n");
-  console.log("======================================================");
+  const startedAt = Date.now();
+
+  console.log("\n======================================================");
   console.log(`🚀 ${requestId} getAstrologerListForUser START`);
   console.log("======================================================");
 
   try {
     // =====================================================
-    // STEP 1: CONTEXT / AUTH
+    // STEP 1: AUTH
     // =====================================================
     console.log(`\n[${requestId}] STEP 1: Checking authentication`);
 
     if (!context?.user) {
-      console.error(
-        `[${requestId}] ❌ context.user is missing`,
-      );
-
+      console.error(`[${requestId}] ❌ Unauthorized`);
       throw new Error("Unauthorized");
     }
 
     const userId = context.user.id;
 
-    console.log(
-      `[${requestId}] ✅ User authenticated`,
-    );
-
-    console.log(
-      `[${requestId}] userId:`,
-      userId,
-    );
+    console.log(`[${requestId}] ✅ User authenticated`);
+    console.log(`[${requestId}] userId:`, userId);
 
     // =====================================================
     // STEP 2: INPUT
     // =====================================================
-    console.log(
-      `\n[${requestId}] STEP 2: Processing searchInput`,
-    );
+    console.log(`\n[${requestId}] STEP 2: Processing searchInput`);
 
     console.log(
       `[${requestId}] searchInput:`,
-      JSON.stringify(searchInput, null, 2),
+      JSON.stringify(searchInput || {}, null, 2),
     );
 
     const {
@@ -838,10 +593,6 @@ module.exports = {
     // =====================================================
     // STEP 3: PAGINATION
     // =====================================================
-    console.log(
-      `\n[${requestId}] STEP 3: Pagination`,
-    );
-
     const pageNumber = Math.max(
       1,
       Number(searchInput?.page) || 1,
@@ -857,6 +608,10 @@ module.exports = {
 
     const skip =
       (pageNumber - 1) * limitNumber;
+
+    console.log(
+      `\n[${requestId}] STEP 3: Pagination`,
+    );
 
     console.log(
       `[${requestId}] Pagination:`,
@@ -884,12 +639,12 @@ module.exports = {
         RATING: "rating",
       };
 
-      const mappedField =
+      const field =
         sortMap[String(sortField).toUpperCase()];
 
-      if (mappedField) {
+      if (field) {
         orderBy = {
-          [mappedField]:
+          [field]:
             String(sortOrder).toUpperCase() === "ASC"
               ? "asc"
               : "desc",
@@ -903,27 +658,22 @@ module.exports = {
     );
 
     // =====================================================
-    // STEP 5: WHERE CONDITION
+    // STEP 5: WHERE
     // =====================================================
     console.log(
       `\n[${requestId}] STEP 5: Building WHERE`,
     );
 
-    const whereAnd = [];
+    const AND = [];
 
     // -----------------------------------------------------
-    // QUERY FILTER
+    // SEARCH QUERY
     // -----------------------------------------------------
     if (query && String(query).trim()) {
       const searchQuery =
         String(query).trim();
 
-      console.log(
-        `[${requestId}] Adding query filter:`,
-        searchQuery,
-      );
-
-      whereAnd.push({
+      AND.push({
         OR: [
           {
             name: {
@@ -951,30 +701,22 @@ module.exports = {
     }
 
     // -----------------------------------------------------
-    // CATEGORY FILTER
+    // CATEGORY
     // -----------------------------------------------------
     if (
       category &&
       String(category).toLowerCase() !== "all"
     ) {
-      const categoryValue =
-        String(category).trim();
-
-      console.log(
-        `[${requestId}] Adding category filter:`,
-        categoryValue,
-      );
-
-      whereAnd.push({
+      AND.push({
         OR: [
           {
             skills: {
-              has: categoryValue,
+              has: category,
             },
           },
           {
             problems: {
-              has: categoryValue,
+              has: category,
             },
           },
         ],
@@ -982,9 +724,9 @@ module.exports = {
     }
 
     const where =
-      whereAnd.length > 0
+      AND.length > 0
         ? {
-            AND: whereAnd,
+            AND,
           }
         : {};
 
@@ -994,7 +736,7 @@ module.exports = {
     );
 
     // =====================================================
-    // STEP 6: ASTROLOGER COUNT
+    // STEP 6: COUNT
     // =====================================================
     console.log(
       `\n[${requestId}] STEP 6: BEFORE astrologer.count()`,
@@ -1002,55 +744,25 @@ module.exports = {
 
     const countStart = Date.now();
 
-    let totalCount;
+    const totalCount =
+      await prisma.astrologer.count({
+        where,
+      });
 
-    try {
-      totalCount =
-        await prisma.astrologer.count({
-          where,
-        });
+    console.log(
+      `[${requestId}] ✅ astrologer.count() SUCCESS`,
+    );
 
-      console.log(
-        `[${requestId}] ✅ astrologer.count() SUCCESS`,
-      );
+    console.log(
+      `[${requestId}] totalCount:`,
+      totalCount,
+    );
 
-      console.log(
-        `[${requestId}] totalCount:`,
-        totalCount,
-      );
-
-      console.log(
-        `[${requestId}] count duration:`,
-        Date.now() - countStart,
-        "ms",
-      );
-    } catch (error) {
-      console.error(
-        `[${requestId}] ❌ astrologer.count() FAILED`,
-      );
-
-      console.error(
-        `[${requestId}] Error name:`,
-        error?.name,
-      );
-
-      console.error(
-        `[${requestId}] Error message:`,
-        error?.message,
-      );
-
-      console.error(
-        `[${requestId}] Error code:`,
-        error?.code,
-      );
-
-      console.error(
-        `[${requestId}] Error meta:`,
-        error?.meta,
-      );
-
-      throw error;
-    }
+    console.log(
+      `[${requestId}] count duration:`,
+      Date.now() - countStart,
+      "ms",
+    );
 
     // =====================================================
     // STEP 7: ASTROLOGER FIND MANY
@@ -1059,84 +771,47 @@ module.exports = {
       `\n[${requestId}] STEP 7: BEFORE astrologer.findMany()`,
     );
 
-    const astrologerStart = Date.now();
+    const findStart = Date.now();
 
-    let astrologers;
+    const astrologers =
+      await prisma.astrologer.findMany({
+        where,
 
-    try {
-      astrologers =
-        await prisma.astrologer.findMany({
-          where,
+        orderBy,
 
-          orderBy,
+        skip,
 
-          skip: skip,
+        take: limitNumber,
 
-          take: limitNumber,
+        include: {
+          pricing: {
+            where: {
+              isActive: true,
 
-          include: {
-            pricing: {
-              where: {
-                isActive: true,
-
-                ...(type
-                  ? {
-                      type: String(
-                        type,
-                      ).toUpperCase(),
-                    }
-                  : {}),
-              },
+              ...(type
+                ? {
+                    type,
+                  }
+                : {}),
             },
           },
-        });
+        },
+      });
 
-      console.log(
-        `[${requestId}] ✅ astrologer.findMany() SUCCESS`,
-      );
+    console.log(
+      `[${requestId}] ✅ astrologer.findMany() SUCCESS`,
+    );
 
-      console.log(
-        `[${requestId}] Astrologers count:`,
-        astrologers.length,
-      );
+    console.log(
+      `[${requestId}] Astrologers count:`,
+      astrologers.length,
+    );
 
-      console.log(
-        `[${requestId}] findMany duration:`,
-        Date.now() - astrologerStart,
-        "ms",
-      );
-    } catch (error) {
-      console.error(
-        `[${requestId}] ❌ astrologer.findMany() FAILED`,
-      );
-
-      console.error(
-        `[${requestId}] Error name:`,
-        error?.name,
-      );
-
-      console.error(
-        `[${requestId}] Error message:`,
-        error?.message,
-      );
-
-      console.error(
-        `[${requestId}] Error code:`,
-        error?.code,
-      );
-
-      console.error(
-        `[${requestId}] Error meta:`,
-        error?.meta,
-      );
-
-      console.error(
-        `[${requestId}] Error stack:`,
-        error?.stack,
-      );
-
-      throw error;
-    }
+    console.log(
+      `[${requestId}] findMany duration:`,
+      Date.now() - findStart,
+      "ms",
+    );
 
     // =====================================================
     // STEP 8: ASTROLOGER IDS
@@ -1155,11 +830,6 @@ module.exports = {
       astrologerIds.length,
     );
 
-    console.log(
-      `[${requestId}] astrologerIds:`,
-      astrologerIds,
-    );
-
     // =====================================================
     // STEP 9: PRICING CONFIG
     // =====================================================
@@ -1167,32 +837,17 @@ module.exports = {
       `\n[${requestId}] STEP 9: BEFORE pricingConfig.findFirst()`,
     );
 
-    let pricingConfig;
+    const pricingConfig =
+      await prisma.pricingConfig.findFirst();
 
-    try {
-      pricingConfig =
-        await prisma.pricingConfig.findFirst();
+    console.log(
+      `[${requestId}] ✅ pricingConfig.findFirst() SUCCESS`,
+    );
 
-      console.log(
-        `[${requestId}] ✅ pricingConfig.findFirst() SUCCESS`,
-      );
-
-      console.log(
-        `[${requestId}] pricingConfig exists:`,
-        !!pricingConfig,
-      );
-    } catch (error) {
-      console.error(
-        `[${requestId}] ❌ pricingConfig.findFirst() FAILED`,
-      );
-
-      console.error(
-        `[${requestId}] Error:`,
-        error,
-      );
-
-      throw error;
-    }
+    console.log(
+      `[${requestId}] pricingConfig exists:`,
+      !!pricingConfig,
+    );
 
     // =====================================================
     // STEP 10: USER OFFER USAGE
@@ -1201,114 +856,66 @@ module.exports = {
       `\n[${requestId}] STEP 10: BEFORE userOfferUsage.findUnique()`,
     );
 
-    let usage;
+    const usage =
+      await prisma.userOfferUsage.findUnique({
+        where: {
+          userId,
+        },
+      });
 
-    try {
-      usage =
-        await prisma.userOfferUsage.findUnique({
+    console.log(
+      `[${requestId}] ✅ userOfferUsage.findUnique() SUCCESS`,
+    );
+
+    console.log(
+      `[${requestId}] usage:`,
+      usage,
+    );
+
+    // =====================================================
+    // STEP 11: ASTROLOGER OFFERS
+    // =====================================================
+    let activeOffers = [];
+
+    if (astrologerIds.length > 0) {
+      console.log(
+        `\n[${requestId}] STEP 11: BEFORE astrologerOffer.findMany()`,
+      );
+
+      const offerStart = Date.now();
+
+      activeOffers =
+        await prisma.astrologerOffer.findMany({
           where: {
-            userId,
+            astrologerId: {
+              in: astrologerIds,
+            },
+
+            isActive: true,
+          },
+
+          include: {
+            offer: true,
           },
         });
 
       console.log(
-        `[${requestId}] ✅ userOfferUsage.findUnique() SUCCESS`,
+        `[${requestId}] ✅ astrologerOffer.findMany() SUCCESS`,
       );
 
       console.log(
-        `[${requestId}] usage:`,
-        usage,
-      );
-    } catch (error) {
-      console.error(
-        `[${requestId}] ❌ userOfferUsage.findUnique() FAILED`,
+        `[${requestId}] Active offers count:`,
+        activeOffers.length,
       );
 
-      console.error(
-        `[${requestId}] Error:`,
-        error,
+      console.log(
+        `[${requestId}] Offer query duration:`,
+        Date.now() - offerStart,
+        "ms",
       );
-
-      throw error;
-    }
-
-    // =====================================================
-    // STEP 11: ACTIVE OFFERS
-    // =====================================================
-    console.log(
-      `\n[${requestId}] STEP 11: BEFORE astrologerOffer.findMany()`,
-    );
-
-    let activeOffers = [];
-
-    if (astrologerIds.length > 0) {
-      try {
-        const offerStart = Date.now();
-
-        activeOffers =
-          await prisma.astrologerOffer.findMany({
-            where: {
-              astrologerId: {
-                in: astrologerIds,
-              },
-
-              isActive: true,
-            },
-
-            include: {
-              offer: true,
-            },
-          });
-
-        console.log(
-          `[${requestId}] ✅ astrologerOffer.findMany() SUCCESS`,
-        );
-
-        console.log(
-          `[${requestId}] Active offers count:`,
-          activeOffers.length,
-        );
-
-        console.log(
-          `[${requestId}] Offer query duration:`,
-          Date.now() - offerStart,
-          "ms",
-        );
-      } catch (error) {
-        console.error(
-          `[${requestId}] ❌ astrologerOffer.findMany() FAILED`,
-        );
-
-        console.error(
-          `[${requestId}] Error name:`,
-          error?.name,
-        );
-
-        console.error(
-          `[${requestId}] Error message:`,
-          error?.message,
-        );
-
-        console.error(
-          `[${requestId}] Error code:`,
-          error?.code,
-        );
-
-        console.error(
-          `[${requestId}] Error meta:`,
-          error?.meta,
-        );
-
-        console.error(
-          `[${requestId}] Error stack:`,
-          error?.stack,
-        );
-
-        throw error;
-      }
     } else {
       console.log(
-        `[${requestId}] No astrologers found. Skipping offer query.`,
+        `[${requestId}] No astrologers found, skipping offer query`,
       );
     }
 
@@ -1322,23 +929,12 @@ module.exports = {
     const offerMap = new Map();
 
     for (const item of activeOffers) {
-      if (!item?.astrologerId) {
-        continue;
-      }
-
-      if (!item?.offer) {
-        console.warn(
-          `[${requestId}] ⚠️ Offer relation missing for astrologer:`,
+      if (!offerMap.has(item.astrologerId)) {
+        offerMap.set(
           item.astrologerId,
+          item.offer,
         );
-
-        continue;
       }
-
-      offerMap.set(
-        item.astrologerId,
-        item.offer,
-      );
     }
 
     console.log(
@@ -1347,229 +943,231 @@ module.exports = {
     );
 
     // =====================================================
-    // STEP 13: BUILD RESPONSE
+    // STEP 13: MAP ASTROLOGERS
     // =====================================================
     console.log(
       `\n[${requestId}] STEP 13: Mapping astrologers`,
     );
 
-    const data = [];
-
-    for (
-      let index = 0;
-      index < astrologers.length;
-      index++
-    ) {
-      const astro =
-        astrologers[index];
-
-      console.log(
-        `[${requestId}] Mapping astrologer ${
-          index + 1
-        }/${astrologers.length}`,
-      );
-
-      console.log(
-        `[${requestId}] Astrologer:`,
-        {
-          id: astro.id,
-          name: astro.name,
-        },
-      );
-
-      try {
-        const specialOffer =
-          offerMap.get(astro.id) || null;
-
-        const pricing =
-          (astro.pricing || []).map(
-            (p) => {
-              let finalPrice =
-                p.price;
-
-              let appliedOffer =
-                null;
-
-              // =================================================
-              // 1. SPECIAL OFFER
-              // =================================================
-              if (specialOffer) {
-                finalPrice =
-                  specialOffer.price;
-
-                appliedOffer =
-                  specialOffer.offerName;
-              }
-
-              // =================================================
-              // 2. FIRST OFFER
-              // =================================================
-              else if (
-                pricingConfig?.isFirstOfferEnabled &&
-                !usage?.usedFirst
-              ) {
-                finalPrice =
-                  p.type === "CHAT"
-                    ? pricingConfig.firstChatPrice
-                    : pricingConfig.firstCallPrice;
-
-                appliedOffer =
-                  "FIRST_TIME_OFFER";
-              }
-
-              // =================================================
-              // 3. SECOND OFFER
-              // =================================================
-              else if (
-                pricingConfig?.isSecondOfferEnabled &&
-                usage?.usedFirst &&
-                !usage?.usedSecond
-              ) {
-                finalPrice =
-                  p.type === "CHAT"
-                    ? pricingConfig.secondChatPrice
-                    : pricingConfig.secondCallPrice;
-
-                appliedOffer =
-                  "SECOND_TIME_OFFER";
-              }
-
-              // =================================================
-              // 4. GLOBAL OFFER
-              // =================================================
-              else if (
-                pricingConfig?.isGlobalOfferEnabled
-              ) {
-                finalPrice =
-                  p.type === "CHAT"
-                    ? pricingConfig.globalChatPrice
-                    : pricingConfig.globalCallPrice;
-
-                appliedOffer =
-                  "GLOBAL_OFFER";
-              }
-
-              return {
-                type: p.type,
-
-                price: finalPrice,
-
-                originalPrice:
-                  p.price,
-
-                offerPrice:
-                  p.offerPrice ?? null,
-
-                appliedOffer,
-
-                commissionPercent:
-                  p.commissionPercent,
-
-                isActive:
-                  p.isActive,
-              };
-            },
-          );
-
-        data.push({
-          id: astro.id,
-
-          profilePic:
-            astro.profilePic,
-
-          name:
-            astro.name,
-
-          displayName:
-            astro.displayName,
-
-          experience:
-            astro.experience,
-
-          rating:
-            astro.rating,
-
-          skills:
-            astro.skills,
-
-          problems:
-            astro.problems,
-
-          languages:
-            astro.languages,
-
-          isBusy:
-            astro.isBusy,
-
-          isOnline:
-            astro.isOnline,
-
-          isChatActive:
-            astro.isChatActive,
-
-          isCallActive:
-            astro.isCallActive,
-
-          isLiveActive:
-            astro.isLiveActive,
-
-          activeOffer:
-            specialOffer
-              ? {
-                  id:
-                    specialOffer.id,
-
-                  offerName:
-                    specialOffer.offerName,
-
-                  price:
-                    specialOffer.price,
-
-                  description:
-                    specialOffer.description,
-                }
-              : null,
-
-          pricing,
-        });
+    const data = astrologers.map(
+      (astro, index) => {
+        console.log(
+          `[${requestId}] Mapping astrologer ${
+            index + 1
+          }/${astrologers.length}`,
+        );
 
         console.log(
-          `[${requestId}] ✅ Astrologer mapped:`,
-          astro.id,
-        );
-      } catch (mappingError) {
-        console.error(
-          `[${requestId}] ❌ ERROR mapping astrologer:`,
-          astro.id,
+          `[${requestId}] Astrologer:`,
+          {
+            id: astro.id,
+            name: astro.name,
+          },
         );
 
-        console.error(
-          `[${requestId}] Mapping error:`,
-          mappingError,
-        );
+        try {
+          const specialOffer =
+            offerMap.get(astro.id);
 
-        throw mappingError;
-      }
-    }
+          const pricing =
+            Array.isArray(astro.pricing)
+              ? astro.pricing.map((p) => {
+                  let finalPrice =
+                    p.price;
+
+                  let appliedOffer = null;
+
+                  // =================================================
+                  // 1. SPECIAL OFFER
+                  // =================================================
+                  if (specialOffer) {
+                    finalPrice =
+                      specialOffer.price;
+
+                    appliedOffer =
+                      specialOffer.offerName;
+                  }
+
+                  // =================================================
+                  // 2. FIRST OFFER
+                  // =================================================
+                  else if (
+                    pricingConfig?.isFirstOfferEnabled &&
+                    !usage?.usedFirst
+                  ) {
+                    finalPrice =
+                      p.type === "CHAT"
+                        ? pricingConfig.firstChatPrice
+                        : pricingConfig.firstCallPrice;
+
+                    appliedOffer =
+                      "FIRST_TIME_OFFER";
+                  }
+
+                  // =================================================
+                  // 3. SECOND OFFER
+                  // =================================================
+                  else if (
+                    pricingConfig?.isSecondOfferEnabled &&
+                    usage?.usedFirst &&
+                    !usage?.usedSecond
+                  ) {
+                    finalPrice =
+                      p.type === "CHAT"
+                        ? pricingConfig.secondChatPrice
+                        : pricingConfig.secondCallPrice;
+
+                    appliedOffer =
+                      "SECOND_TIME_OFFER";
+                  }
+
+                  // =================================================
+                  // 4. GLOBAL OFFER
+                  // =================================================
+                  else if (
+                    pricingConfig?.isGlobalOfferEnabled
+                  ) {
+                    finalPrice =
+                      p.type === "CHAT"
+                        ? pricingConfig.globalChatPrice
+                        : pricingConfig.globalCallPrice;
+
+                    appliedOffer =
+                      "GLOBAL_OFFER";
+                  }
+
+                  return {
+                    type: p.type,
+
+                    price: finalPrice,
+
+                    originalPrice:
+                      p.price,
+
+                    offerPrice:
+                      p.offerPrice ?? null,
+
+                    appliedOffer,
+
+                    commissionPercent:
+                      p.commissionPercent,
+
+                    isActive:
+                      p.isActive,
+                  };
+                })
+              : [];
+
+          return {
+            id: astro.id,
+
+            profilePic:
+              astro.profilePic,
+
+            name: astro.name,
+
+            displayName:
+              astro.displayName,
+
+            experience:
+              astro.experience,
+
+            rating:
+              astro.rating,
+
+            skills:
+              astro.skills,
+
+            problems:
+              astro.problems,
+
+            languages:
+              astro.languages,
+
+            isBusy:
+              astro.isBusy,
+
+            isOnline:
+              astro.isOnline,
+
+            isChatActive:
+              astro.isChatActive,
+
+            isCallActive:
+              astro.isCallActive,
+
+            isLiveActive:
+              astro.isLiveActive,
+
+            activeOffer:
+              specialOffer
+                ? {
+                    id:
+                      specialOffer.id,
+
+                    offerName:
+                      specialOffer.offerName,
+
+                    price:
+                      specialOffer.price,
+
+                    description:
+                      specialOffer.description,
+                  }
+                : null,
+
+            pricing,
+          };
+        } catch (mapError) {
+          console.error(
+            `[${requestId}] ❌ ERROR mapping astrologer ${astro.id}`,
+          );
+
+          console.error(
+            `[${requestId}] Mapping error:`,
+            mapError,
+          );
+
+          throw mapError;
+        }
+      },
+    );
 
     // =====================================================
     // STEP 14: RESPONSE
     // =====================================================
-    const totalPages =
-      Math.ceil(
-        totalCount / limitNumber,
-      );
-
     console.log(
       `\n[${requestId}] STEP 14: Preparing response`,
     );
 
+    const totalPages =
+      Math.ceil(
+        totalCount /
+          limitNumber,
+      );
+
+    const response = {
+      data,
+
+      totalCount,
+
+      currentPage:
+        pageNumber,
+
+      totalPages,
+    };
+
     console.log(
       `[${requestId}] Response:`,
       {
-        dataCount: data.length,
+        dataCount:
+          data.length,
+
         totalCount,
-        currentPage: pageNumber,
+
+        currentPage:
+          pageNumber,
+
         totalPages,
       },
     );
@@ -1583,19 +1181,16 @@ module.exports = {
     );
 
     console.log(
+      `[${requestId}] Total duration:`,
+      Date.now() - startedAt,
+      "ms",
+    );
+
+    console.log(
       "======================================================",
     );
 
-    return {
-      data,
-
-      totalCount,
-
-      currentPage:
-        pageNumber,
-
-      totalPages,
-    };
+    return response;
   } catch (error) {
     // =====================================================
     // ERROR
@@ -1638,16 +1233,20 @@ module.exports = {
     );
 
     console.error(
+      `[${requestId}] Total duration:`,
+      Date.now() - startedAt,
+      "ms",
+    );
+
+    console.error(
       "======================================================",
     );
 
-    throw new Error(
-      error?.message ||
-        "Failed to get astrologer list",
-    );
+    throw error;
   }
 },
 
+  
     getRechargePacks: async (_, __, context) => {
       const { user } = context;
 
