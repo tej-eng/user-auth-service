@@ -1910,6 +1910,7 @@ module.exports = {
             id: s.id,
             userName: s.user?.name || "",
             astrologerName: s.astrologer?.name || "",
+            astrologerDisplayName: s.astrologer?.displayName || "",
             astrologerImage: s.astrologer?.profilePic || "",
 
             status: s.status,

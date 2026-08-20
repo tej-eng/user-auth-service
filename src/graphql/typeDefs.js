@@ -418,6 +418,7 @@ module.exports = gql`
 
     userName: String
     astrologerName: String
+    astrologerDisplayName: String
     astrologerImage: String
 
     startedAt: String
