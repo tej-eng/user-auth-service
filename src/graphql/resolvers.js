@@ -2322,92 +2322,162 @@ module.exports = {
         astrologerName: remedy.session.astrologer.name,
       };
     },
-    getUserSessions: async (_, { filter }, context) => {
-      try {
-        if (!context.user) throw new Error("Unauthorized");
+   
+getUserSessions: async (_, { filter }, context) => {
+  try {
+    if (!context.user) {
+      throw new Error("Unauthorized");
+    }
 
-        const userId = context.user.id;
+    const userId = context.user.id;
 
-        const { status, fromDate, toDate, page = 1, limit = 10 } = filter || {};
+    const {
+      status,
+      type,
+      fromDate,
+      toDate,
+      page = 1,
+      limit = 10,
+    } = filter || {};
 
-        const skip = (page - 1) * limit;
+    const skip = (page - 1) * limit;
 
-        //  Build dynamic where condition
-        const where = {
-          userId,
-          ...(status && { status }),
+    // -----------------------------------
+    // BUILD DYNAMIC WHERE CONDITION
+    // -----------------------------------
 
-          ...(fromDate || toDate
-            ? {
-                createdAt: {
-                  ...(fromDate && { gte: new Date(fromDate) }),
-                  ...(toDate && { lte: new Date(toDate) }),
-                },
-              }
-            : {}),
-        };
+    const where = {
+      userId,
 
-        //  Fetch sessions + count
-        const [sessions, totalCount] = await Promise.all([
-          prisma.session.findMany({
-            where,
-            include: {
-              user: {
-                select: { name: true },
-              },
-              astrologer: {
-                select: { name: true,displayName:true, profilePic: true },
-              },
+      ...(status && {
+        status,
+      }),
+
+      ...(type && {
+        type,
+      }),
+
+      ...(fromDate || toDate
+        ? {
+            createdAt: {
+              ...(fromDate && {
+                gte: new Date(fromDate),
+              }),
+
+              ...(toDate && {
+                lte: new Date(toDate),
+              }),
             },
-            orderBy: {
-              createdAt: "desc",
+          }
+        : {}),
+    };
+
+    console.log("getUserSessions where:", where);
+
+    // -----------------------------------
+    // FETCH SESSIONS + COUNT
+    // -----------------------------------
+
+    const [sessions, totalCount] = await Promise.all([
+      prisma.session.findMany({
+        where,
+
+        include: {
+          user: {
+            select: {
+              name: true,
             },
-            skip,
-            take: limit,
-          }),
+          },
 
-          prisma.session.count({ where }),
-        ]);
+          astrologer: {
+            select: {
+              name: true,
+              displayName: true,
+              profilePic: true,
+            },
+          },
+        },
 
-        //  Transform response
-        const formatted = sessions.map((s) => {
-          const ratePerSecond = s.ratePerMin / 60;
+        orderBy: {
+          createdAt: "desc",
+        },
 
-          return {
-            id: s.id,
-            userName: s.user?.name || "",
-            astrologerName: s.astrologer?.name || "",
-            displayName: s.astrologer?.displayName || "",
-            astrologerImage: s.astrologer?.profilePic || "",
+        skip,
+        take: limit,
+      }),
 
-            status: s.status,
+      prisma.session.count({
+        where,
+      }),
+    ]);
 
-            startedAt: s.startedAt,
-            endedAt: s.endedAt,
+    // -----------------------------------
+    // TRANSFORM RESPONSE
+    // -----------------------------------
 
-            durationSec: s.durationSec,
-            durationMin: Math.ceil(s.durationSec / 60),
+    const formatted = sessions.map((s) => {
+      const ratePerSecond = Number(s.ratePerMin || 0) / 60;
 
-            ratePerMin: s.ratePerMin,
-            ratePerSecond: Number(ratePerSecond.toFixed(2)),
+      return {
+        id: s.id,
 
-            totalCharge: s.coinsDeducted,
-            coinsEarned: s.coinsEarned,
-            commission: s.commission,
-          };
-        });
+        userName: s.user?.name || "",
 
-        return {
-          data: formatted,
-          totalCount,
-          currentPage: page,
-          totalPages: Math.ceil(totalCount / limit),
-        };
-      } catch (error) {
-        console.error("getUserSessions error:", error);
-        throw new Error(error.message || "Failed to fetch sessions");
-      }
-    },
+        astrologerName: s.astrologer?.name || "",
+
+        displayName: s.astrologer?.displayName || "",
+
+        astrologerImage: s.astrologer?.profilePic || "",
+
+        // -----------------------------------
+        // CALL / CHAT
+        // -----------------------------------
+        type: s.type,
+
+        status: s.status,
+
+        startedAt: s.startedAt,
+
+        endedAt: s.endedAt,
+
+        durationSec: s.durationSec || 0,
+
+        durationMin: Math.ceil((s.durationSec || 0) / 60),
+
+        ratePerMin: s.ratePerMin,
+
+        ratePerSecond: Number(ratePerSecond.toFixed(2)),
+
+        totalCharge: s.coinsDeducted,
+
+        coinsEarned: s.coinsEarned,
+
+        commission: s.commission,
+      };
+    });
+
+    // -----------------------------------
+    // RESPONSE
+    // -----------------------------------
+
+    return {
+      data: formatted,
+
+      totalCount,
+
+      currentPage: page,
+
+      totalPages: Math.ceil(totalCount / limit),
+    };
+  } catch (error) {
+    console.error("getUserSessions error:", error);
+
+    throw new Error(
+      error.message || "Failed to fetch sessions",
+    );
+  }
+},
+
     getChatMessages: async (_, { roomId, limit = 50, offset = 0 }, context) => {
       try {
         if (!context.user) {
