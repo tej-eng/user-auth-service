@@ -414,7 +414,7 @@ module.exports = gql`
   limit: Int
 }
 
-  type ChatSession {
+  
  type ChatSession {
   id: ID
 
