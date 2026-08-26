@@ -405,37 +405,41 @@ module.exports = gql`
     FAILED
   }
 
-  input SessionFilterInput {
-    status: SessionStatus
-    fromDate: String
-    toDate: String
-    page: Int
-    limit: Int
-  }
+ input SessionFilterInput {
+  status: SessionStatus
+  type: SessionType
+  fromDate: String
+  toDate: String
+  page: Int
+  limit: Int
+}
 
   type ChatSession {
-    id: ID
+ type ChatSession {
+  id: ID
 
-    userName: String
-    astrologerName: String
-    displayName: String
-    astrologerImage: String
+  userName: String
+  astrologerName: String
+  displayName: String
+  astrologerImage: String
 
-    startedAt: String
-    endedAt: String
+  type: SessionType
 
-    durationSec: Int
-    durationMin: Int
+  startedAt: String
+  endedAt: String
 
-    ratePerMin: Int
-    ratePerSecond: Float
+  durationSec: Int
+  durationMin: Int
 
-    totalCharge: Float
-    coinsEarned: Float
-    commission: Float
+  ratePerMin: Int
+  ratePerSecond: Float
 
-    status: SessionStatus
-  }
+  totalCharge: Float
+  coinsEarned: Float
+  commission: Float
+
+  status: SessionStatus
+}
   type UserDashboardStats {
     walletBalance: Int
     totalRecharge: Float
