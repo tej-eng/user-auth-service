@@ -3723,7 +3723,7 @@ module.exports = {
           `cleanup_:${roomId}_${input.astrologerId}_${userId}`,
           JSON.stringify(queueData),
           "EX",
-          60,
+          70,
         );
         await redis.rpush(
           `queue:${input.astrologerId}`,
