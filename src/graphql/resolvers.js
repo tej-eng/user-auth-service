@@ -3762,7 +3762,8 @@ getUserSessions: async (_, { filter }, context) => {
           };
         }
 
-        const userQueueKey = `user_in_queue:${input.astrologerId}`;
+        //const userQueueKey = `user_in_queue:${input.astrologerId}`;
+        const userQueueKey = `user_in_queue`;
 
         // Check duplicate user
         const alreadyExists = await redis.sismember(userQueueKey, userId);
@@ -3773,7 +3774,7 @@ getUserSessions: async (_, { filter }, context) => {
             chatTime,
             intakeId: intake.id,
             message:
-              "duplicate request. User is already in queue for this astrologer",
+              "Duplicate request. User has already submitted a request.",
             pricePerMin,
             pricingType: pricing.type,
           };

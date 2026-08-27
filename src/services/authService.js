@@ -7,7 +7,7 @@ const { connectMongo, getDb } = require("../config/mongo");
 const { sendOTP } = require("./smsService");
 
 const OTP_EXPIRE = 300; // 5 minutes
-const OTP_LIMIT = 3; // 3 per 10 min
+const OTP_LIMIT = 10; // 3 per 10 min
 const LOGIN_LIMIT = 5; // 5 failed attempts
 
 // ================= LOG TO MONGO =================
