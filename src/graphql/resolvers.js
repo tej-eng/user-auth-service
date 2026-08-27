@@ -3501,6 +3501,15 @@ getUserSessions: async (_, { filter }, context) => {
         throw new Error("Insufficient balance.Please Recharge your wallet.");
       }
 
+      const userQueueKey = `user_in_queue`;
+
+        // Check duplicate user
+        const alreadyExists = await redis.sismember(userQueueKey, userId);
+
+        if (alreadyExists) {
+         throw new Error("Duplicate request. User has already submitted a request.");
+        }
+
       const walletBalance = user.wallet.balanceCoins || 0;
 
       // Get Astrologer with Pricing
@@ -3762,23 +3771,23 @@ getUserSessions: async (_, { filter }, context) => {
           };
         }
 
-        //const userQueueKey = `user_in_queue:${input.astrologerId}`;
-        const userQueueKey = `user_in_queue`;
+        // //const userQueueKey = `user_in_queue:${input.astrologerId}`;
+        // const userQueueKey = `user_in_queue`;
 
-        // Check duplicate user
-        const alreadyExists = await redis.sismember(userQueueKey, userId);
+        // // Check duplicate user
+        // const alreadyExists = await redis.sismember(userQueueKey, userId);
 
-        if (alreadyExists) {
-          return {
-            roomId,
-            chatTime,
-            intakeId: intake.id,
-            message:
-              "Duplicate request. User has already submitted a request.",
-            pricePerMin,
-            pricingType: pricing.type,
-          };
-        }
+        // if (alreadyExists) {
+        //   return {
+        //     roomId,
+        //     chatTime,
+        //     intakeId: intake.id,
+        //     message:
+        //       "Duplicate request. User has already submitted a request.",
+        //     pricePerMin,
+        //     pricingType: pricing.type,
+        //   };
+        // }
 
         const exists = await redis.exists(`request_data:${roomId}`);
 
