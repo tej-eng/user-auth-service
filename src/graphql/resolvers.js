@@ -3497,9 +3497,9 @@ getUserSessions: async (_, { filter }, context) => {
         include: { wallet: true },
       });
 
-      if (!user || !user.wallet) {
-        throw new Error("Insufficient balance.Please Recharge your wallet.");
-      }
+      // if (!user || !user.wallet) {
+      //   throw new Error("Insufficient balance.Please Recharge your wallet.");
+      // }
 
       const userQueueKey = `user_in_queue`;
 
@@ -3706,7 +3706,7 @@ getUserSessions: async (_, { filter }, context) => {
       if (chatTime <= 0 && pricePerMin !=0) {
         throw new Error("Insufficient balance");
       }
-
+       
        if (chatTime < 5 && pricePerMin !=0) {
         throw new Error("balance must be minimum 5 minutes");
       }
