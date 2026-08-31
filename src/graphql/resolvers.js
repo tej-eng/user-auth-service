@@ -3510,7 +3510,7 @@ getUserSessions: async (_, { filter }, context) => {
          throw new Error("Duplicate request. User has already submitted a request.");
         }
 
-      const walletBalance = user.wallet.balanceCoins || 0;
+      const walletBalance = user?.wallet?.balanceCoins || 0;
 
       // Get Astrologer with Pricing
       const astrologer = await prisma.astrologer.findUnique({
