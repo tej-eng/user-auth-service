@@ -3703,7 +3703,7 @@ getUserSessions: async (_, { filter }, context) => {
         chatTime = Math.floor(walletBalance / pricePerMin);
       }
 
-      if (chatTime <= 0 ) {
+      if (chatTime <= 0 && pricePerMin !=0) {
         throw new Error("Insufficient balance");
       }
 
