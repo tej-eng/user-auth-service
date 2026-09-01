@@ -15,32 +15,32 @@ const { graphqlUploadExpress } = require("graphql-upload");
 const path = require("path");
 const morgan = require("morgan");
 
-
-
 async function startServer() {
   const app = express();
   app.use(
     cors({
       origin: [
-      "http://localhost:3000",
-      "https://dhwaniastro.com",
-      /https:\/\/dhwani-astro-v2.*\.vercel\.app/  
-    ],
+        "http://localhost:3000",
+        "https://dhwaniastro.com",
+        /https:\/\/dhwani-astro-v2.*\.vercel\.app/,
+      ],
       credentials: true,
-    })
+    }),
   );
   app.use(
-  "/uploads",
-  require("express").static(path.join(__dirname, "uploads"))
-);
-app.use(graphqlUploadExpress({ maxFileSize: 10000000, maxFiles: 1 }));
+    "/uploads",
+    require("express").static(path.join(__dirname, "uploads")),
+  );
+  app.use(
+    "/profile/uploads",
+    express.static(path.join(__dirname, "uploads", "profile")),
+  );
+  app.use(graphqlUploadExpress({ maxFileSize: 10000000, maxFiles: 1 }));
   app.use(cookieParser());
   app.use(express.json());
   app.use(
-  morgan(
-    ":date[iso] :method :url :status :response-time ms - :remote-addr"
-  )
-);
+    morgan(":date[iso] :method :url :status :response-time ms - :remote-addr"),
+  );
   app.use(rateLimiter);
 
   const server = new ApolloServer({
@@ -55,23 +55,22 @@ app.use(graphqlUploadExpress({ maxFileSize: 10000000, maxFiles: 1 }));
   app.use(
     "/graphql",
     expressMiddleware(server, {
- context: async ({ req, res }) => {
+      context: async ({ req, res }) => {
+        const token = req.cookies?.accessToken;
 
-  const token = req.cookies?.accessToken;
+        let user = null;
 
-  let user = null;
+        if (token) {
+          try {
+            user = verifyAccessToken(token);
+          } catch (e) {
+            console.log("JWT Error:", e.message);
+          }
+        }
 
-  if (token) {
-    try {
-      user = verifyAccessToken(token);
-    } catch (e) {
-      console.log("JWT Error:", e.message);
-    }
-  }
-
-  return { req, res, user };
-}
-    })
+        return { req, res, user };
+      },
+    }),
   );
 
   const PORT = process.env.PORT || 4000;
