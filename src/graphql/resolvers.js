@@ -972,6 +972,7 @@ module.exports = {
               profilePic: astro.profilePic,
 
               name: astro.name,
+              tags:astro.tags,
 
               displayName: astro.displayName,
 
