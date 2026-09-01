@@ -22,8 +22,7 @@ async function logEvent(type, mobile, details = {}) {
       details,
       timestamp: new Date(),
     });
-  } catch (error) {
-  }
+  } catch (error) {}
 }
 
 // ================= SEND OTP =================
@@ -63,19 +62,18 @@ const sendOTPService = async (countryCode, mobile) => {
     // Store OTP
     await redis.set(`otp:${phoneKey}`, otp, "EX", OTP_EXPIRE);
     await sendOTP({
-  countryCode,
-  mobile,
-  otp,
-});
+      countryCode,
+      mobile,
+      otp,
+    });
 
     // Log event
     await logEvent("OTP_GENERATED", phoneKey, { otp });
 
     return {
       message: "OTP sent successfully",
-      otp,  //need to remove in production
+      otp, //need to remove in production
     };
-
   } catch (error) {
     await logEvent("OTP_FAILED", `${countryCode}-${mobile}`, {
       error: error.message,
@@ -86,7 +84,7 @@ const sendOTPService = async (countryCode, mobile) => {
 };
 
 // ================= VERIFY OTP =================
-const verifyOTPService = async (countryCode, mobile, otp,source) => {
+const verifyOTPService = async (countryCode, mobile, otp, source) => {
   try {
     if (!countryCode || !mobile || !otp) {
       throw new Error("Country code, mobile and OTP required");
@@ -97,7 +95,6 @@ const verifyOTPService = async (countryCode, mobile, otp,source) => {
 
     // Get stored OTP
     const storedOTP = await redis.get(`otp:${phoneKey}`);
-
 
     if (!storedOTP) {
       await logEvent("OTP_EXPIRED", phoneKey);
@@ -144,21 +141,21 @@ const verifyOTPService = async (countryCode, mobile, otp,source) => {
         data: {
           countryCode,
           mobile,
-          source
+          source,
         },
       });
       isNewUser = true;
     }
-console.log("========== OTP LOGIN ==========");
-console.log("USER ID:", user.id);
-console.log("USER MOBILE:", user.mobile);
-console.log("IS NEW USER:", isNewUser);
+    console.log("========== OTP LOGIN ==========");
+    console.log("USER ID:", user.id);
+    console.log("USER MOBILE:", user.mobile);
+    console.log("IS NEW USER:", isNewUser);
     if (user.isDeleted) {
       throw new Error("Account deleted");
     }
 
     const hasName = !!user.name;
-console.log("TOKEN USER:", user);
+    console.log("TOKEN USER:", user);
     //  GENERATE TOKENS
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
@@ -180,7 +177,6 @@ console.log("TOKEN USER:", user);
       isNewUser,
       hasName,
     };
-
   } catch (error) {
     await logEvent("LOGIN_FAILED", `${countryCode}${mobile}`, {
       error: error.message,
@@ -203,7 +199,8 @@ const refreshTokenService = async (token) => {
     }
 
     const user = await prisma.user.findUnique({ where: { id: decoded.id } });
-    if (!user || user.refreshToken !== token) throw new Error("Invalid refresh token");
+    if (!user || user.refreshToken !== token)
+      throw new Error("Invalid refresh token");
 
     const newAccess = generateAccessToken(user);
     const newRefresh = generateRefreshToken(user);

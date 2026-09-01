@@ -6,6 +6,13 @@ module.exports = gql`
     FEMALE
     OTHER
   }
+type ProfileImageUploadResponse {
+  success: Boolean!
+  message: String!
+  url: String
+  filename: String
+  user: User
+}
 
   type User {
     id: ID!
@@ -23,6 +30,7 @@ module.exports = gql`
     user_status: Int
     wallet: UserWallet
     stats: UserDashboardStats
+      profileImage: String
   }
 
   type AuthPayload {
@@ -51,6 +59,8 @@ module.exports = gql`
     birthDate: String
     birthTime: String
     occupation: String
+      birthPlace: String
+       profileImage: String
   }
   # -----------------------------------------
   # End user update input section
@@ -1495,5 +1505,8 @@ module.exports = gql`
     verifyServiceCoupon(
       input: VerifyServiceCouponInput!
     ): VerifyServiceCouponResponse!
+      uploadProfileImage(
+    file: Upload!
+  ): ProfileImageUploadResponse!
   }
 `;
