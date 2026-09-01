@@ -22,6 +22,7 @@ type ProfileImageUploadResponse {
     gender: Gender
     birthDate: String
     birthTime: String
+     birthPlace: String
     occupation: String
     isActive: Boolean
     isDeleted: Boolean
