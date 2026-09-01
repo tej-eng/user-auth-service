@@ -92,10 +92,8 @@ type ProfileImageUploadResponse {
     profilePic: String
     name: String
     displayName: String
-
     experience: Int
     rating: Float
-
     skills: [String]
     languages: [String]
     problems: [String]
