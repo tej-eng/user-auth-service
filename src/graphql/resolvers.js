@@ -3286,48 +3286,46 @@ module.exports = {
       }
     },
 
-updateUserProfile: async (_, { input }, context) => {
-  if (!context.user) {
-    throw new Error("Unauthorized. Please login.");
-  }
+    updateUserProfile: async (_, { input }, context) => {
+      if (!context.user) {
+        throw new Error("Unauthorized. Please login.");
+      }
 
-  const dbUser = await prisma.user.findUnique({
-    where: {
-      id: context.user.id,
+      const dbUser = await prisma.user.findUnique({
+        where: {
+          id: context.user.id,
+        },
+      });
+
+      if (!dbUser) {
+        throw new Error(
+          `Authenticated user not found. User ID: ${context.user.id}`,
+        );
+      }
+
+      const updatedUser = await prisma.user.update({
+        where: {
+          id: context.user.id,
+        },
+        data: {
+          name: input.name,
+          gender: input.gender,
+          birthDate: input.birthDate ? new Date(input.birthDate) : null,
+          birthTime: input.birthTime,
+          occupation: input.occupation,
+          birthPlace: input.birthPlace || null,
+          profileImage: input.profileImage || dbUser.profileImage,
+        },
+      });
+
+      await logEvent({
+        userId: context.user.id,
+        action: "UPDATE_PROFILE",
+        details: input,
+      });
+
+      return updatedUser;
     },
-  });
-
-  if (!dbUser) {
-    throw new Error(
-      `Authenticated user not found. User ID: ${context.user.id}`,
-    );
-  }
-
-  const updatedUser = await prisma.user.update({
-    where: {
-      id: context.user.id,
-    },
-    data: {
-      name: input.name,
-      gender: input.gender,
-      birthDate: input.birthDate
-        ? new Date(input.birthDate)
-        : null,
-      birthTime: input.birthTime,
-      occupation: input.occupation,
-      birthPlace: input.birthPlace || null,
-      profileImage: input.profileImage || dbUser.profileImage,
-    },
-  });
-
-  await logEvent({
-    userId: context.user.id,
-    action: "UPDATE_PROFILE",
-    details: input,
-  });
-
-  return updatedUser;
-},
 
     // intake for chat
 
@@ -3816,7 +3814,7 @@ updateUserProfile: async (_, { input }, context) => {
         throw new Error(error.message || "Failed to submit review");
       }
     },
-    uploadProfileImage: async (_, { file }, context) => {
+ uploadProfileImage: async (_, { file }, context) => {
   try {
     if (!context.user) {
       throw new Error("Unauthorized");
@@ -3840,7 +3838,6 @@ updateUserProfile: async (_, { input }, context) => {
 
     const { createReadStream, filename, mimetype } = await file;
 
-    // Only images
     if (!mimetype || !mimetype.startsWith("image/")) {
       throw new Error("Only image files are allowed");
     }
@@ -3849,22 +3846,7 @@ updateUserProfile: async (_, { input }, context) => {
 
     const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
-    // ================= UPLOAD DIRECTORY =================
-
-    const uploadRoot =
-      process.env.UPLOAD_DIR ||
-      path.join(__dirname, "..", "uploads");
-
-    // Separate profile folder
-    const uploadDir = path.join(uploadRoot, "profile");
-
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, {
-        recursive: true,
-      });
-    }
-
-    // ================= FILE NAME =================
+    // ================= ALLOWED EXTENSIONS =================
 
     const ext = path.extname(filename).toLowerCase();
 
@@ -3881,14 +3863,25 @@ updateUserProfile: async (_, { input }, context) => {
       );
     }
 
+    // ================= UPLOAD DIRECTORY =================
+
+    const uploadRoot =
+      process.env.UPLOAD_DIR ||
+      path.join(__dirname, "..", "uploads");
+
+    const uploadDir = path.join(uploadRoot, "profile");
+
+    fs.mkdirSync(uploadDir, {
+      recursive: true,
+    });
+
+    // ================= UNIQUE FILE NAME =================
+
     const newFileName = `${Date.now()}-${Math.random()
       .toString(36)
       .substring(2, 8)}${ext}`;
 
-    const uploadPath = path.join(
-      uploadDir,
-      newFileName
-    );
+    const uploadPath = path.join(uploadDir, newFileName);
 
     // ================= SAVE FILE =================
 
@@ -3913,9 +3906,7 @@ updateUserProfile: async (_, { input }, context) => {
           }
 
           reject(
-            new Error(
-              "Profile image must be less than 2MB"
-            )
+            new Error("Profile image must be less than 2MB")
           );
         }
       });
@@ -3970,10 +3961,7 @@ updateUserProfile: async (_, { input }, context) => {
       user: updatedUser,
     };
   } catch (error) {
-    console.error(
-      "uploadProfileImage error:",
-      error
-    );
+    console.error("uploadProfileImage error:", error);
 
     throw new Error(
       error.message || "Profile image upload failed"
