@@ -1603,7 +1603,7 @@ module.exports = {
 
             astrologer: {
               id: session.astrologer?.id,
-              name: session.astrologer?.name,
+              name: session.astrologer?.displayName,
               profilePic: session.astrologer?.profilePic,
               experience: session.astrologer?.experience,
               rating: session.astrologer?.rating,
@@ -1841,7 +1841,7 @@ module.exports = {
 
             astrologer: {
               id: session.astrologer?.id,
-              name: session.astrologer?.name,
+              name: session.astrologer?.displayName,
               profilePic: session.astrologer?.profilePic,
               experience: session.astrologer?.experience,
               rating: session.astrologer?.rating,
