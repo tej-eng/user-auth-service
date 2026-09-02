@@ -1474,7 +1474,7 @@ module.exports = {
             astrologer: {
               select: {
                 id: true,
-                name: true,
+                displayName: true,
                 profilePic: true,
                 experience: true,
                 rating: true,
@@ -1738,7 +1738,7 @@ module.exports = {
             astrologer: {
               select: {
                 id: true,
-                name: true,
+                displayName: true,
                 profilePic: true,
                 experience: true,
                 rating: true,
