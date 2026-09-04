@@ -2883,9 +2883,9 @@ module.exports = {
     },
     getSimilarAstrologers: async (_, { astrologerId }, context) => {
       try {
-        if (!context.user) {
-          throw new Error("Unauthorized");
-        }
+        // if (!context.user) {
+        //   throw new Error("Unauthorized");
+        // }
 
         const userId = context.user.id;
 
