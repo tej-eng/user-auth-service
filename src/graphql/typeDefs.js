@@ -1344,8 +1344,59 @@ type ProfileImageUploadResponse {
     name: String!
     type: String!
   }
+
+  type PaymentInvoice {
+  id: ID!
+
+  invoiceNo: String
+  transactionId: String
+  razorpayOrderId: String
+  razorpayPaymentId: String
+
+  amount: Float
+  discount: Float
+  taxableAmount: Float
+
+  sgst: Float
+  cgst: Float
+  igst: Float
+
+  sgstRate: Float
+  cgstRate: Float
+  igstRate: Float
+  gstRate: Float
+
+  totalTax: Float
+  totalAmount: Float
+  amountReceived: Float
+  amountInWords: String
+
+  userName: String
+  city: String
+  state: String
+  pincode: String
+  country: String
+
+  placeOfSupply: String
+
+  supplierGSTIN: String
+  supplierAddress: String
+  website: String
+  email: String
+
+  recipientGSTIN: String
+
+  transactionHistoryUrl: String
+
+  hsnSac: String
+  reverseCharge: Boolean
+  panNumber: String
+
+  createdAt: String
+}
   #-------------END CALL RECORDING---
   type Query {
+   getPaymentInvoice(transactionId: ID!): PaymentInvoice
     getAstrologerCategories: [AstrologerCategory!]!
     getActiveSkills: [Skill!]!
     getActiveProblems: [Problem!]!
