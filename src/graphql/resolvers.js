@@ -972,7 +972,7 @@ module.exports = {
               profilePic: astro.profilePic,
 
               name: astro.name,
-              tags:astro.tags,
+              tags: astro.tags,
 
               displayName: astro.displayName,
 
@@ -3170,6 +3170,119 @@ module.exports = {
         },
       });
     },
+    getPaymentInvoice: async (_, { transactionId }, { prisma }) => {
+      try {
+        const transaction = await prisma.walletTransaction.findUnique({
+          where: {
+            id: transactionId,
+          },
+          include: {
+            userWallet: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        });
+
+        if (!transaction) {
+          throw new Error("Wallet transaction not found");
+        }
+
+        if (transaction.description !== "Recharge successful") {
+          throw new Error("Invoice is available only for wallet recharge");
+        }
+
+        const payment = await prisma.payment.findFirst({
+          where: {
+            walletTransactionId: transaction.id,
+  status: "SUCCESS",
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        });
+
+        if (!payment) {
+          throw new Error("Payment not found");
+        }
+
+        const amount = Number(payment.amount || 0);
+
+        const gstRate = Number(payment.gstRate || 18);
+
+        const taxableAmount = amount / (1 + gstRate / 100);
+
+        const totalTax = amount - taxableAmount;
+
+        return {
+          id: transaction.id,
+
+          invoiceNo: payment.invoiceNo || `INV-${transaction.id.slice(0, 8)}`,
+
+          transactionId: payment.transactionId || transaction.id,
+
+          razorpayOrderId: payment.razorpayOrderId || null,
+
+          razorpayPaymentId: payment.razorpayPaymentId || null,
+
+          amount: taxableAmount,
+          discount: 0,
+          taxableAmount,
+
+          sgst: 0,
+          cgst: 0,
+          igst: totalTax,
+
+          sgstRate: 0,
+          cgstRate: 0,
+          igstRate: gstRate,
+          gstRate,
+
+          totalTax,
+          totalAmount: amount,
+          amountReceived: amount,
+
+          amountInWords: payment.amountInWords || null,
+
+          userName: transaction.userWallet?.user?.name || "-",
+
+          city: transaction.userWallet?.user?.city || "-",
+
+          state: transaction.userWallet?.user?.state || "-",
+
+          pincode: transaction.userWallet?.user?.pincode || "-",
+
+          country: transaction.userWallet?.user?.country || "India",
+
+          placeOfSupply: transaction.userWallet?.user?.state || "-",
+
+          supplierGSTIN: payment.supplierGSTIN || "-",
+
+          supplierAddress: payment.supplierAddress || "-",
+
+          website: payment.website || "-",
+
+          email: payment.email || "-",
+
+          recipientGSTIN: payment.recipientGSTIN || "-",
+
+          transactionHistoryUrl: payment.transactionHistoryUrl || "-",
+
+          hsnSac: payment.hsnSac || "999799",
+
+          reverseCharge: payment.reverseCharge || false,
+
+          panNumber: payment.panNumber || "-",
+
+          createdAt: transaction.createdAt,
+        };
+      } catch (error) {
+        console.error("getPaymentInvoice error:", error);
+
+        throw new Error(error.message || "Failed to fetch payment invoice");
+      }
+    },
   },
   //----------------start code for mutation ----------------------------
   Mutation: {
@@ -3815,160 +3928,148 @@ module.exports = {
         throw new Error(error.message || "Failed to submit review");
       }
     },
- uploadProfileImage: async (_, { file }, context) => {
-  try {
-    if (!context.user) {
-      throw new Error("Unauthorized");
-    }
-
-    const userId = context.user.id;
-
-    // ================= USER CHECK =================
-
-    const user = await prisma.user.findUnique({
-      where: {
-        id: userId,
-      },
-    });
-
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    // ================= FILE =================
-
-    const { createReadStream, filename, mimetype } = await file;
-
-    if (!mimetype || !mimetype.startsWith("image/")) {
-      throw new Error("Only image files are allowed");
-    }
-
-    // ================= FILE SIZE =================
-
-    const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
-
-    // ================= ALLOWED EXTENSIONS =================
-
-    const ext = path.extname(filename).toLowerCase();
-
-    const allowedExtensions = [
-      ".jpg",
-      ".jpeg",
-      ".png",
-      ".webp",
-    ];
-
-    if (!allowedExtensions.includes(ext)) {
-      throw new Error(
-        "Only JPG, JPEG, PNG and WEBP images are allowed"
-      );
-    }
-
-    // ================= UPLOAD DIRECTORY =================
-
-    const uploadRoot =
-      process.env.UPLOAD_DIR ||
-      path.join(__dirname, "..", "uploads");
-
-    const uploadDir = path.join(uploadRoot, "profile");
-
-    fs.mkdirSync(uploadDir, {
-      recursive: true,
-    });
-
-    // ================= UNIQUE FILE NAME =================
-
-    const newFileName = `${Date.now()}-${Math.random()
-      .toString(36)
-      .substring(2, 8)}${ext}`;
-
-    const uploadPath = path.join(uploadDir, newFileName);
-
-    // ================= SAVE FILE =================
-
-    await new Promise((resolve, reject) => {
-      const stream = createReadStream();
-      const out = fs.createWriteStream(uploadPath);
-
-      let fileSize = 0;
-      let rejected = false;
-
-      stream.on("data", (chunk) => {
-        fileSize += chunk.length;
-
-        if (fileSize > MAX_FILE_SIZE && !rejected) {
-          rejected = true;
-
-          stream.destroy();
-          out.destroy();
-
-          if (fs.existsSync(uploadPath)) {
-            fs.unlinkSync(uploadPath);
-          }
-
-          reject(
-            new Error("Profile image must be less than 2MB")
-          );
+    uploadProfileImage: async (_, { file }, context) => {
+      try {
+        if (!context.user) {
+          throw new Error("Unauthorized");
         }
-      });
 
-      stream.on("error", (error) => {
-        if (!rejected) {
-          reject(error);
+        const userId = context.user.id;
+
+        // ================= USER CHECK =================
+
+        const user = await prisma.user.findUnique({
+          where: {
+            id: userId,
+          },
+        });
+
+        if (!user) {
+          throw new Error("User not found");
         }
-      });
 
-      out.on("error", (error) => {
-        if (!rejected) {
-          reject(error);
+        // ================= FILE =================
+
+        const { createReadStream, filename, mimetype } = await file;
+
+        if (!mimetype || !mimetype.startsWith("image/")) {
+          throw new Error("Only image files are allowed");
         }
-      });
 
-      out.on("finish", () => {
-        if (!rejected) {
-          resolve();
+        // ================= FILE SIZE =================
+
+        const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+
+        // ================= ALLOWED EXTENSIONS =================
+
+        const ext = path.extname(filename).toLowerCase();
+
+        const allowedExtensions = [".jpg", ".jpeg", ".png", ".webp"];
+
+        if (!allowedExtensions.includes(ext)) {
+          throw new Error("Only JPG, JPEG, PNG and WEBP images are allowed");
         }
-      });
 
-      stream.pipe(out);
-    });
+        // ================= UPLOAD DIRECTORY =================
 
-    // ================= PUBLIC URL =================
+        const uploadRoot =
+          process.env.UPLOAD_DIR || path.join(__dirname, "..", "uploads");
 
-    const baseUrl =
-      process.env.PROFILE_UPLOAD_BASE_URL ||
-      "https://dhwaniastro.com/profile/uploads";
+        const uploadDir = path.join(uploadRoot, "profile");
 
-    const fileUrl = `${baseUrl}/${newFileName}`;
+        fs.mkdirSync(uploadDir, {
+          recursive: true,
+        });
 
-    // ================= UPDATE USER =================
+        // ================= UNIQUE FILE NAME =================
 
-    const updatedUser = await prisma.user.update({
-      where: {
-        id: userId,
-      },
-      data: {
-        profileImage: fileUrl,
-      },
-    });
+        const newFileName = `${Date.now()}-${Math.random()
+          .toString(36)
+          .substring(2, 8)}${ext}`;
 
-    // ================= RESPONSE =================
+        const uploadPath = path.join(uploadDir, newFileName);
 
-    return {
-      success: true,
-      message: "Profile image updated successfully",
-      url: fileUrl,
-      filename: newFileName,
-      user: updatedUser,
-    };
-  } catch (error) {
-    console.error("uploadProfileImage error:", error);
+        // ================= SAVE FILE =================
 
-    throw new Error(
-      error.message || "Profile image upload failed"
-    );
-  }
-},
+        await new Promise((resolve, reject) => {
+          const stream = createReadStream();
+          const out = fs.createWriteStream(uploadPath);
+
+          let fileSize = 0;
+          let rejected = false;
+
+          stream.on("data", (chunk) => {
+            fileSize += chunk.length;
+
+            if (fileSize > MAX_FILE_SIZE && !rejected) {
+              rejected = true;
+
+              stream.destroy();
+              out.destroy();
+
+              if (fs.existsSync(uploadPath)) {
+                fs.unlinkSync(uploadPath);
+              }
+
+              reject(new Error("Profile image must be less than 2MB"));
+            }
+          });
+
+          stream.on("error", (error) => {
+            if (!rejected) {
+              reject(error);
+            }
+          });
+
+          out.on("error", (error) => {
+            if (!rejected) {
+              reject(error);
+            }
+          });
+
+          out.on("finish", () => {
+            if (!rejected) {
+              resolve();
+            }
+          });
+
+          stream.pipe(out);
+        });
+
+        // ================= PUBLIC URL =================
+
+        const baseUrl =
+          process.env.PROFILE_UPLOAD_BASE_URL ||
+          "https://dhwaniastro.com/profile/uploads";
+
+        const fileUrl = `${baseUrl}/${newFileName}`;
+
+        // ================= UPDATE USER =================
+
+        const updatedUser = await prisma.user.update({
+          where: {
+            id: userId,
+          },
+          data: {
+            profileImage: fileUrl,
+          },
+        });
+
+        // ================= RESPONSE =================
+
+        return {
+          success: true,
+          message: "Profile image updated successfully",
+          url: fileUrl,
+          filename: newFileName,
+          user: updatedUser,
+        };
+      } catch (error) {
+        console.error("uploadProfileImage error:", error);
+
+        throw new Error(error.message || "Profile image upload failed");
+      }
+    },
     uploadImage: async (_, { file }, context) => {
       try {
         if (!context.user) {
