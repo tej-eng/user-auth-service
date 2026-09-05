@@ -3170,119 +3170,151 @@ module.exports = {
         },
       });
     },
-    getPaymentInvoice: async (_, { transactionId }, { prisma }) => {
-      try {
-        const transaction = await prisma.walletTransaction.findUnique({
-          where: {
-            id: transactionId,
-          },
+getPaymentInvoice: async (_, { transactionId }, { prisma }) => {
+  try {
+    const transaction = await prisma.walletTransaction.findUnique({
+      where: {
+        id: transactionId,
+      },
+      include: {
+        userWallet: {
           include: {
-            userWallet: {
-              include: {
-                user: true,
-              },
-            },
+            user: true,
           },
-        });
+        },
+      },
+    });
 
-        if (!transaction) {
-          throw new Error("Wallet transaction not found");
-        }
+    if (!transaction) {
+      throw new Error("Wallet transaction not found");
+    }
 
-        if (transaction.description !== "Recharge successful") {
-          throw new Error("Invoice is available only for wallet recharge");
-        }
+    if (transaction.description !== "Recharge successful") {
+      throw new Error("Invoice is available only for wallet recharge");
+    }
 
-        const payment = await prisma.payment.findFirst({
-          where: {
-            walletTransactionId: transaction.id,
-  status: "SUCCESS",
-          },
-          orderBy: {
-            createdAt: "desc",
-          },
-        });
+    // Payment find karo
+    const payment = await prisma.payment.findFirst({
+      where: {
+        rechargePackId: transaction.rechargePackId,
+        status: "SUCCESS",
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
 
-        if (!payment) {
-          throw new Error("Payment not found");
-        }
+    if (!payment) {
+      throw new Error("Payment not found");
+    }
 
-        const amount = Number(payment.amount || 0);
+    const amount = Number(payment.amount || 0);
+    const gstRate = Number(payment.gstRate || 18);
 
-        const gstRate = Number(payment.gstRate || 18);
+    const taxableAmount =
+      amount / (1 + gstRate / 100);
 
-        const taxableAmount = amount / (1 + gstRate / 100);
+    const totalTax =
+      amount - taxableAmount;
 
-        const totalTax = amount - taxableAmount;
+    return {
+      id: transaction.id,
 
-        return {
-          id: transaction.id,
+      invoiceNo:
+        payment.invoiceNo ||
+        `INV-${transaction.id.slice(0, 8)}`,
 
-          invoiceNo: payment.invoiceNo || `INV-${transaction.id.slice(0, 8)}`,
+      transactionId:
+        payment.transactionId ||
+        transaction.id,
 
-          transactionId: payment.transactionId || transaction.id,
+      razorpayOrderId:
+        payment.razorpayOrderId || null,
 
-          razorpayOrderId: payment.razorpayOrderId || null,
+      razorpayPaymentId:
+        payment.razorpayPaymentId || null,
 
-          razorpayPaymentId: payment.razorpayPaymentId || null,
+      amount: taxableAmount,
 
-          amount: taxableAmount,
-          discount: 0,
-          taxableAmount,
+      discount: 0,
 
-          sgst: 0,
-          cgst: 0,
-          igst: totalTax,
+      taxableAmount,
 
-          sgstRate: 0,
-          cgstRate: 0,
-          igstRate: gstRate,
-          gstRate,
+      sgst: 0,
+      cgst: 0,
+      igst: totalTax,
 
-          totalTax,
-          totalAmount: amount,
-          amountReceived: amount,
+      sgstRate: 0,
+      cgstRate: 0,
+      igstRate: gstRate,
 
-          amountInWords: payment.amountInWords || null,
+      gstRate,
 
-          userName: transaction.userWallet?.user?.name || "-",
+      totalTax,
 
-          city: transaction.userWallet?.user?.city || "-",
+      totalAmount: amount,
 
-          state: transaction.userWallet?.user?.state || "-",
+      amountReceived: amount,
 
-          pincode: transaction.userWallet?.user?.pincode || "-",
+      amountInWords:
+        payment.amountInWords || null,
 
-          country: transaction.userWallet?.user?.country || "India",
+      userName:
+        transaction.userWallet?.user?.name || "-",
 
-          placeOfSupply: transaction.userWallet?.user?.state || "-",
+      city:
+        transaction.userWallet?.user?.city || "-",
 
-          supplierGSTIN: payment.supplierGSTIN || "-",
+      state:
+        transaction.userWallet?.user?.state || "-",
 
-          supplierAddress: payment.supplierAddress || "-",
+      pincode:
+        transaction.userWallet?.user?.pincode || "-",
 
-          website: payment.website || "-",
+      country:
+        transaction.userWallet?.user?.country || "India",
 
-          email: payment.email || "-",
+      placeOfSupply:
+        transaction.userWallet?.user?.state || "-",
 
-          recipientGSTIN: payment.recipientGSTIN || "-",
+      supplierGSTIN:
+        payment.supplierGSTIN || "-",
 
-          transactionHistoryUrl: payment.transactionHistoryUrl || "-",
+      supplierAddress:
+        payment.supplierAddress || "-",
 
-          hsnSac: payment.hsnSac || "999799",
+      website:
+        payment.website || "-",
 
-          reverseCharge: payment.reverseCharge || false,
+      email:
+        payment.email || "-",
 
-          panNumber: payment.panNumber || "-",
+      recipientGSTIN:
+        payment.recipientGSTIN || "-",
 
-          createdAt: transaction.createdAt,
-        };
-      } catch (error) {
-        console.error("getPaymentInvoice error:", error);
+      transactionHistoryUrl:
+        payment.transactionHistoryUrl || "-",
 
-        throw new Error(error.message || "Failed to fetch payment invoice");
-      }
-    },
+      hsnSac:
+        payment.hsnSac || "999799",
+
+      reverseCharge:
+        payment.reverseCharge || false,
+
+      panNumber:
+        payment.panNumber || "-",
+
+      createdAt:
+        transaction.createdAt,
+    };
+  } catch (error) {
+    console.error("getPaymentInvoice error:", error);
+
+    throw new Error(
+      error.message || "Failed to fetch payment invoice"
+    );
+  }
+},
   },
   //----------------start code for mutation ----------------------------
   Mutation: {
