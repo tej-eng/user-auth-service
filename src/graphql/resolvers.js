@@ -3170,7 +3170,7 @@ module.exports = {
         },
       });
     },
-getPaymentInvoice: async (_, { transactionId }, { prisma }) => {
+getPaymentInvoice: async (_, { transactionId }) => {
   try {
     const transaction = await prisma.walletTransaction.findUnique({
       where: {
